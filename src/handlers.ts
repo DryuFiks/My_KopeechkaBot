@@ -47,9 +47,7 @@ function formatTx(tx: Transaction): string {
 
 function formatSummary(title: string, summary: PeriodSummary): string {
   const unconvertedNote =
-    summary.unconverted_count > 0
-      ? `\n⚠️ ${summary.unconverted_count} операц. без курса — не учтены в сумме`
-      : "";
+    summary.unconverted_count > 0 ? `\n⚠️ ${summary.unconverted_count} операц. без курса — не учтены в сумме` : "";
   return (
     `<b>${title}</b>\n` +
     `Доходы: +${summary.income_gel} GEL\n` +
@@ -83,24 +81,38 @@ export function registerHandlers(bot: Bot): void {
     "start",
     safe("/start", async (ctx) => {
       await ctx.reply(START_MESSAGE, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
-    })
+    }),
   );
 
   bot.hears("💰 Финансы", async (ctx) => {
-    await ctx.reply("💰 Финансы\n➖ Расход — записать расход\n➕ Доход — записать доход\n🧾 История — последние операции", { reply_markup: mainKeyboard });
+    await ctx.reply(
+      "💰 Финансы\n➖ Расход — записать расход\n➕ Доход — записать доход\n🧾 История — последние операции",
+      { reply_markup: mainKeyboard },
+    );
   });
   bot.hears("📊 Аналитика", async (ctx) => {
-    await ctx.reply("📊 Аналитика\n📊 Бюджет — лимиты на месяц\n📈 Статистика — расходы по категориям", { reply_markup: mainKeyboard });
+    await ctx.reply("📊 Аналитика\n📊 Бюджет — лимиты на месяц\n📈 Статистика — расходы по категориям", {
+      reply_markup: mainKeyboard,
+    });
   });
   bot.hears("🗓 Планирование", async (ctx) => {
-    await ctx.reply("🗓 Планирование\n🔁 Платежи — регулярные платежи\n🎯 Накопления — цели и пополнения", { reply_markup: mainKeyboard });
+    await ctx.reply("🗓 Планирование\n🔁 Платежи — регулярные платежи\n🎯 Накопления — цели и пополнения", {
+      reply_markup: mainKeyboard,
+    });
   });
   bot.hears("🛠 Сервис", async (ctx) => {
-    await ctx.reply("🛠 Сервис\n💱 Курсы валют — актуальные курсы\n📖 Все команды — справка\n⚙️ Настройки\n🔄 Перезапуск — только администратор", { reply_markup: mainKeyboard });
+    await ctx.reply(
+      "🛠 Сервис\n💱 Курсы валют — актуальные курсы\n📖 Все команды — справка\n⚙️ Настройки\n🔄 Перезапуск — только администратор",
+      { reply_markup: mainKeyboard },
+    );
   });
 
-  bot.hears("📖 Все команды", safe("all commands", async (ctx) => {
-    await ctx.reply(HELP_MESSAGE + `
+  bot.hears(
+    "📖 Все команды",
+    safe("all commands", async (ctx) => {
+      await ctx.reply(
+        HELP_MESSAGE +
+          `
 
 <b>Дополнительные команды</b>
 /menu — открыть меню
@@ -114,23 +126,33 @@ export function registerHandlers(bot: Bot): void {
 /deletepayment ID — отключить платёж
 /deletegoal ID — закрыть цель
 
-Кнопки меню: 💰 Финансы, 📊 Аналитика, 🗓 Планирование, 🛠 Сервис.`, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
-  }));
+Кнопки меню: 💰 Финансы, 📊 Аналитика, 🗓 Планирование, 🛠 Сервис.`,
+        { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
+      );
+    }),
+  );
 
-  bot.hears("💱 Курсы валют", safe("rate button", async (ctx) => {
-    await refreshRatesIfStale();
-    const rates = getAllRateInfo();
-    const lines = rates.map((r) => r.rateToGel === null
-      ? `${r.currency} → курс недоступен`
-      : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`);
-    await ctx.reply(`Курсы валют (CBR-XML-Daily, ЦБ РФ):\n${lines.join("\n")}\n\nИсточник: https://www.cbr-xml-daily.com/`, { reply_markup: mainKeyboard });
-  }));
+  bot.hears(
+    "💱 Курсы валют",
+    safe("rate button", async (ctx) => {
+      await refreshRatesIfStale();
+      const rates = getAllRateInfo();
+      const lines = rates.map((r) =>
+        r.rateToGel === null
+          ? `${r.currency} → курс недоступен`
+          : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`,
+      );
+      await ctx.reply(`Курсы валют (CBR-XML-Daily, ЦБ РФ):\n${lines.join("\n")}\n\nИсточник: NGB Банк`, {
+        reply_markup: mainKeyboard,
+      });
+    }),
+  );
 
   bot.command(
     "help",
     safe("/help", async (ctx) => {
       await ctx.reply(HELP_MESSAGE, { parse_mode: PARSE_MODE });
-    })
+    }),
   );
 
   bot.command(
@@ -143,13 +165,11 @@ export function registerHandlers(bot: Bot): void {
           return `${r.currency} → курс недоступен`;
         }
         const staleTag = r.isFallback ? " ⚠️ устаревший (API недоступен)" : "";
-        const updated = r.updatedAt
-          ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})`
-          : "";
+        const updated = r.updatedAt ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})` : "";
         return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
       });
       await ctx.reply(`Текущие курсы (источник: CBR-XML-Daily, курсы ЦБ РФ):\n${lines.join("\n")}`);
-    })
+    }),
   );
 
   bot.command(
@@ -164,7 +184,7 @@ export function registerHandlers(bot: Bot): void {
 
       const summary = await getSummaryForRange(userId, from, to);
       await ctx.reply(formatSummary("Итоги за сегодня", summary), { parse_mode: PARSE_MODE });
-    })
+    }),
   );
 
   bot.command(
@@ -179,7 +199,7 @@ export function registerHandlers(bot: Bot): void {
 
       const summary = await getSummaryForRange(userId, from, to);
       await ctx.reply(formatSummary("Итоги за месяц", summary), { parse_mode: PARSE_MODE });
-    })
+    }),
   );
 
   bot.command(
@@ -197,7 +217,7 @@ export function registerHandlers(bot: Bot): void {
       await ctx.reply(`<b>Последние операции</b>\n${lines.join("\n")}`, {
         parse_mode: PARSE_MODE,
       });
-    })
+    }),
   );
 
   bot.command(
@@ -212,12 +232,23 @@ export function registerHandlers(bot: Bot): void {
         return;
       }
       await ctx.reply(`Отменено: ${formatTx(deleted)}`, { parse_mode: PARSE_MODE });
-    })
+    }),
   );
 
   // Plain text messages — attempt to parse as a transaction.
   bot.on("message:text", async (ctx, next) => {
-    const menuLabels = new Set(["➖ Расход", "➕ Доход", "📊 Бюджет", "🧾 История", "🔁 Платежи", "🎯 Накопления", "📈 Статистика", "⚙️ Настройки", "🔄 Перезапуск", "❌ Отмена"]);
+    const menuLabels = new Set([
+      "➖ Расход",
+      "➕ Доход",
+      "📊 Бюджет",
+      "🧾 История",
+      "🔁 Платежи",
+      "🎯 Накопления",
+      "📈 Статистика",
+      "⚙️ Настройки",
+      "🔄 Перезапуск",
+      "❌ Отмена",
+    ]);
     if (menuLabels.has(ctx.message.text.trim())) return next();
     const userId = ctx.from?.id;
     if (!userId) return;
@@ -246,8 +277,7 @@ export function registerHandlers(bot: Bot): void {
       });
 
       const sign = saved.type === "expense" ? "Расход" : "Доход";
-      const gelText =
-        saved.amount_gel !== null ? `≈ ${saved.amount_gel} GEL` : "курс для этой валюты недоступен";
+      const gelText = saved.amount_gel !== null ? `≈ ${saved.amount_gel} GEL` : "курс для этой валюты недоступен";
       const categoryText = saved.category ? `, категория: ${escapeHtml(saved.category)}` : "";
       await ctx.reply(`${sign} записан: ${saved.amount} ${saved.currency}${categoryText} (${gelText})`, {
         parse_mode: PARSE_MODE,

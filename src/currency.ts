@@ -1,58 +1,59 @@
-// Currency rates sourced from Google Finance quote pages.
-// Google does not provide a supported public exchange-rate API, so this is
-// best-effort HTML parsing and may need updating if Google changes its page.
-//
-// Behavior:
-// - Rates are cached in memory for 24h.
-// - The cache is also persisted to the `rate_cache` table, so a restart
-//   doesn't lose the last known rate (used as a fallback if the API is down).
-// - If a rate is genuinely unavailable (fresh install, API down, no cache
-//   yet), conversion returns null — callers must show this to the user
-//   rather than inventing a value.
+// Official exchange rates from the National Bank of Georgia (NBG).
+// Rates are fetched at most once per Georgia calendar day and persisted in PostgreSQL.
+// If NBG is unavailable, the last saved rates remain available as fallback.
 
 import { pool } from "./db";
 import { logger } from "./logger";
 
-// currency-converter-lt is CommonJS and does not include TypeScript declarations.
-const CurrencyConverter = require("currency-converter-lt") as new (options?: unknown) => any;
-const converter = new CurrencyConverter().setupRatesCache({
-  isRatesCaching: true,
-  ratesCacheDuration: 3600,
-});
-
 export type SupportedCurrency = "RUB" | "GEL" | "USD";
 export const SUPPORTED_CURRENCIES: SupportedCurrency[] = ["RUB", "GEL", "USD"];
 
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const FETCH_TIMEOUT_MS = 5000;
-const CBR_URL = "https://www.cbr-xml-daily.com/latest.js";
+const NBG_URL = "https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/";
+const FETCH_TIMEOUT_MS = 10000;
+const TIME_ZONE = "Asia/Tbilisi";
 
 interface RateEntry {
   rateToGel: number;
   fetchedAt: Date;
 }
 
+interface NbgCurrency {
+  code: string;
+  quantity: number;
+  rate: number;
+}
+
+interface NbgDay {
+  date: string;
+  currencies: NbgCurrency[];
+}
+
 const cache = new Map<SupportedCurrency, RateEntry>();
-cache.set("GEL", { rateToGel: 1, fetchedAt: new Date(0) }); // GEL is always 1, never stale
+cache.set("GEL", { rateToGel: 1, fetchedAt: new Date(0) });
+
+function georgiaDate(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
 
 export function isSupportedCurrency(code: string): code is SupportedCurrency {
   return (SUPPORTED_CURRENCIES as string[]).includes(code.toUpperCase());
 }
 
-/** Loads the last known rates from the DB at startup, so a restart keeps a usable fallback. */
 export async function loadRateCacheFromDb(): Promise<void> {
   try {
     const result = await pool.query<{
-      currency: string;
-      rate_to_gel: string;
-      fetched_at: Date;
-    }>(`SELECT currency, rate_to_gel, fetched_at FROM rate_cache`);
+      currency: string; rate_to_gel: string; fetched_at: Date;
+    }>("SELECT currency, rate_to_gel, fetched_at FROM rate_cache");
     for (const row of result.rows) {
       if (isSupportedCurrency(row.currency)) {
-        cache.set(row.currency as SupportedCurrency, {
-          rateToGel: parseFloat(row.rate_to_gel),
-          fetchedAt: row.fetched_at,
-        });
+        const rate = Number(row.rate_to_gel);
+        if (Number.isFinite(rate) && rate > 0) {
+          cache.set(row.currency, { rateToGel: rate, fetchedAt: new Date(row.fetched_at) });
+        }
       }
     }
     logger.info(`Loaded ${result.rows.length} cached exchange rate(s) from DB.`);
@@ -61,70 +62,72 @@ export async function loadRateCacheFromDb(): Promise<void> {
   }
 }
 
-async function persistRate(currency: SupportedCurrency, rate: number, fetchedAt: Date): Promise<void> {
+async function persistRates(rates: Map<SupportedCurrency, number>, fetchedAt: Date): Promise<void> {
+  const client = await pool.connect();
   try {
-    await pool.query(
-      `INSERT INTO rate_cache (currency, rate_to_gel, fetched_at)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (currency) DO UPDATE SET rate_to_gel = $2, fetched_at = $3`,
-      [currency, rate, fetchedAt],
-    );
+    await client.query("BEGIN");
+    for (const [currency, rate] of rates) {
+      await client.query(
+        `INSERT INTO rate_cache (currency, rate_to_gel, fetched_at)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (currency) DO UPDATE SET rate_to_gel = EXCLUDED.rate_to_gel, fetched_at = EXCLUDED.fetched_at`,
+        [currency, rate, fetchedAt],
+      );
+    }
+    await client.query("COMMIT");
   } catch (err) {
-    logger.warn(`Could not persist rate cache for ${currency}: ${(err as Error).message}`);
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
 }
 
-async function fetchRatesFromConverter(currencies: SupportedCurrency[]): Promise<Map<SupportedCurrency, number>> {
-  const result = new Map<SupportedCurrency, number>();
+async function fetchRatesFromNbg(): Promise<Map<SupportedCurrency, number>> {
+  const date = georgiaDate();
+  const url = `${NBG_URL}?date=${date}`;
+  const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  if (!response.ok) throw new Error(`NBG API HTTP ${response.status}`);
+  const payload = await response.json() as NbgDay[];
+  if (!Array.isArray(payload) || !payload[0] || !Array.isArray(payload[0].currencies)) {
+    throw new Error("NBG API returned an unexpected response");
+  }
 
-  for (const currency of currencies) {
-    if (currency === "GEL") continue;
-
-    // One unit of source currency converted to GEL gives our rate multiplier.
-    logger.info(`Currency converter package: ${require("currency-converter-lt/package.json").version}`);
-
-    const raw = await converter.from(currency).to("GEL").amount(1).convert();
-
-    logger.info(`Currency debug ${currency}-GEL: raw=${String(raw)}, typeof=${typeof raw}, isNull=${raw === null}`);
-
-    logger.info(`Currency debug ${currency}-GEL: ${JSON.stringify(raw)} (type: ${typeof raw})`);
-
-    const rate = typeof raw === "number" ? raw : Number(String(raw).replace(",", "."));
-
-    if (!Number.isFinite(rate) || rate <= 0) {
-      throw new Error(`currency-converter-lt returned an invalid ${currency}-GEL rate: ${JSON.stringify(raw)}`);
+  const result = new Map<SupportedCurrency, number>([["GEL", 1]]);
+  for (const item of payload[0].currencies) {
+    if (!isSupportedCurrency(item.code)) continue;
+    const quantity = Number(item.quantity);
+    const rate = Number(item.rate);
+    if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(rate) || rate <= 0) {
+      throw new Error(`NBG returned an invalid ${item.code} rate`);
     }
-
-    if (!Number.isFinite(rate) || rate <= 0) {
-      throw new Error(`currency-converter-lt returned an invalid ${currency}-GEL rate`);
-    }
-    result.set(currency, rate);
+    result.set(item.code, rate / quantity);
+  }
+  for (const currency of SUPPORTED_CURRENCIES) {
+    if (!result.has(currency)) throw new Error(`NBG response is missing ${currency}`);
   }
   return result;
 }
 
 export async function refreshRatesIfStale(): Promise<void> {
-  const now = Date.now();
-  const stale = SUPPORTED_CURRENCIES.filter((c) => {
-    if (c === "GEL") return false;
-    const entry = cache.get(c);
-    return !entry || now - entry.fetchedAt.getTime() > CACHE_TTL_MS;
+  const today = georgiaDate();
+  const stale = SUPPORTED_CURRENCIES.some((currency) => {
+    if (currency === "GEL") return false;
+    const entry = cache.get(currency);
+    return !entry || georgiaDate(entry.fetchedAt) !== today;
   });
-  if (stale.length === 0) return;
+  if (!stale) return;
 
   try {
-    const fetched = await fetchRatesFromConverter(stale);
+    const fetched = await fetchRatesFromNbg();
     const fetchedAt = new Date();
-    for (const [currency, rate] of fetched.entries()) {
+    await persistRates(fetched, fetchedAt);
+    for (const [currency, rate] of fetched) {
       cache.set(currency, { rateToGel: rate, fetchedAt });
-      await persistRate(currency, rate, fetchedAt);
     }
-    const missing = stale.filter((c) => !fetched.has(c));
-    if (missing.length > 0) {
-      logger.warn(`currency-converter-lt did not return rates for: ${missing.join(", ")}`);
-    }
+    logger.info(`Updated exchange rates from NBG for Georgia date ${today}.`);
   } catch (err) {
-    logger.warn(`currency-converter-lt rate refresh failed, using cached/fallback rates: ${(err as Error).message}`);
+    logger.warn(`NBG rate refresh failed; using cached rates if available: ${(err as Error).message}`);
   }
 }
 
@@ -132,31 +135,23 @@ export interface RateInfo {
   currency: SupportedCurrency;
   rateToGel: number | null;
   updatedAt: Date | null;
-  /** true when this rate is older than the 24h cache window (API was unreachable). */
   isFallback: boolean;
 }
 
 export function getRateInfo(currency: SupportedCurrency): RateInfo {
-  if (currency === "GEL") {
-    return { currency, rateToGel: 1, updatedAt: null, isFallback: false };
-  }
+  if (currency === "GEL") return { currency, rateToGel: 1, updatedAt: null, isFallback: false };
   const entry = cache.get(currency);
-  if (!entry) {
-    return { currency, rateToGel: null, updatedAt: null, isFallback: false };
-  }
-  const isFallback = Date.now() - entry.fetchedAt.getTime() > CACHE_TTL_MS;
-  return { currency, rateToGel: entry.rateToGel, updatedAt: entry.fetchedAt, isFallback };
+  if (!entry) return { currency, rateToGel: null, updatedAt: null, isFallback: false };
+  return {
+    currency, rateToGel: entry.rateToGel, updatedAt: entry.fetchedAt,
+    isFallback: georgiaDate(entry.fetchedAt) !== georgiaDate(),
+  };
 }
 
 export function getAllRateInfo(): RateInfo[] {
-  return SUPPORTED_CURRENCIES.map((c) => getRateInfo(c));
+  return SUPPORTED_CURRENCIES.map(getRateInfo);
 }
 
-/**
- * Converts to GEL using the best available rate (fresh, or a stale cached
- * fallback). Returns null only when there is truly no rate on record yet —
- * callers must show that explicitly rather than storing a fabricated value.
- */
 export function convertToGel(amount: number, currency: SupportedCurrency): number | null {
   const info = getRateInfo(currency);
   if (info.rateToGel === null) return null;
