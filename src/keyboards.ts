@@ -1,50 +1,45 @@
-import { InlineKeyboard, Keyboard } from "grammy";
+import { InlineKeyboard } from "grammy";
 
-const backButton = "⬅️ Главное меню";
+export const mainKeyboard = new InlineKeyboard()
+  .text("💰 Финансы", "menu:finance")
+  .text("📊 Аналитика", "menu:analytics")
+  .row()
+  .text("🗓 Планирование", "menu:planning")
+  .text("🛠 Сервис", "menu:service");
 
-export const mainKeyboard = new Keyboard()
-  .text("💰 Финансы")
-  .text("📊 Аналитика")
-  .row()
-  .text("🗓 Планирование")
-  .text("🛠 Сервис")
-  .resized();
+const back = () => new InlineKeyboard().text("⬅️ Главное меню", "menu:main");
 
-export const financeKeyboard = new Keyboard()
-  .text("➖ Расход")
-  .text("➕ Доход")
+export const financeKeyboard = new InlineKeyboard()
+  .text("➖ Расход", "action:expense")
+  .text("➕ Доход", "action:income")
   .row()
-  .text("🧾 История")
+  .text("🧾 История", "action:history")
   .row()
-  .text(backButton)
-  .resized();
+  .text("⬅️ Главное меню", "menu:main");
 
-export const analyticsKeyboard = new Keyboard()
-  .text("📊 Бюджет")
-  .text("📈 Статистика")
+export const analyticsKeyboard = new InlineKeyboard()
+  .text("📊 Бюджет", "action:budget")
+  .text("📈 Статистика", "action:stats")
   .row()
-  .text(backButton)
-  .resized();
+  .text("⬅️ Главное меню", "menu:main");
 
-export const planningKeyboard = new Keyboard()
-  .text("🔁 Платежи")
-  .text("🎯 Накопления")
+export const planningKeyboard = new InlineKeyboard()
+  .text("🔁 Платежи", "action:payments")
+  .text("🎯 Накопления", "action:goals")
   .row()
-  .text(backButton)
-  .resized();
+  .text("⬅️ Главное меню", "menu:main");
 
-export const serviceKeyboard = new Keyboard()
-  .text("💱 Курсы валют")
-  .text("📖 Все команды")
+export const serviceKeyboard = new InlineKeyboard()
+  .text("💱 Курсы валют", "action:rates")
+  .text("📖 Все команды", "action:help")
   .row()
-  .text("⚙️ Настройки")
+  .text("⚙️ Настройки", "action:settings")
   .row()
-  .text("🔄 Перезапуск")
+  .text("🔄 Перезапуск", "action:restart")
   .row()
-  .text(backButton)
-  .resized();
+  .text("⬅️ Главное меню", "menu:main");
 
-export const cancelKeyboard = new Keyboard().text("❌ Отмена").resized();
+export const cancelKeyboard = new InlineKeyboard().text("❌ Отмена", "flow:cancel");
 
 export function categoryKeyboard(type: "expense" | "income", categories: string[]) {
   const keyboard = new InlineKeyboard();

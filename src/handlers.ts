@@ -79,10 +79,26 @@ function safe<C extends Context>(label: string, fn: (ctx: C) => Promise<void>): 
 }
 
 export function registerHandlers(bot: Bot): void {
+  const showMainMenu = async (ctx: Context): Promise<void> => {
+    // Remove a persistent ReplyKeyboard left over from an older bot version.
+    await ctx.reply("Открываю меню…", { reply_markup: { remove_keyboard: true } });
+    await ctx.reply(START_MESSAGE, {
+      parse_mode: PARSE_MODE,
+      reply_markup: mainKeyboard,
+    });
+  };
+
   bot.command(
     "start",
     safe("/start", async (ctx) => {
-      await ctx.reply(START_MESSAGE, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
+      await showMainMenu(ctx);
+    }),
+  );
+
+  bot.command(
+    "menu",
+    safe("/menu", async (ctx) => {
+      await showMainMenu(ctx);
     }),
   );
 

@@ -7,24 +7,21 @@ import {
   serviceKeyboard,
 } from "../keyboards";
 
+const MENU = {
+  main: { text: "Главное меню", keyboard: mainKeyboard },
+  finance: { text: "💰 Финансы", keyboard: financeKeyboard },
+  analytics: { text: "📊 Аналитика", keyboard: analyticsKeyboard },
+  planning: { text: "🗓 Планирование", keyboard: planningKeyboard },
+  service: { text: "🛠 Сервис", keyboard: serviceKeyboard },
+} as const;
+
 export function registerGroupMenuHandlers(bot: Bot): void {
-  bot.hears("⬅️ Главное меню", async (ctx) => {
-    await ctx.reply("Главное меню", { reply_markup: mainKeyboard });
-  });
-
-  bot.hears("💰 Финансы", async (ctx) => {
-    await ctx.reply("💰 Финансы", { reply_markup: financeKeyboard });
-  });
-
-  bot.hears("📊 Аналитика", async (ctx) => {
-    await ctx.reply("📊 Аналитика", { reply_markup: analyticsKeyboard });
-  });
-
-  bot.hears("🗓 Планирование", async (ctx) => {
-    await ctx.reply("🗓 Планирование", { reply_markup: planningKeyboard });
-  });
-
-  bot.hears("🛠 Сервис", async (ctx) => {
-    await ctx.reply("🛠 Сервис", { reply_markup: serviceKeyboard });
+  bot.callbackQuery(/^menu:(main|finance|analytics|planning|service)$/, async (ctx) => {
+    const section = ctx.match[1] as keyof typeof MENU;
+    const menu = MENU[section];
+    await ctx.answerCallbackQuery();
+    await ctx.editMessageText(menu.text, { reply_markup: menu.keyboard }).catch(() => {
+      // Navigation must not create extra chat messages if Telegram refuses the edit.
+    });
   });
 }
