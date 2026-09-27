@@ -18,7 +18,7 @@ export const SUPPORTED_CURRENCIES: SupportedCurrency[] = ["RUB", "GEL", "USD"];
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const FETCH_TIMEOUT_MS = 5000;
-const GOOGLE_FINANCE_URL = "https://www.google.com/finance/quote";
+const CBR_URL = "https://www.cbr-xml-daily.com/latest.js";
 
 interface RateEntry {
   rateToGel: number;
@@ -67,63 +67,30 @@ async function persistRate(currency: SupportedCurrency, rate: number, fetchedAt:
   }
 }
 
-async function fetchRatesFromGoogleFinance(
+async function fetchRatesFromCbr(
   currencies: SupportedCurrency[]
 ): Promise<Map<SupportedCurrency, number>> {
-  const result = new Map<SupportedCurrency, number>();
-
-  // Google Finance quotes are expressed as units of the second currency per
-  // one unit of the first (e.g. USD-GEL means GEL for 1 USD).
-  for (const currency of currencies) {
-    if (currency === "GEL") continue;
-
-    const url = `${GOOGLE_FINANCE_URL}/${currency}-GEL?hl=en`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-    try {
-      const res = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-      });
-      if (!res.ok) {
-        throw new Error(`Google Finance responded with HTTP ${res.status} for ${currency}-GEL`);
-      }
-
-      const html = await res.text();
-      // Google Finance currently places the headline quote in a span named
-      // Pdsbrc, after the pair label (e.g. "Russian Ruble / Georgian Lari").
-      // Anchor the match to the expected pair so we don't accidentally parse
-      // an unrelated number elsewhere in the page.
-      const currencyNames: Record<Exclude<SupportedCurrency, "GEL">, string> = {
-        RUB: "Russian Ruble",
-        USD: "US Dollar",
-      };
-      const pairLabel = `${currencyNames[currency]}\\s*\/\\s*Georgian Lari`;
-      const quotePattern = new RegExp(
-        `<div[^>]*class="[^"]*gO24Ff[^"]*"[^>]*>\\s*${pairLabel}\\s*</div>[\\s\\S]{0,4000}?<span[^>]*jsname="Pdsbrc"[^>]*>\\s*<span[^>]*>\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*</span>`,
-        "i"
-      );
-      const match = quotePattern.exec(html);
-      let rate: number | null = null;
-      if (match?.[1]) {
-        const parsed = Number(match[1].replace(/,/g, ""));
-        if (Number.isFinite(parsed) && parsed > 0) rate = parsed;
-      }
-
-      if (rate === null) {
-        throw new Error(`Could not parse ${currency}-GEL quote from Google Finance`);
-      }
-      result.set(currency, rate);
-    } finally {
-      clearTimeout(timeout);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(CBR_URL, { signal: controller.signal, headers: { "User-Agent": "KopeechkaBot/0.0.8" } });
+    if (!res.ok) throw new Error(`CBR-XML-Daily responded with HTTP ${res.status}`);
+    const data = await res.json() as { base?: string; rates?: Record<string, number>; date?: string };
+    if (data.base !== "RUB" || !data.rates || !(data.rates.GEL > 0)) {
+      throw new Error("Unexpected CBR-XML-Daily response");
     }
+    const result = new Map<SupportedCurrency, number>();
+    for (const currency of currencies) {
+      if (currency === "GEL") continue;
+      const rubToCurrency = data.rates[currency];
+      if (!(rubToCurrency > 0)) throw new Error(`Missing ${currency} rate from CBR-XML-Daily`);
+      // latest.js gives units of foreign currency per RUB. Convert 1 unit to GEL.
+      result.set(currency, data.rates.GEL / rubToCurrency);
+    }
+    return result;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return result;
 }
 
 /**
@@ -141,7 +108,7 @@ export async function refreshRatesIfStale(): Promise<void> {
   if (stale.length === 0) return;
 
   try {
-    const fetched = await fetchRatesFromGoogleFinance(stale);
+    const fetched = await fetchRatesFromCbr(stale);
     const fetchedAt = new Date();
     for (const [currency, rate] of fetched.entries()) {
       cache.set(currency, { rateToGel: rate, fetchedAt });
@@ -149,11 +116,11 @@ export async function refreshRatesIfStale(): Promise<void> {
     }
     const missing = stale.filter((c) => !fetched.has(c));
     if (missing.length > 0) {
-      logger.warn(`Google Finance did not return rates for: ${missing.join(", ")}`);
+      logger.warn(`CBR-XML-Daily did not return rates for: ${missing.join(", ")}`);
     }
   } catch (err) {
     logger.warn(
-      `Google Finance rate refresh failed, using cached/fallback rates: ${(err as Error).message}`
+      `CBR-XML-Daily rate refresh failed, using cached/fallback rates: ${(err as Error).message}`
     );
   }
 }

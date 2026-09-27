@@ -86,6 +86,46 @@ export function registerHandlers(bot: Bot): void {
     })
   );
 
+  bot.hears("💰 Финансы", async (ctx) => {
+    await ctx.reply("💰 Финансы\n➖ Расход — записать расход\n➕ Доход — записать доход\n🧾 История — последние операции", { reply_markup: mainKeyboard });
+  });
+  bot.hears("📊 Аналитика", async (ctx) => {
+    await ctx.reply("📊 Аналитика\n📊 Бюджет — лимиты на месяц\n📈 Статистика — расходы по категориям", { reply_markup: mainKeyboard });
+  });
+  bot.hears("🗓 Планирование", async (ctx) => {
+    await ctx.reply("🗓 Планирование\n🔁 Платежи — регулярные платежи\n🎯 Накопления — цели и пополнения", { reply_markup: mainKeyboard });
+  });
+  bot.hears("🛠 Сервис", async (ctx) => {
+    await ctx.reply("🛠 Сервис\n💱 Курсы валют — актуальные курсы\n📖 Все команды — справка\n⚙️ Настройки\n🔄 Перезапуск — только администратор", { reply_markup: mainKeyboard });
+  });
+
+  bot.hears("📖 Все команды", safe("all commands", async (ctx) => {
+    await ctx.reply(HELP_MESSAGE + `
+
+<b>Дополнительные команды</b>
+/menu — открыть меню
+/budget Категория сумма — задать лимит
+/category expense Еда — добавить категорию расхода
+/category income Зарплата — добавить категорию дохода
+/goal Название сумма — создать цель
+/save ID сумма — пополнить цель
+/payment день сумма валюта название — добавить платёж
+/payments — список платежей
+/deletepayment ID — отключить платёж
+/deletegoal ID — закрыть цель
+
+Кнопки меню: 💰 Финансы, 📊 Аналитика, 🗓 Планирование, 🛠 Сервис.`, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
+  }));
+
+  bot.hears("💱 Курсы валют", safe("rate button", async (ctx) => {
+    await refreshRatesIfStale();
+    const rates = getAllRateInfo();
+    const lines = rates.map((r) => r.rateToGel === null
+      ? `${r.currency} → курс недоступен`
+      : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`);
+    await ctx.reply(`Курсы валют (CBR-XML-Daily, ЦБ РФ):\n${lines.join("\n")}\n\nИсточник: https://www.cbr-xml-daily.com/`, { reply_markup: mainKeyboard });
+  }));
+
   bot.command(
     "help",
     safe("/help", async (ctx) => {
@@ -102,13 +142,13 @@ export function registerHandlers(bot: Bot): void {
         if (r.rateToGel === null) {
           return `${r.currency} → курс недоступен`;
         }
-        const staleTag = r.isFallback ? " ⚠️ устаревший (Google Finance недоступен)" : "";
+        const staleTag = r.isFallback ? " ⚠️ устаревший (API недоступен)" : "";
         const updated = r.updatedAt
           ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})`
           : "";
         return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
       });
-      await ctx.reply(`Текущие курсы (источник: Google Finance):\n${lines.join("\n")}`);
+      await ctx.reply(`Текущие курсы (источник: CBR-XML-Daily, курсы ЦБ РФ):\n${lines.join("\n")}`);
     })
   );
 
