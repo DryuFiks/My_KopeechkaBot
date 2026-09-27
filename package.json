@@ -1,0 +1,23 @@
+{
+  "name": "kopeechka-bot",
+  "version": "0.0.0",
+  "description": "Personal finance tracking Telegram bot (MVP per Sprint 1 plan)",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "grammy": "^1.30.0",
+    "pg": "^8.13.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.1",
+    "@types/node": "^22.7.5",
+    "@types/pg": "^8.11.10"
+  }
+}
