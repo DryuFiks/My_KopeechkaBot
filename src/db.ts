@@ -1,6 +1,7 @@
 import { Pool } from "pg";
-import { TransactionType } from "./parser";
-import { SupportedCurrency } from "./currency";
+import type { TransactionType } from "./parser";
+import type { SupportedCurrency } from "./currency";
+import { logger } from "./logger";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -11,7 +12,7 @@ export const pool = new Pool({ connectionString });
 
 pool.on("error", (err) => {
   // Unexpected errors on idle clients — log and keep the process alive.
-  console.error(`[db] Unexpected pool error: ${err.message}`);
+  logger.error(`Unexpected pool error: ${err.message}`);
 });
 
 /** Verifies the DB connection at startup. Throws a clear error on failure. */
@@ -71,7 +72,7 @@ export async function getLastTransactions(
   return result.rows;
 }
 
-export interface MonthlySummary {
+export interface PeriodSummary {
   income_gel: number;
   expense_gel: number;
   balance_gel: number;
@@ -79,11 +80,12 @@ export interface MonthlySummary {
   unconverted_count: number;
 }
 
-export async function getMonthlySummary(
+/** Summarizes transactions in [from, to). Used by both /month and /today. */
+export async function getSummaryForRange(
   userId: number,
   from: Date,
   to: Date
-): Promise<MonthlySummary> {
+): Promise<PeriodSummary> {
   const result = await pool.query<{
     income_gel: string | null;
     expense_gel: string | null;

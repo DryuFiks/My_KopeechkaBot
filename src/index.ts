@@ -2,6 +2,8 @@ import "dotenv/config";
 import { Bot } from "grammy";
 import { checkConnection, closePool } from "./db";
 import { registerHandlers } from "./handlers";
+import { loadRateCacheFromDb, refreshRatesIfStale } from "./currency";
+import { logger } from "./logger";
 
 async function main(): Promise<void> {
   const token = process.env.BOT_TOKEN;
@@ -9,15 +11,19 @@ async function main(): Promise<void> {
     throw new Error("BOT_TOKEN is not set. Check your .env file.");
   }
 
-  console.log("[startup] Checking database connection...");
+  logger.info("Checking database connection...");
   await checkConnection();
-  console.log("[startup] Database OK.");
+  logger.info("Database OK.");
+
+  logger.info("Loading exchange rate cache...");
+  await loadRateCacheFromDb();
+  await refreshRatesIfStale();
 
   const bot = new Bot(token);
   registerHandlers(bot);
 
   const shutdown = async (signal: string) => {
-    console.log(`[shutdown] Received ${signal}, stopping bot...`);
+    logger.info(`Received ${signal}, stopping bot...`);
     await bot.stop();
     await closePool();
     process.exit(0);
@@ -25,11 +31,13 @@ async function main(): Promise<void> {
   process.once("SIGINT", () => shutdown("SIGINT"));
   process.once("SIGTERM", () => shutdown("SIGTERM"));
 
-  console.log("[startup] Starting bot (polling)...");
-  await bot.start();
+  logger.info("Starting bot (polling)...");
+  await bot.start({
+    onStart: () => logger.info("Bot is running."),
+  });
 }
 
 main().catch((err) => {
-  console.error(`[fatal] ${err instanceof Error ? err.message : String(err)}`);
+  logger.error(`Fatal startup error: ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 });
