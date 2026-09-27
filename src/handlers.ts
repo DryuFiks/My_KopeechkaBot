@@ -84,28 +84,12 @@ export function registerHandlers(bot: Bot): void {
     }),
   );
 
-  bot.hears("💰 Финансы", async (ctx) => {
-    await ctx.reply(
-      "💰 Финансы\n➖ Расход — записать расход\n➕ Доход — записать доход\n🧾 История — последние операции",
-      { reply_markup: mainKeyboard },
-    );
-  });
-  bot.hears("📊 Аналитика", async (ctx) => {
-    await ctx.reply("📊 Аналитика\n📊 Бюджет — лимиты на месяц\n📈 Статистика — расходы по категориям", {
-      reply_markup: mainKeyboard,
-    });
-  });
-  bot.hears("🗓 Планирование", async (ctx) => {
-    await ctx.reply("🗓 Планирование\n🔁 Платежи — регулярные платежи\n🎯 Накопления — цели и пополнения", {
-      reply_markup: mainKeyboard,
-    });
-  });
-  bot.hears("🛠 Сервис", async (ctx) => {
-    await ctx.reply(
-      "🛠 Сервис\n💱 Курсы валют — актуальные курсы\n📖 Все команды — справка\n⚙️ Настройки\n🔄 Перезапуск — только администратор",
-      { reply_markup: mainKeyboard },
-    );
-  });
+  
+
+  
+  
+  
+  
 
   bot.hears(
     "📖 Все команды",
@@ -142,7 +126,7 @@ export function registerHandlers(bot: Bot): void {
           ? `${r.currency} → курс недоступен`
           : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`,
       );
-      await ctx.reply(`Курсы валют (CBR-XML-Daily, ЦБ РФ):\n${lines.join("\n")}\n\nИсточник: NGB Банк`, {
+      await ctx.reply(`Курсы валют (Национальный банк Грузии):\n${lines.join("\n")}\n\nИсточник: NBG — Национальный банк Грузии`, {
         reply_markup: mainKeyboard,
       });
     }),
@@ -168,7 +152,7 @@ export function registerHandlers(bot: Bot): void {
         const updated = r.updatedAt ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})` : "";
         return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
       });
-      await ctx.reply(`Текущие курсы (источник: CBR-XML-Daily, курсы ЦБ РФ):\n${lines.join("\n")}`);
+      await ctx.reply(`Текущие курсы (источник: NBG — Национальный банк Грузии):\n${lines.join("\n")}`);
     }),
   );
 
@@ -248,6 +232,11 @@ export function registerHandlers(bot: Bot): void {
       "⚙️ Настройки",
       "🔄 Перезапуск",
       "❌ Отмена",
+      "💰 Финансы",
+      "📊 Аналитика",
+      "🗓 Планирование",
+      "🛠 Сервис",
+      "⬅️ Главное меню",
     ]);
     if (menuLabels.has(ctx.message.text.trim())) return next();
     const userId = ctx.from?.id;

@@ -2,6 +2,7 @@ import "dotenv/config";
 import { Bot } from "grammy";
 import { checkConnection, closePool } from "./db";
 import { registerHandlers } from "./handlers";
+import { registerGroupMenuHandlers } from "./handlers/groups";
 import { registerFeatureHandlers } from "./features";
 import { loadRateCacheFromDb, refreshRatesIfStale } from "./currency";
 import { logger } from "./logger";
@@ -22,6 +23,7 @@ async function main(): Promise<void> {
 
   const bot = new Bot(token);
   registerHandlers(bot);
+  registerGroupMenuHandlers(bot);
   registerFeatureHandlers(bot);
 
   const shutdown = async (signal: string) => {
