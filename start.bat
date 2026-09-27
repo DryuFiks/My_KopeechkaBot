@@ -1,11 +1,20 @@
 @echo off
-setlocal
-:run
+cd /d "%~dp0"
+
+:restart
+echo.
 echo Starting Kopeechka Bot...
-npm start
-if errorlevel 75 (
-  echo Restart requested. Starting again in 2 seconds...
-  timeout /t 2 /nobreak >nul
-  goto run
+
+call npm start
+set "EXIT_CODE=%ERRORLEVEL%"
+
+if "%EXIT_CODE%"=="75" (
+    echo.
+    echo Restart requested. Restarting in 2 seconds...
+    timeout /t 2 /nobreak >nul
+    goto restart
 )
-echo Bot stopped.
+
+echo.
+echo Bot stopped with exit code %EXIT_CODE%.
+pause

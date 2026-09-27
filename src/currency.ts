@@ -1,7 +1,6 @@
-// V1 — Real currency rates.
-// Source: National Bank of Georgia (NBG) official API — a natural fit since
-// GEL is the base currency of this bot and the user is in Georgia.
-// https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/
+// Currency rates sourced from Google Finance quote pages.
+// Google does not provide a supported public exchange-rate API, so this is
+// best-effort HTML parsing and may need updating if Google changes its page.
 //
 // Behavior:
 // - Rates are cached in memory for 24h.
@@ -19,7 +18,7 @@ export const SUPPORTED_CURRENCIES: SupportedCurrency[] = ["RUB", "GEL", "USD"];
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const FETCH_TIMEOUT_MS = 5000;
-const NBG_URL = "https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/";
+const GOOGLE_FINANCE_URL = "https://www.google.com/finance/quote";
 
 interface RateEntry {
   rateToGel: number;
@@ -68,35 +67,63 @@ async function persistRate(currency: SupportedCurrency, rate: number, fetchedAt:
   }
 }
 
-async function fetchRatesFromNbg(
+async function fetchRatesFromGoogleFinance(
   currencies: SupportedCurrency[]
 ): Promise<Map<SupportedCurrency, number>> {
-  const url = `${NBG_URL}?currencies=${currencies.join(",")}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const result = new Map<SupportedCurrency, number>();
 
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) {
-      throw new Error(`NBG API responded with HTTP ${res.status}`);
-    }
-    const data = (await res.json()) as Array<{
-      currencies: Array<{ code: string; quantity: number; rate: number }>;
-    }>;
-    const entries = data[0]?.currencies ?? [];
+  // Google Finance quotes are expressed as units of the second currency per
+  // one unit of the first (e.g. USD-GEL means GEL for 1 USD).
+  for (const currency of currencies) {
+    if (currency === "GEL") continue;
 
-    const result = new Map<SupportedCurrency, number>();
-    for (const entry of entries) {
-      const code = entry.code.toUpperCase();
-      if (isSupportedCurrency(code) && code !== "GEL" && entry.quantity > 0) {
-        // NBG publishes "rate GEL per `quantity` units" — normalize to a per-unit rate.
-        result.set(code as SupportedCurrency, entry.rate / entry.quantity);
+    const url = `${GOOGLE_FINANCE_URL}/${currency}-GEL?hl=en`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`Google Finance responded with HTTP ${res.status} for ${currency}-GEL`);
       }
+
+      const html = await res.text();
+      // Google Finance currently places the headline quote in a span named
+      // Pdsbrc, after the pair label (e.g. "Russian Ruble / Georgian Lari").
+      // Anchor the match to the expected pair so we don't accidentally parse
+      // an unrelated number elsewhere in the page.
+      const currencyNames: Record<Exclude<SupportedCurrency, "GEL">, string> = {
+        RUB: "Russian Ruble",
+        USD: "US Dollar",
+      };
+      const pairLabel = `${currencyNames[currency]}\\s*\/\\s*Georgian Lari`;
+      const quotePattern = new RegExp(
+        `<div[^>]*class="[^"]*gO24Ff[^"]*"[^>]*>\\s*${pairLabel}\\s*</div>[\\s\\S]{0,4000}?<span[^>]*jsname="Pdsbrc"[^>]*>\\s*<span[^>]*>\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*</span>`,
+        "i"
+      );
+      const match = quotePattern.exec(html);
+      let rate: number | null = null;
+      if (match?.[1]) {
+        const parsed = Number(match[1].replace(/,/g, ""));
+        if (Number.isFinite(parsed) && parsed > 0) rate = parsed;
+      }
+
+      if (rate === null) {
+        throw new Error(`Could not parse ${currency}-GEL quote from Google Finance`);
+      }
+      result.set(currency, rate);
+    } finally {
+      clearTimeout(timeout);
     }
-    return result;
-  } finally {
-    clearTimeout(timeout);
   }
+
+  return result;
 }
 
 /**
@@ -114,7 +141,7 @@ export async function refreshRatesIfStale(): Promise<void> {
   if (stale.length === 0) return;
 
   try {
-    const fetched = await fetchRatesFromNbg(stale);
+    const fetched = await fetchRatesFromGoogleFinance(stale);
     const fetchedAt = new Date();
     for (const [currency, rate] of fetched.entries()) {
       cache.set(currency, { rateToGel: rate, fetchedAt });
@@ -122,11 +149,11 @@ export async function refreshRatesIfStale(): Promise<void> {
     }
     const missing = stale.filter((c) => !fetched.has(c));
     if (missing.length > 0) {
-      logger.warn(`NBG API did not return rates for: ${missing.join(", ")}`);
+      logger.warn(`Google Finance did not return rates for: ${missing.join(", ")}`);
     }
   } catch (err) {
     logger.warn(
-      `Exchange rate refresh failed, using cached/fallback rates: ${(err as Error).message}`
+      `Google Finance rate refresh failed, using cached/fallback rates: ${(err as Error).message}`
     );
   }
 }

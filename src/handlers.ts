@@ -102,13 +102,13 @@ export function registerHandlers(bot: Bot): void {
         if (r.rateToGel === null) {
           return `${r.currency} → курс недоступен`;
         }
-        const staleTag = r.isFallback ? " ⚠️ устаревший (API недоступен)" : "";
+        const staleTag = r.isFallback ? " ⚠️ устаревший (Google Finance недоступен)" : "";
         const updated = r.updatedAt
           ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})`
           : "";
         return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
       });
-      await ctx.reply(`Текущие курсы (источник: Нацбанк Грузии, NBG):\n${lines.join("\n")}`);
+      await ctx.reply(`Текущие курсы (источник: Google Finance):\n${lines.join("\n")}`);
     })
   );
 
