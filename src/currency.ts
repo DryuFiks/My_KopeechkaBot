@@ -13,6 +13,13 @@
 import { pool } from "./db";
 import { logger } from "./logger";
 
+// currency-converter-lt is CommonJS and does not include TypeScript declarations.
+const CurrencyConverter = require("currency-converter-lt") as new (options?: unknown) => any;
+const converter = new CurrencyConverter().setupRatesCache({
+  isRatesCaching: true,
+  ratesCacheDuration: 3600,
+});
+
 export type SupportedCurrency = "RUB" | "GEL" | "USD";
 export const SUPPORTED_CURRENCIES: SupportedCurrency[] = ["RUB", "GEL", "USD"];
 
@@ -60,44 +67,42 @@ async function persistRate(currency: SupportedCurrency, rate: number, fetchedAt:
       `INSERT INTO rate_cache (currency, rate_to_gel, fetched_at)
        VALUES ($1, $2, $3)
        ON CONFLICT (currency) DO UPDATE SET rate_to_gel = $2, fetched_at = $3`,
-      [currency, rate, fetchedAt]
+      [currency, rate, fetchedAt],
     );
   } catch (err) {
     logger.warn(`Could not persist rate cache for ${currency}: ${(err as Error).message}`);
   }
 }
 
-async function fetchRatesFromCbr(
-  currencies: SupportedCurrency[]
-): Promise<Map<SupportedCurrency, number>> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const res = await fetch(CBR_URL, { signal: controller.signal, headers: { "User-Agent": "KopeechkaBot/0.0.8" } });
-    if (!res.ok) throw new Error(`CBR-XML-Daily responded with HTTP ${res.status}`);
-    const data = await res.json() as { base?: string; rates?: Record<string, number>; date?: string };
-    if (data.base !== "RUB" || !data.rates || !(data.rates.GEL > 0)) {
-      throw new Error("Unexpected CBR-XML-Daily response");
+async function fetchRatesFromConverter(currencies: SupportedCurrency[]): Promise<Map<SupportedCurrency, number>> {
+  const result = new Map<SupportedCurrency, number>();
+
+  for (const currency of currencies) {
+    if (currency === "GEL") continue;
+
+    // One unit of source currency converted to GEL gives our rate multiplier.
+    logger.info(`Currency converter package: ${require("currency-converter-lt/package.json").version}`);
+
+    const raw = await converter.from(currency).to("GEL").amount(1).convert();
+
+    logger.info(`Currency debug ${currency}-GEL: raw=${String(raw)}, typeof=${typeof raw}, isNull=${raw === null}`);
+
+    logger.info(`Currency debug ${currency}-GEL: ${JSON.stringify(raw)} (type: ${typeof raw})`);
+
+    const rate = typeof raw === "number" ? raw : Number(String(raw).replace(",", "."));
+
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new Error(`currency-converter-lt returned an invalid ${currency}-GEL rate: ${JSON.stringify(raw)}`);
     }
-    const result = new Map<SupportedCurrency, number>();
-    for (const currency of currencies) {
-      if (currency === "GEL") continue;
-      const rubToCurrency = data.rates[currency];
-      if (!(rubToCurrency > 0)) throw new Error(`Missing ${currency} rate from CBR-XML-Daily`);
-      // latest.js gives units of foreign currency per RUB. Convert 1 unit to GEL.
-      result.set(currency, data.rates.GEL / rubToCurrency);
+
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new Error(`currency-converter-lt returned an invalid ${currency}-GEL rate`);
     }
-    return result;
-  } finally {
-    clearTimeout(timeout);
+    result.set(currency, rate);
   }
+  return result;
 }
 
-/**
- * Refreshes any currency whose cached rate is missing or older than 24h.
- * Never throws — on failure it logs a warning and leaves the existing
- * (possibly stale) cache in place, which callers treat as a fallback.
- */
 export async function refreshRatesIfStale(): Promise<void> {
   const now = Date.now();
   const stale = SUPPORTED_CURRENCIES.filter((c) => {
@@ -108,7 +113,7 @@ export async function refreshRatesIfStale(): Promise<void> {
   if (stale.length === 0) return;
 
   try {
-    const fetched = await fetchRatesFromCbr(stale);
+    const fetched = await fetchRatesFromConverter(stale);
     const fetchedAt = new Date();
     for (const [currency, rate] of fetched.entries()) {
       cache.set(currency, { rateToGel: rate, fetchedAt });
@@ -116,12 +121,10 @@ export async function refreshRatesIfStale(): Promise<void> {
     }
     const missing = stale.filter((c) => !fetched.has(c));
     if (missing.length > 0) {
-      logger.warn(`CBR-XML-Daily did not return rates for: ${missing.join(", ")}`);
+      logger.warn(`currency-converter-lt did not return rates for: ${missing.join(", ")}`);
     }
   } catch (err) {
-    logger.warn(
-      `CBR-XML-Daily rate refresh failed, using cached/fallback rates: ${(err as Error).message}`
-    );
+    logger.warn(`currency-converter-lt rate refresh failed, using cached/fallback rates: ${(err as Error).message}`);
   }
 }
 
