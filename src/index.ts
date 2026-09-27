@@ -2,9 +2,9 @@ import "dotenv/config";
 import { Bot } from "grammy";
 import { checkConnection, closePool } from "./db";
 import { registerHandlers } from "./handlers";
+import { registerFeatureHandlers } from "./features";
 import { loadRateCacheFromDb, refreshRatesIfStale } from "./currency";
 import { logger } from "./logger";
-import { processDueRecurring } from "./recurring";
 
 async function main(): Promise<void> {
   const token = process.env.BOT_TOKEN;
@@ -22,17 +22,10 @@ async function main(): Promise<void> {
 
   const bot = new Bot(token);
   registerHandlers(bot);
-  // Poll due recurring payments every minute. DB row locks protect against duplicates.
-  const recurringTimer = setInterval(() => {
-    void processDueRecurring((userId, text) => bot.api.sendMessage(userId, text))
-      .catch((err) => logger.error(`Recurring scheduler failed: ${err instanceof Error ? err.message : String(err)}`));
-  }, 60_000);
-  void processDueRecurring((userId, text) => bot.api.sendMessage(userId, text))
-    .catch((err) => logger.error(`Initial recurring run failed: ${err instanceof Error ? err.message : String(err)}`));
+  registerFeatureHandlers(bot);
 
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, stopping bot...`);
-    clearInterval(recurringTimer);
     await bot.stop();
     await closePool();
     process.exit(0);

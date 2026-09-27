@@ -115,21 +115,14 @@
 
 > Редактирование существующих записей, фильтрация по типу операции и автоматические тесты, упомянутые в ранней версии этого README, не входили в технический план Sprint 2 (`finance_bot_plan_detailed.txt`) и перенесены в бэклог — при необходимости добавим отдельным спринтом.
 
-### ✅ Версия 0.0.2 (Sprint 3) — реализована в коде
+### ⏳ Версия 0.0.2 (Sprint 3) — в планах
 
-* [x] Таблица `recurring` и команды `/recurring add|list|remove|toggle`.
-* [x] Планировщик с запуском раз в минуту, транзакционной обработкой и `FOR UPDATE SKIP LOCKED` для защиты от повторной обработки несколькими экземплярами; уведомления в Telegram.
-* [x] `/stats` — топ-5 категорий расходов за месяц в GEL.
-* [x] `/export` — CSV-выгрузка операций текущего пользователя (UTF-8 BOM для Excel).
+* [ ] Таблица и команды `/recurring` (add/list/remove/toggle).
+* [ ] Планировщик регулярных платежей с защитой от дублей и уведомлениями.
+* [ ] `/stats` — топ-5 категорий расходов за месяц.
+* [ ] `/export` — CSV-выгрузка операций пользователя.
 
-Миграция 0.0.2: `sql/003_recurring.sql`. Примени её после `schema.sql` и `002_add_rate_cache.sql`.
-Регулярный платёж создаётся так:
-`/recurring add expense 12.50 GEL подписка monthly 2026-10-01`
-Периоды: `daily`, `weekly`, `monthly`; дата задаётся в UTC (первое выполнение — около 09:00 UTC).
-Другие команды: `/recurring list`, `/recurring remove <id>`, `/recurring toggle <id>`.
-`/stats` показывает категории расходов за текущий календарный месяц; `/export` выгружает все операции пользователя в CSV.
-
-Важно: планировщик выполняет просроченные записи при следующем проходе; держи процесс бота постоянно запущенным, чтобы операции и уведомления отправлялись вовремя.
+Подробности — разделы R1–R7 в `finance_bot_plan_detailed.txt`.
 
 ---
 
@@ -144,7 +137,7 @@ My_KopeechkaBot/
 │   ├── db.ts           — пул PostgreSQL и параметризованные функции доступа к БД
 │   ├── parser.ts       — разбор текстовой строки операции
 │   ├── currency.ts     — курсы валют (NBG API), кэш с фолбэком, конвертация
-│   ├── handlers.ts     — команды и обработчик операций\n│   ├── recurring.ts    — CRUD и планировщик регулярных платежей
+│   ├── handlers.ts     — команды /start /help /today /month /last /undo /rate + обработчик текста
 │   ├── format.ts       — режим форматирования (HTML) и экранирование
 │   └── logger.ts       — логирование с уровнями и ротацией по дням
 ├── sql/
@@ -245,12 +238,7 @@ Get-Content sql/002_add_rate_cache.sql | docker exec -i <container_id> psql -U p
 docker exec -it <container_id> psql -U postgres -d finance_bot -c "\dt"
 ```
 
-Должны быть видны `transactions` и `rate_cache`. Для версии 0.0.2 дополнительно примени миграцию:
-```powershell
-Get-Content sql/003_recurring.sql | docker exec -i <container_id> psql -U postgres -d finance_bot
-```
-В bash/Linux: `docker exec -i <container_id> psql -U postgres -d finance_bot < sql/003_recurring.sql`.
-После миграции должны быть видны также таблица `recurring` и индекс `idx_recurring_due`.
+Должны быть видны `transactions` и `rate_cache`.
 
 ### 4. Настройка окружения
 
@@ -309,7 +297,7 @@ npm start
 | `/undo`   | Отменить последнюю операцию (только свою)                         |
 | `/rate`   | Текущие курсы валют, источник и время последнего обновления       |
 
-Команды `/stats`, `/export`, `/recurring` доступны в версии 0.0.2.
+Команды `/stats`, `/export`, `/recurring` появятся в 0.0.2.
 
 ---
 
@@ -379,7 +367,7 @@ USD → 2.7 GEL (обновлено 2026-09-27 08:00)
 
 * [x] **MVP** — базовый Telegram-бот и учёт операций.
 * [x] **0.0.1** — реальные курсы валют, `/today`, `/help`, форматирование, обработка ошибок, логирование.
-* [x] **0.0.2** — регулярные платежи, уведомления, статистика по категориям, CSV-экспорт.
+* [ ] **0.0.2** — регулярные платежи, уведомления, статистика по категориям, CSV-экспорт.
 * [ ] **0.1.0** — стабилизация, автозапуск/мониторинг, расширение тестов.
 
 ---
@@ -427,3 +415,17 @@ GitHub: [My_KopeechkaBot](https://github.com/DryuFiks/My_KopeechkaBot)
 ---
 
 **My Kopeechka Bot** — простой и расширяемый инструмент для управления личными финансами прямо в Telegram.
+
+## Features through 0.0.8
+
+See [`README_RELEASES.md`](README_RELEASES.md) for the release map, database migration order, and commands for categories, budgets, recurring payments, savings goals, analytics, and CSV export. Before starting the bot on an existing database, apply `sql/003_release_0_0_8.sql` after the earlier migrations.
+
+
+## Запуск в Windows с автоматическим перезапуском
+
+1. В `.env` укажи `ADMIN_TELEGRAM_ID` — свой числовой Telegram ID. Его можно узнать у @userinfobot.
+2. Выполни `npm install` и `npm run build`.
+3. Запускай бота через `start.bat`, а не напрямую через `npm start`.
+4. После обновления файлов снова выполни `npm run build`, затем нажми в Telegram `/start` или `/menu`. Кнопка «🔄 Перезапуск» завершит текущий процесс специальным кодом, и `start.bat` запустит его снова.
+
+Кнопка перезапуска доступна только пользователю, чей ID указан в `ADMIN_TELEGRAM_ID`. Она перезапускает уже собранную версию из `dist`, поэтому после изменения исходников сначала обязательно выполни `npm run build`.
