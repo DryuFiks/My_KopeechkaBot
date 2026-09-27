@@ -5,7 +5,7 @@ import { escapeHtml, PARSE_MODE } from "../format";
 import { money, monthStart, safe, showBudget } from "./common";
 
 export function registerAnalyticsHandlers(bot: Bot): void {
-bot.command(
+  bot.command(
     "budget",
     safe("budget", async (ctx) => {
       const uid = ctx.from?.id;
@@ -33,7 +33,7 @@ bot.command(
     }),
   );
 
-bot.command(
+  bot.command(
     "stats",
     safe("stats", async (ctx) => {
       const uid = ctx.from?.id;
@@ -51,7 +51,7 @@ bot.command(
     }),
   );
 
-bot.command(
+  bot.command(
     "export",
     safe("export", async (ctx) => {
       const uid = ctx.from?.id;
@@ -64,7 +64,9 @@ bot.command(
       const csv = [
         "date,type,amount,currency,category,note,amount_gel",
         ...r.rows.map((x: any) =>
-          [x.created_at.toISOString(), x.type, x.amount, x.currency, x.category, x.note, x.amount_gel].map(q).join(","),
+          [x.created_at.toISOString(), x.type, x.amount, x.currency, x.category, x.note, x.amount_gel]
+            .map(q)
+            .join(","),
         ),
       ].join("\r\n");
       await ctx.replyWithDocument(new InputFile(Buffer.from("\uFEFF" + csv, "utf8"), "transactions.csv"), {

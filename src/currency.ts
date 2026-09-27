@@ -33,7 +33,10 @@ cache.set("GEL", { rateToGel: 1, fetchedAt: new Date(0) });
 
 function georgiaDate(date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   }).formatToParts(date);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}`;
@@ -46,7 +49,9 @@ export function isSupportedCurrency(code: string): code is SupportedCurrency {
 export async function loadRateCacheFromDb(): Promise<void> {
   try {
     const result = await pool.query<{
-      currency: string; rate_to_gel: string; fetched_at: Date;
+      currency: string;
+      rate_to_gel: string;
+      fetched_at: Date;
     }>("SELECT currency, rate_to_gel, fetched_at FROM rate_cache");
     for (const row of result.rows) {
       if (isSupportedCurrency(row.currency)) {
@@ -88,7 +93,7 @@ async function fetchRatesFromNbg(): Promise<Map<SupportedCurrency, number>> {
   const url = `${NBG_URL}?date=${date}`;
   const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`NBG API HTTP ${response.status}`);
-  const payload = await response.json() as NbgDay[];
+  const payload = (await response.json()) as NbgDay[];
   if (!Array.isArray(payload) || !payload[0] || !Array.isArray(payload[0].currencies)) {
     throw new Error("NBG API returned an unexpected response");
   }
@@ -143,7 +148,9 @@ export function getRateInfo(currency: SupportedCurrency): RateInfo {
   const entry = cache.get(currency);
   if (!entry) return { currency, rateToGel: null, updatedAt: null, isFallback: false };
   return {
-    currency, rateToGel: entry.rateToGel, updatedAt: entry.fetchedAt,
+    currency,
+    rateToGel: entry.rateToGel,
+    updatedAt: entry.fetchedAt,
     isFallback: georgiaDate(entry.fetchedAt) !== georgiaDate(),
   };
 }

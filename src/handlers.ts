@@ -47,7 +47,9 @@ function formatTx(tx: Transaction): string {
 
 function formatSummary(title: string, summary: PeriodSummary): string {
   const unconvertedNote =
-    summary.unconverted_count > 0 ? `\n⚠️ ${summary.unconverted_count} операц. без курса — не учтены в сумме` : "";
+    summary.unconverted_count > 0
+      ? `\n⚠️ ${summary.unconverted_count} операц. без курса — не учтены в сумме`
+      : "";
   return (
     `<b>${title}</b>\n` +
     `Доходы: +${summary.income_gel} GEL\n` +
@@ -84,13 +86,6 @@ export function registerHandlers(bot: Bot): void {
     }),
   );
 
-  
-
-  
-  
-  
-  
-
   bot.hears(
     "📖 Все команды",
     safe("all commands", async (ctx) => {
@@ -126,9 +121,12 @@ export function registerHandlers(bot: Bot): void {
           ? `${r.currency} → курс недоступен`
           : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`,
       );
-      await ctx.reply(`Курсы валют (Национальный банк Грузии):\n${lines.join("\n")}\n\nИсточник: NBG — Национальный банк Грузии`, {
-        reply_markup: mainKeyboard,
-      });
+      await ctx.reply(
+        `Курсы валют (Национальный банк Грузии):\n${lines.join("\n")}\n\nИсточник: NBG — Национальный банк Грузии`,
+        {
+          reply_markup: mainKeyboard,
+        },
+      );
     }),
   );
 
@@ -149,7 +147,9 @@ export function registerHandlers(bot: Bot): void {
           return `${r.currency} → курс недоступен`;
         }
         const staleTag = r.isFallback ? " ⚠️ устаревший (API недоступен)" : "";
-        const updated = r.updatedAt ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})` : "";
+        const updated = r.updatedAt
+          ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})`
+          : "";
         return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
       });
       await ctx.reply(`Текущие курсы (источник: NBG — Национальный банк Грузии):\n${lines.join("\n")}`);
@@ -266,7 +266,8 @@ export function registerHandlers(bot: Bot): void {
       });
 
       const sign = saved.type === "expense" ? "Расход" : "Доход";
-      const gelText = saved.amount_gel !== null ? `≈ ${saved.amount_gel} GEL` : "курс для этой валюты недоступен";
+      const gelText =
+        saved.amount_gel !== null ? `≈ ${saved.amount_gel} GEL` : "курс для этой валюты недоступен";
       const categoryText = saved.category ? `, категория: ${escapeHtml(saved.category)}` : "";
       await ctx.reply(`${sign} записан: ${saved.amount} ${saved.currency}${categoryText} (${gelText})`, {
         parse_mode: PARSE_MODE,

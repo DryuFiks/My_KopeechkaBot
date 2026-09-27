@@ -21,9 +21,7 @@ export async function checkConnection(): Promise<void> {
     await pool.query("SELECT 1");
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `Could not connect to PostgreSQL. Check DATABASE_URL in .env. Details: ${message}`
-    );
+    throw new Error(`Could not connect to PostgreSQL. Check DATABASE_URL in .env. Details: ${message}`);
   }
 }
 
@@ -53,21 +51,18 @@ export async function insertTransaction(params: {
     `INSERT INTO transactions (user_id, type, amount, currency, amount_gel, category, note)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
-    [userId, type, amount, currency, amountGel, category, note]
+    [userId, type, amount, currency, amountGel, category, note],
   );
   return result.rows[0];
 }
 
-export async function getLastTransactions(
-  userId: number,
-  limit: number
-): Promise<Transaction[]> {
+export async function getLastTransactions(userId: number, limit: number): Promise<Transaction[]> {
   const result = await pool.query<Transaction>(
     `SELECT * FROM transactions
      WHERE user_id = $1
      ORDER BY created_at DESC, id DESC
      LIMIT $2`,
-    [userId, limit]
+    [userId, limit],
   );
   return result.rows;
 }
@@ -81,11 +76,7 @@ export interface PeriodSummary {
 }
 
 /** Summarizes transactions in [from, to). Used by both /month and /today. */
-export async function getSummaryForRange(
-  userId: number,
-  from: Date,
-  to: Date
-): Promise<PeriodSummary> {
+export async function getSummaryForRange(userId: number, from: Date, to: Date): Promise<PeriodSummary> {
   const result = await pool.query<{
     income_gel: string | null;
     expense_gel: string | null;
@@ -99,7 +90,7 @@ export async function getSummaryForRange(
        COUNT(*) FILTER (WHERE amount_gel IS NULL) AS unconverted_count
      FROM transactions
      WHERE user_id = $1 AND created_at >= $2 AND created_at < $3`,
-    [userId, from, to]
+    [userId, from, to],
   );
   const row = result.rows[0];
   const incomeGel = parseFloat(row.income_gel ?? "0");
@@ -124,7 +115,7 @@ export async function deleteLastTransaction(userId: number): Promise<Transaction
        ORDER BY created_at DESC, id DESC
        LIMIT 1
        FOR UPDATE`,
-      [userId]
+      [userId],
     );
     if (found.rows.length === 0) {
       await client.query("ROLLBACK");
@@ -133,7 +124,7 @@ export async function deleteLastTransaction(userId: number): Promise<Transaction
     const id = found.rows[0].id;
     const deleted = await client.query<Transaction>(
       `DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING *`,
-      [id, userId]
+      [id, userId],
     );
     await client.query("COMMIT");
     return deleted.rows[0] ?? null;

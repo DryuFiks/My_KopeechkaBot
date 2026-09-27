@@ -8,7 +8,7 @@ import { logger } from "../logger";
 import { flows, money, safe, showBudget } from "./common";
 
 export function registerMenuFlowHandlers(bot: Bot): void {
-bot.command(
+  bot.command(
     "menu",
     safe("menu", async (ctx) => {
       flows.delete(ctx.from!.id);
@@ -16,7 +16,7 @@ bot.command(
     }),
   );
 
-bot.hears(
+  bot.hears(
     "🔄 Перезапуск",
     safe("restart", async (ctx) => {
       const userId = ctx.from?.id;
@@ -39,7 +39,7 @@ bot.hears(
     }),
   );
 
-bot.on(
+  bot.on(
     "message:text",
     safe("menu/text", async (ctx) => {
       const uid = ctx.from?.id;
@@ -47,7 +47,8 @@ bot.on(
       if (!uid || !message || !("text" in message) || typeof message.text !== "string") return;
       const text = message.text.trim();
       if (text.startsWith("/")) return;
-      if (["💰 Финансы", "📊 Аналитика", "🗓 Планирование", "🛠 Сервис", "⬅️ Главное меню"].includes(text)) return;
+      if (["💰 Финансы", "📊 Аналитика", "🗓 Планирование", "🛠 Сервис", "⬅️ Главное меню"].includes(text))
+        return;
       if (text === "🔄 Перезапуск") {
         return;
       }
@@ -95,7 +96,10 @@ bot.on(
         await ctx.reply(
           (r.rowCount
             ? r.rows
-                .map((x: any) => `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`)
+                .map(
+                  (x: any) =>
+                    `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`,
+                )
                 .join("\n")
             : "Регулярных платежей нет.") + "\n\nДобавить: /payment день сумма валюта название",
           { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
@@ -110,7 +114,10 @@ bot.on(
         await ctx.reply(
           (r.rowCount
             ? r.rows
-                .map((x: any) => `${x.id}. ${escapeHtml(x.title)} — ${money(x.saved_gel)} / ${money(x.target_gel)} GEL`)
+                .map(
+                  (x: any) =>
+                    `${x.id}. ${escapeHtml(x.title)} — ${money(x.saved_gel)} / ${money(x.target_gel)} GEL`,
+                )
                 .join("\n")
             : "Целей пока нет.") + "\n\nСоздать: /goal Название сумма\nПополнить: /save ID сумма",
           { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
@@ -140,7 +147,9 @@ bot.on(
           return;
         }
         if (parsed.type !== flow.type) {
-          await ctx.reply(`Для этого шага нужен ${flow.type === "expense" ? "расход (минус)" : "доход (плюс)"}.`);
+          await ctx.reply(
+            `Для этого шага нужен ${flow.type === "expense" ? "расход (минус)" : "доход (плюс)"}.`,
+          );
           return;
         }
         flow.amount = parsed.amount;
@@ -170,7 +179,7 @@ bot.on(
     }),
   );
 
-bot.callbackQuery(
+  bot.callbackQuery(
     /^flow:(save|cancel)$/,
     safe("flow callback", async (ctx) => {
       const uid = ctx.from?.id;

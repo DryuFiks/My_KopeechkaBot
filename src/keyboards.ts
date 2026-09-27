@@ -3,30 +3,44 @@ import { InlineKeyboard, Keyboard } from "grammy";
 const backButton = "⬅️ Главное меню";
 
 export const mainKeyboard = new Keyboard()
-  .text("💰 Финансы").text("📊 Аналитика").row()
-  .text("🗓 Планирование").text("🛠 Сервис")
+  .text("💰 Финансы")
+  .text("📊 Аналитика")
+  .row()
+  .text("🗓 Планирование")
+  .text("🛠 Сервис")
   .resized();
 
 export const financeKeyboard = new Keyboard()
-  .text("➖ Расход").text("➕ Доход").row()
-  .text("🧾 История").row()
+  .text("➖ Расход")
+  .text("➕ Доход")
+  .row()
+  .text("🧾 История")
+  .row()
   .text(backButton)
   .resized();
 
 export const analyticsKeyboard = new Keyboard()
-  .text("📊 Бюджет").text("📈 Статистика").row()
+  .text("📊 Бюджет")
+  .text("📈 Статистика")
+  .row()
   .text(backButton)
   .resized();
 
 export const planningKeyboard = new Keyboard()
-  .text("🔁 Платежи").text("🎯 Накопления").row()
+  .text("🔁 Платежи")
+  .text("🎯 Накопления")
+  .row()
   .text(backButton)
   .resized();
 
 export const serviceKeyboard = new Keyboard()
-  .text("💱 Курсы валют").text("📖 Все команды").row()
-  .text("⚙️ Настройки").row()
-  .text("🔄 Перезапуск").row()
+  .text("💱 Курсы валют")
+  .text("📖 Все команды")
+  .row()
+  .text("⚙️ Настройки")
+  .row()
+  .text("🔄 Перезапуск")
+  .row()
   .text(backButton)
   .resized();
 

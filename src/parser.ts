@@ -44,8 +44,7 @@ export function parseTransactionMessage(rawText: string): ParseResult {
   const match = LINE_PATTERN.exec(text);
   if (!match) {
     return {
-      error:
-        "Не понял формат. Начни с + (доход) или - (расход), затем сумма. Пример: -150 gel еда обед",
+      error: "Не понял формат. Начни с + (доход) или - (расход), затем сумма. Пример: -150 gel еда обед",
     };
   }
 

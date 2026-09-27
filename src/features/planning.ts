@@ -5,7 +5,7 @@ import { escapeHtml, PARSE_MODE } from "../format";
 import { money, safe } from "./common";
 
 export function registerPlanningHandlers(bot: Bot): void {
-bot.command(
+  bot.command(
     "category",
     safe("category", async (ctx) => {
       const uid = ctx.from?.id;
@@ -28,7 +28,7 @@ bot.command(
     }),
   );
 
-bot.command(
+  bot.command(
     "goal",
     safe("goal", async (ctx) => {
       const uid = ctx.from?.id;
@@ -42,7 +42,10 @@ bot.command(
         await ctx.reply(
           r.rowCount
             ? r.rows
-                .map((x: any) => `${x.id}. ${escapeHtml(x.title)} — ${money(x.saved_gel)} / ${money(x.target_gel)} GEL`)
+                .map(
+                  (x: any) =>
+                    `${x.id}. ${escapeHtml(x.title)} — ${money(x.saved_gel)} / ${money(x.target_gel)} GEL`,
+                )
                 .join("\n")
             : "Целей пока нет. Создай: /goal Название сумма",
           { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
@@ -58,7 +61,7 @@ bot.command(
     }),
   );
 
-bot.command(
+  bot.command(
     "save",
     safe("save", async (ctx) => {
       const uid = ctx.from?.id;
@@ -84,12 +87,14 @@ bot.command(
     }),
   );
 
-bot.command(
+  bot.command(
     "payment",
     safe("payment", async (ctx) => {
       const uid = ctx.from?.id;
       if (!uid) return;
-      const m = /^\/payment\s+(\d{1,2})\s+(\d+(?:[.,]\d{1,2})?)\s+(RUB|GEL|USD)\s+(.+)$/i.exec(ctx.message?.text ?? "");
+      const m = /^\/payment\s+(\d{1,2})\s+(\d+(?:[.,]\d{1,2})?)\s+(RUB|GEL|USD)\s+(.+)$/i.exec(
+        ctx.message?.text ?? "",
+      );
       if (!m) {
         const r = await pool.query(
           "SELECT id,title,amount,currency,due_day FROM recurring_payments WHERE user_id=$1 AND active ORDER BY due_day",
@@ -98,25 +103,25 @@ bot.command(
         await ctx.reply(
           r.rowCount
             ? r.rows
-                .map((x: any) => `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`)
+                .map(
+                  (x: any) =>
+                    `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`,
+                )
                 .join("\n")
             : "Платежей пока нет. Создание: /payment день сумма валюта название",
           { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
         );
         return;
       }
-      await pool.query("INSERT INTO recurring_payments(user_id,due_day,amount,currency,title) VALUES($1,$2,$3,$4,$5)", [
-        uid,
-        Number(m[1]),
-        Number(m[2].replace(",", ".")),
-        m[3].toUpperCase(),
-        m[4].trim().slice(0, 120),
-      ]);
+      await pool.query(
+        "INSERT INTO recurring_payments(user_id,due_day,amount,currency,title) VALUES($1,$2,$3,$4,$5)",
+        [uid, Number(m[1]), Number(m[2].replace(",", ".")), m[3].toUpperCase(), m[4].trim().slice(0, 120)],
+      );
       await ctx.reply("Регулярный платёж добавлен.", { reply_markup: mainKeyboard });
     }),
   );
 
-bot.command(
+  bot.command(
     "payments",
     safe("payments", async (ctx) => {
       const uid = ctx.from?.id;
@@ -128,7 +133,9 @@ bot.command(
       await ctx.reply(
         r.rowCount
           ? r.rows
-              .map((x: any) => `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`)
+              .map(
+                (x: any) => `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`,
+              )
               .join("\n")
           : "Регулярных платежей нет.",
         { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
@@ -136,7 +143,7 @@ bot.command(
     }),
   );
 
-bot.command(
+  bot.command(
     "deletepayment",
     safe("deletepayment", async (ctx) => {
       const uid = ctx.from?.id;
@@ -146,24 +153,24 @@ bot.command(
         await ctx.reply("Формат: /deletepayment ID");
         return;
       }
-      const r = await pool.query("UPDATE recurring_payments SET active=FALSE WHERE id=$1 AND user_id=$2 RETURNING id", [
-        id,
-        uid,
-      ]);
+      const r = await pool.query(
+        "UPDATE recurring_payments SET active=FALSE WHERE id=$1 AND user_id=$2 RETURNING id",
+        [id, uid],
+      );
       await ctx.reply(r.rowCount ? "Платёж отключён." : "Платёж не найден.", { reply_markup: mainKeyboard });
     }),
   );
 
-bot.command(
+  bot.command(
     "deletegoal",
     safe("deletegoal", async (ctx) => {
       const uid = ctx.from?.id;
       if (!uid) return;
       const id = Number((ctx.message?.text ?? "").split(/\s+/)[1]);
-      const r = await pool.query("UPDATE savings_goals SET active=FALSE WHERE id=$1 AND user_id=$2 RETURNING id", [
-        id,
-        uid,
-      ]);
+      const r = await pool.query(
+        "UPDATE savings_goals SET active=FALSE WHERE id=$1 AND user_id=$2 RETURNING id",
+        [id, uid],
+      );
       await ctx.reply(r.rowCount ? "Цель закрыта." : "Цель не найдена.", { reply_markup: mainKeyboard });
     }),
   );

@@ -13,10 +13,10 @@ export default tseslint.config(
       globals: globals.node,
     },
     rules: {
-      "max-lines": ["error", { "max": 300, "skipBlankLines": true, "skipComments": true }],
+      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
-    }
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+    },
   },
-  prettier
+  prettier,
 );
