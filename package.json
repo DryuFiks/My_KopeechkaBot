@@ -1,7 +1,7 @@
 {
   "name": "kopeechka-bot",
-  "version": "0.0.1",
-  "description": "Personal finance tracking Telegram bot (Sprint 1 MVP + Sprint 2 / 0.0.1)",
+  "version": "0.0.2",
+  "description": "Personal finance Telegram bot with recurring payments, category stats and CSV export (0.0.2)",
   "main": "dist/index.js",
   "type": "commonjs",
   "engines": {
