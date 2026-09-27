@@ -7,8 +7,6 @@ export const mainKeyboard = new InlineKeyboard()
   .text("🗓 Планирование", "menu:planning")
   .text("🛠 Сервис", "menu:service");
 
-const back = () => new InlineKeyboard().text("⬅️ Главное меню", "menu:main");
-
 export const financeKeyboard = new InlineKeyboard()
   .text("➖ Расход", "action:expense")
   .text("➕ Доход", "action:income")
