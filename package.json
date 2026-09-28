@@ -11,11 +11,13 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "format": "prettier --write \"src/**/*.ts\" \"*.json\" \"*.mjs\"",
-    "format:check": "prettier --check \"src/**/*.ts\" \"*.json\" \"*.mjs\"",
+    "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\" \"*.json\" \"*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"*.json\" \"*.mjs\"",
     "lint": "eslint .",
     "test": "vitest run",
     "check": "npm run format:check && npm run lint && npm run build && npm run test",
+    "migrate:create": "tsx scripts/create-migration.ts",
+    "migrate:up": "tsx scripts/migrate.ts",
     "prepare": "husky"
   },
   "dependencies": {
