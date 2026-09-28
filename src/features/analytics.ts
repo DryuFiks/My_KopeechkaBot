@@ -1,8 +1,9 @@
 import { Bot, InputFile } from "grammy";
 import { pool } from "../db";
 import { mainKeyboard } from "../keyboards";
-import { escapeHtml, formatMoney, formatPeriodLabel, renderScreen, PARSE_MODE } from "../format";
+import { escapeHtml, formatMoney, PARSE_MODE } from "../format";
 import { monthStart, showBudget } from "./common";
+import { renderStatsScreen } from "./stats";
 import { safe } from "../middleware/safe";
 
 export function registerAnalyticsHandlers(bot: Bot): void {
@@ -59,20 +60,8 @@ export function registerAnalyticsHandlers(bot: Bot): void {
     safe("stats", async (ctx) => {
       const uid = ctx.from?.id;
       if (!uid) return;
-      const from = monthStart();
-      const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
-      const r = await pool.query(
-        `SELECT category,COALESCE(SUM(amount_gel),0) total FROM transactions WHERE user_id=$1 AND type='expense' AND created_at >= $2 AND created_at < $3 GROUP BY category ORDER BY total DESC LIMIT 10`,
-        [uid, from, to],
-      );
-      const text = renderScreen({
-        title: `Расходы по категориям — ${formatPeriodLabel(from, to)}`,
-        lines: r.rows.map(
-          (x: any) => `${escapeHtml(x.category ?? "Без категории")}: ${formatMoney(x.total, "GEL")}`,
-        ),
-        emptyText: "За этот месяц расходов нет.",
-      });
-      await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
+      const { text, keyboard } = await renderStatsScreen(uid, 0);
+      await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: keyboard });
     }),
   );
 

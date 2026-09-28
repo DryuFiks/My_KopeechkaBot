@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   formatBalanceOverview,
   formatBudgetCategoryLine,
+  formatDelta,
   formatMoney,
+  formatPercentDelta,
   formatPeriodLabel,
   formatSignedAmount,
   paginate,
@@ -99,6 +101,35 @@ describe("formatBalanceOverview", () => {
     });
     expect(text).toContain("15.00 USD");
     expect(text).toContain("300.00 RUB");
+  });
+});
+
+describe("formatDelta", () => {
+  it("signs a positive change explicitly", () => {
+    expect(formatDelta(50, "GEL")).toBe("+50.00 GEL");
+  });
+
+  it("keeps the minus sign already produced for a negative change", () => {
+    expect(formatDelta(-50, "GEL")).toBe("-50.00 GEL");
+  });
+
+  it("shows a plain zero with no sign", () => {
+    expect(formatDelta(0, "GEL")).toBe("0.00 GEL");
+  });
+});
+
+describe("formatPercentDelta", () => {
+  it("computes a signed percent change", () => {
+    expect(formatPercentDelta(120, 100)).toBe("+20%");
+    expect(formatPercentDelta(80, 100)).toBe("-20%");
+  });
+
+  it("returns 0% when both periods are zero, not NaN", () => {
+    expect(formatPercentDelta(0, 0)).toBe("0%");
+  });
+
+  it("returns 'н/д' instead of Infinity when the previous period was zero", () => {
+    expect(formatPercentDelta(100, 0)).toBe("н/д");
   });
 });
 

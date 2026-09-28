@@ -84,3 +84,31 @@ export async function getBudgetReport(userId: number, from: Date, to: Date): Pro
     };
   });
 }
+
+/**
+ * Total budget remaining (limit minus spent, summed across every categorized month in
+ * [from, to)) for the dashboard's KPI card. Budgets are monthly, so a quarter/year range
+ * sums each calendar month inside it. Returns null when no budget exists anywhere in the
+ * range — a real 0 (fully spent) is never confused with "no budget was set".
+ */
+export async function getBudgetRemainingForRange(
+  userId: number,
+  from: Date,
+  to: Date,
+): Promise<number | null> {
+  let total = 0;
+  let hasAnyBudget = false;
+  let cursor = new Date(from.getFullYear(), from.getMonth(), 1);
+  while (cursor < to) {
+    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    const report = await getBudgetReport(userId, cursor, monthEnd);
+    for (const row of report) {
+      if (row.effectiveLimitGel !== null) {
+        total += row.effectiveLimitGel - row.spentGel;
+        hasAnyBudget = true;
+      }
+    }
+    cursor = monthEnd;
+  }
+  return hasAnyBudget ? Math.round(total * 100) / 100 : null;
+}

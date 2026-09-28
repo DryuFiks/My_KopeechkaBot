@@ -6,7 +6,7 @@ import {
   planningKeyboard,
   serviceKeyboard,
 } from "../keyboards";
-import { logger } from "../logger";
+import { editOrReply } from "../editOrReply";
 import { safeCallback } from "../middleware/safe";
 
 const MENU = {
@@ -29,14 +29,7 @@ export function registerNavigationHandlers(bot: Bot): void {
     safeCallback("navigation", async (ctx) => {
       const section = ctx.match[1] as keyof typeof MENU;
       const menu = MENU[section];
-      try {
-        await ctx.editMessageText(menu.text, { reply_markup: menu.keyboard });
-      } catch (err) {
-        // Telegram refuses the edit (message too old/deleted, or from a group where
-        // the bot lost the message) — fall back to a fresh message instead of a silent no-op.
-        logger.warn(`navigation: editMessageText failed, falling back to reply: ${(err as Error).message}`);
-        await ctx.reply(menu.text, { reply_markup: menu.keyboard });
-      }
+      await editOrReply(ctx, menu.text, { reply_markup: menu.keyboard });
     }),
   );
 }

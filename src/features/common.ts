@@ -8,7 +8,9 @@ import {
   renderScreen,
   PARSE_MODE,
 } from "../format";
+import { renderBarRow } from "../charts";
 import { CATEGORY_KIND_LABEL, CATEGORY_KIND_ORDER } from "../budgetRules";
+import type { BudgetCategoryReport } from "../db/budget";
 import type { TransactionType } from "../parser";
 
 export type Flow = {
@@ -28,6 +30,12 @@ export const monthStart = () => {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 };
 
+/** Bar + the exact plan/fact/deviation line underneath it — the bar alone is never the only source of truth. */
+function formatBudgetRowWithBar(row: BudgetCategoryReport): string[] {
+  const label = row.category ?? "Без категории";
+  return [renderBarRow(label, row.effectiveLimitGel ?? 0, row.spentGel), formatBudgetCategoryLine(row)];
+}
+
 export async function showBudget(ctx: Context, userId: number): Promise<void> {
   const from = monthStart();
   const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
@@ -37,7 +45,7 @@ export async function showBudget(ctx: Context, userId: number): Promise<void> {
   for (const kind of CATEGORY_KIND_ORDER) {
     const rows = report.filter((row) => row.limitGel !== null && row.kind === kind);
     if (rows.length === 0) continue;
-    lines.push(`<b>${CATEGORY_KIND_LABEL[kind]}</b>`, ...rows.map(formatBudgetCategoryLine), "");
+    lines.push(`<b>${CATEGORY_KIND_LABEL[kind]}</b>`, ...rows.flatMap(formatBudgetRowWithBar), "");
   }
   const noLimit = report.filter((row) => row.limitGel === null);
   if (noLimit.length > 0) {

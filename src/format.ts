@@ -30,6 +30,24 @@ export function formatDateShort(date: Date): string {
   return date.toISOString().slice(0, 16).replace("T", " ");
 }
 
+/** A change in currency, always signed: "+50.00 GEL", "-20.00 GEL", "0.00 GEL". */
+export function formatDelta(diff: number, currency: string): string {
+  const sign = diff > 0 ? "+" : "";
+  return `${sign}${formatMoney(diff, currency)}`;
+}
+
+/**
+ * A period-over-period percent change. Never divides by a zero (or negative-then-positive
+ * sign flip) previous value — those cases have no meaningful percent, so this returns
+ * "н/д" (not applicable) instead of Infinity/NaN or a made-up number.
+ */
+export function formatPercentDelta(current: number, previous: number): string {
+  if (previous === 0) return current === 0 ? "0%" : "н/д";
+  const percent = Math.round(((current - previous) / Math.abs(previous)) * 100);
+  const sign = percent > 0 ? "+" : "";
+  return `${sign}${percent}%`;
+}
+
 const RU_MONTHS_GENITIVE = [
   "января",
   "февраля",

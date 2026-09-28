@@ -182,6 +182,87 @@ export async function getRecentCategories(
   return result.rows.map((row) => row.name);
 }
 
+export interface CategoryTotal {
+  category: string | null;
+  amountGel: number;
+}
+
+/** Expense totals per category in [from, to) — the raw data behind the structure chart. */
+export async function getExpenseCategoryTotals(
+  userId: number,
+  from: Date,
+  to: Date,
+): Promise<CategoryTotal[]> {
+  const result = await pool.query<{ category: string | null; total: string }>(
+    `SELECT category, COALESCE(SUM(amount_gel), 0) AS total
+     FROM transactions
+     WHERE user_id = $1 AND type = 'expense' AND created_at >= $2 AND created_at < $3
+     GROUP BY category
+     ORDER BY total DESC`,
+    [userId, from, to],
+  );
+  return result.rows.map((row) => ({ category: row.category, amountGel: parseFloat(row.total) }));
+}
+
+/**
+ * Expense transactions for one category in [from, to) — the drill-down behind a
+ * structure-chart row. `category: null` matches "Без категории" (IS NOT DISTINCT FROM
+ * handles the NULL case that plain `=` can't).
+ */
+export async function getTransactionsByCategory(
+  userId: number,
+  category: string | null,
+  from: Date,
+  to: Date,
+): Promise<Transaction[]> {
+  const result = await pool.query<Transaction>(
+    `SELECT * FROM transactions
+     WHERE user_id = $1 AND type = 'expense' AND category IS NOT DISTINCT FROM $2
+       AND created_at >= $3 AND created_at < $4
+     ORDER BY created_at DESC, id DESC
+     LIMIT 200`,
+    [userId, category, from, to],
+  );
+  return result.rows;
+}
+
+export interface ExpenseBucket {
+  bucket: Date;
+  amountGel: number;
+}
+
+/**
+ * Expense totals bucketed by day or by month across [from, to), with every bucket present
+ * (zero-filled) even when there was no spending — a trend line must not silently skip
+ * empty days. Buckets one query at a time (not SQL date_trunc) so day/month boundaries
+ * follow the same local-time range comparison as the rest of the app, not the Postgres
+ * session timezone, which could otherwise shift a near-midnight transaction by a day.
+ */
+export async function getExpenseSeries(
+  userId: number,
+  from: Date,
+  to: Date,
+  granularity: "day" | "month",
+): Promise<ExpenseBucket[]> {
+  const buckets: ExpenseBucket[] = [];
+  let cursor = new Date(from);
+  while (cursor < to) {
+    const next =
+      granularity === "day"
+        ? new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1)
+        : new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    const result = await pool.query<{ total: string }>(
+      `SELECT COALESCE(SUM(amount_gel), 0) AS total
+       FROM transactions
+       WHERE user_id = $1 AND type = 'expense' AND created_at >= $2 AND created_at < $3`,
+      [userId, cursor, next],
+    );
+    buckets.push({ bucket: new Date(cursor), amountGel: parseFloat(result.rows[0].total) });
+    cursor = next;
+  }
+  return buckets;
+}
+
 export async function closePool(): Promise<void> {
   await pool.end();
 }

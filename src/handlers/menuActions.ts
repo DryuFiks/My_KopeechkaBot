@@ -3,6 +3,7 @@ import { pool, getSummaryForRange } from "../db";
 import { mainKeyboard, paginationKeyboard } from "../keyboards";
 import { refreshRatesIfStale, getAllRateInfo } from "../currency";
 import { flows, monthStart, showBudget } from "../features/common";
+import { editOrReply } from "../editOrReply";
 import { logger } from "../logger";
 import {
   escapeHtml,
@@ -47,17 +48,6 @@ const HELP = `Команды:
  /undo — отменить последнюю операцию
  /rate — курсы валют`;
 
-async function editOrReply(ctx: any, text: string, keyboard = mainKeyboard, parseMode?: string) {
-  const options: any = { reply_markup: keyboard };
-  if (parseMode) options.parse_mode = parseMode;
-  try {
-    await ctx.editMessageText(text, options);
-  } catch (err) {
-    logger.warn(`menuActions: editMessageText failed, falling back to reply: ${(err as Error).message}`);
-    await ctx.reply(text, options);
-  }
-}
-
 export function registerMenuActionHandlers(bot: Bot): void {
   bot.callbackQuery(
     /^action:(expense|income)$/,
@@ -68,7 +58,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
       await editOrReply(
         ctx,
         `Введи сумму ${type === "expense" ? "расхода" : "дохода"}, например: 25 GEL Еда обед\nИли только сумму — предложу выбрать категорию: 25 GEL`,
-        mainKeyboard,
+        { reply_markup: mainKeyboard },
       );
     }),
   );
@@ -104,14 +94,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
         emptyText:
           "За этот месяц ещё нет дохода, чтобы предложить шаблон. Как только запишешь доход, здесь появится подсказка по 50/30/20 — не обязательное правило, а просто отправная точка.",
       });
-      await editOrReply(ctx, text, mainKeyboard, PARSE_MODE);
-    }),
-  );
-
-  bot.callbackQuery(
-    "action:stats",
-    safeCallback("action:stats", async (ctx) => {
-      await editOrReply(ctx, "Команда /stats покажет расходы по категориям. /export — выгрузка CSV.");
+      await editOrReply(ctx, text, { reply_markup: mainKeyboard, parse_mode: PARSE_MODE });
     }),
   );
 
@@ -119,7 +102,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
     "action:history",
     safeCallback("action:history", async (ctx) => {
       const { text, keyboard } = await renderHistoryPage(ctx.from.id, 0);
-      await editOrReply(ctx, text, keyboard, PARSE_MODE);
+      await editOrReply(ctx, text, { reply_markup: keyboard, parse_mode: PARSE_MODE });
     }),
   );
 
@@ -127,7 +110,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
     /^hist:page:(\d+)$/,
     safeCallback("hist:page", async (ctx) => {
       const { text, keyboard } = await renderHistoryPage(ctx.from.id, Number(ctx.match[1]));
-      await editOrReply(ctx, text, keyboard, PARSE_MODE);
+      await editOrReply(ctx, text, { reply_markup: keyboard, parse_mode: PARSE_MODE });
     }),
   );
 
@@ -146,7 +129,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
         ),
         emptyText: "Регулярных платежей нет.",
       });
-      await editOrReply(ctx, text, mainKeyboard, PARSE_MODE);
+      await editOrReply(ctx, text, { reply_markup: mainKeyboard, parse_mode: PARSE_MODE });
     }),
   );
 
@@ -165,7 +148,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
         ),
         emptyText: "Целей пока нет. Создать: /goal Название сумма\nПополнить: /save ID сумма",
       });
-      await editOrReply(ctx, text, mainKeyboard, PARSE_MODE);
+      await editOrReply(ctx, text, { reply_markup: mainKeyboard, parse_mode: PARSE_MODE });
     }),
   );
 
@@ -178,14 +161,17 @@ export function registerMenuActionHandlers(bot: Bot): void {
           ? `${r.currency} → курс недоступен`
           : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`,
       );
-      await editOrReply(ctx, renderScreen({ title: "Курсы валют (NBG)", lines }), mainKeyboard, PARSE_MODE);
+      await editOrReply(ctx, renderScreen({ title: "Курсы валют (NBG)", lines }), {
+        reply_markup: mainKeyboard,
+        parse_mode: PARSE_MODE,
+      });
     }),
   );
 
   bot.callbackQuery(
     "action:help",
     safeCallback("action:help", async (ctx) => {
-      await editOrReply(ctx, HELP);
+      await editOrReply(ctx, HELP, { reply_markup: mainKeyboard });
     }),
   );
 
@@ -195,6 +181,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
       await editOrReply(
         ctx,
         "Настройки: валюта по умолчанию GEL. Доступные валюты: GEL, RUB, USD.\nКоманды: /category, /budget, /payment, /goal, /export",
+        { reply_markup: mainKeyboard },
       );
     }),
   );
