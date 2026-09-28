@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isParseError, parseTransactionMessage } from "./parser";
+import { isParseError, parseAmountLine, parseTransactionMessage } from "./parser";
 
 describe("parseTransactionMessage", () => {
   it("parses an expense with currency, category and note", () => {
@@ -74,5 +74,43 @@ describe("parseTransactionMessage", () => {
     if (isParseError(result)) return;
     expect(result.category).toBeNull();
     expect(result.note).toBeNull();
+  });
+});
+
+describe("parseAmountLine", () => {
+  it("parses a bare amount with no category — used to trigger the category picker", () => {
+    const result = parseAmountLine("25 GEL");
+    expect(isParseError(result)).toBe(false);
+    if (isParseError(result)) return;
+    expect(result).toEqual({ amount: 25, currency: "GEL", category: null, note: null });
+  });
+
+  it("parses amount, category and note together, skipping the category picker", () => {
+    const result = parseAmountLine("25 GEL Еда обед");
+    expect(isParseError(result)).toBe(false);
+    if (isParseError(result)) return;
+    expect(result.category).toBe("Еда");
+    expect(result.note).toBe("обед");
+  });
+
+  it("does not require (or accept) a leading sign — the wizard already knows the type", () => {
+    expect(isParseError(parseAmountLine("-25 GEL"))).toBe(true);
+    expect(isParseError(parseAmountLine("+25 GEL"))).toBe(true);
+  });
+
+  it("defaults to GEL when no currency token is given", () => {
+    const result = parseAmountLine("25 еда");
+    expect(isParseError(result)).toBe(false);
+    if (isParseError(result)) return;
+    expect(result.currency).toBe("GEL");
+    expect(result.category).toBe("еда");
+  });
+
+  it("rejects an empty message", () => {
+    expect(isParseError(parseAmountLine("   "))).toBe(true);
+  });
+
+  it("rejects a zero or negative amount", () => {
+    expect(isParseError(parseAmountLine("0 GEL"))).toBe(true);
   });
 });

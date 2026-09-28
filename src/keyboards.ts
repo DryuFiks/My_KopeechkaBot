@@ -39,16 +39,23 @@ export const serviceKeyboard = new InlineKeyboard()
 
 export const cancelKeyboard = new InlineKeyboard().text("❌ Отмена", "flow:cancel");
 
-export function categoryKeyboard(type: "expense" | "income", categories: string[]) {
+/**
+ * Categories are matched to the tapped button by index into the same array the caller
+ * stored on the Flow (see handlers/textFlow.ts) — not by encoding the name itself in
+ * callback_data, which could exceed Telegram's 64-byte limit for longer/Cyrillic names.
+ */
+export function categoryKeyboard(categories: string[]) {
   const keyboard = new InlineKeyboard();
-  for (const category of categories) keyboard.text(category, `cat:${type}:${category}`).row();
-  keyboard.text("Без категории", `cat:${type}:_`).row().text("Отмена", "flow:cancel");
+  categories.forEach((category, index) => keyboard.text(category, `cat:${index}`).row());
+  keyboard.text("Без категории", "cat:none").row().text("❌ Отмена", "flow:cancel");
   return keyboard;
 }
 
 export const confirmKeyboard = new InlineKeyboard()
   .text("✅ Сохранить", "flow:save")
   .text("❌ Отмена", "flow:cancel");
+
+export const undoKeyboard = new InlineKeyboard().text("↩️ Отменить", "undo:last");
 
 /** Prev/page-indicator/next row (only shown when there's more than one page) plus a back button. */
 export function paginationKeyboard(

@@ -11,10 +11,11 @@ export type Flow = {
   category?: string | null;
   note?: string | null;
   stage: "amount" | "category" | "confirm";
+  /** Categories shown at the "category" stage, so cat:<index> callbacks can resolve them. */
+  categoryOptions?: string[];
 };
 
 export const flows = new Map<number, Flow>();
-export const money = (n: unknown) => Number(n ?? 0).toFixed(2);
 export const monthStart = () => {
   const date = new Date();
   return new Date(date.getFullYear(), date.getMonth(), 1);

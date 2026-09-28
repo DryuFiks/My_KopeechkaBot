@@ -136,6 +136,71 @@ export async function deleteLastTransaction(userId: number): Promise<Transaction
   }
 }
 
+export interface BalanceOverview {
+  totalGel: number;
+  unconvertedByCurrency: { currency: SupportedCurrency; amount: number }[];
+}
+
+/**
+ * All-time balance across every transaction the user has (income minus expense, in GEL).
+ * Transactions whose currency couldn't be converted (amount_gel IS NULL) are never
+ * guessed at — their raw per-currency totals are reported separately instead.
+ */
+export async function getBalanceOverview(userId: number): Promise<BalanceOverview> {
+  const gelResult = await pool.query<{ total: string | null }>(
+    `SELECT COALESCE(SUM(amount_gel) FILTER (WHERE type = 'income'), 0)
+          - COALESCE(SUM(amount_gel) FILTER (WHERE type = 'expense'), 0) AS total
+     FROM transactions
+     WHERE user_id = $1`,
+    [userId],
+  );
+  const unconvertedResult = await pool.query<{ currency: SupportedCurrency; amount: string }>(
+    `SELECT currency,
+            COALESCE(SUM(amount) FILTER (WHERE type = 'income'), 0)
+              - COALESCE(SUM(amount) FILTER (WHERE type = 'expense'), 0) AS amount
+     FROM transactions
+     WHERE user_id = $1 AND amount_gel IS NULL
+     GROUP BY currency`,
+    [userId],
+  );
+  return {
+    totalGel: Math.round(parseFloat(gelResult.rows[0]?.total ?? "0") * 100) / 100,
+    unconvertedByCurrency: unconvertedResult.rows.map((row) => ({
+      currency: row.currency,
+      amount: parseFloat(row.amount),
+    })),
+  };
+}
+
+/**
+ * Categories the user already uses for this transaction type: most-used from their
+ * transaction history, merged with any categories they created explicitly but never
+ * (yet) used, ordered by usage then recency.
+ */
+export async function getRecentCategories(
+  userId: number,
+  type: TransactionType,
+  limit = 8,
+): Promise<string[]> {
+  const result = await pool.query<{ name: string }>(
+    `SELECT name FROM (
+       SELECT category AS name, COUNT(*)::int AS uses, MAX(created_at) AS last_used
+       FROM transactions
+       WHERE user_id = $1 AND type = $2 AND category IS NOT NULL
+       GROUP BY category
+       UNION ALL
+       SELECT name, 0 AS uses, NULL::timestamptz AS last_used
+       FROM categories
+       WHERE user_id = $1 AND type = $2
+     ) combined
+     GROUP BY name
+     ORDER BY MAX(uses) DESC, MAX(last_used) DESC NULLS LAST
+     LIMIT $3`,
+    [userId, type, limit],
+  );
+  return result.rows.map((row) => row.name);
+}
+
 export async function closePool(): Promise<void> {
   await pool.end();
 }

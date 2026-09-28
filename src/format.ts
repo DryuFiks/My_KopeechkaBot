@@ -98,6 +98,29 @@ export function renderScreen(params: { title: string; lines: string[]; emptyText
   return `<b>${escapeHtml(title)}</b>\n${body}`;
 }
 
+export interface BalanceOverviewLike {
+  totalGel: number;
+  unconvertedByCurrency: { currency: string; amount: number }[];
+}
+
+/**
+ * The balance shown after saving a transaction. Never invents a number: when some of the
+ * user's transactions couldn't be converted to GEL, the GEL total is labelled as excluding
+ * them, and their raw per-currency sums are listed separately instead of being folded in.
+ */
+export function formatBalanceOverview(overview: BalanceOverviewLike): string {
+  const hasUnconverted = overview.unconvertedByCurrency.length > 0;
+  const lines = [
+    hasUnconverted
+      ? `Остаток (без валют без курса): ${formatMoney(overview.totalGel, "GEL")}`
+      : `Остаток: ${formatMoney(overview.totalGel, "GEL")}`,
+  ];
+  for (const entry of overview.unconvertedByCurrency) {
+    lines.push(`⚠️ Также есть операции без курса: ${formatMoney(entry.amount, entry.currency)}`);
+  }
+  return lines.join("\n");
+}
+
 export interface Page<T> {
   items: T[];
   page: number;

@@ -65,7 +65,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
       flows.set(uid, { type, stage: "amount" });
       await editOrReply(
         ctx,
-        `Введи сумму ${type === "expense" ? "расхода" : "дохода"}, например: 25 GEL Еда обед\nМожно и в старом формате: -25 gel еда обед`,
+        `Введи сумму ${type === "expense" ? "расхода" : "дохода"}, например: 25 GEL Еда обед\nИли только сумму — предложу выбрать категорию: 25 GEL`,
         mainKeyboard,
       );
     }),

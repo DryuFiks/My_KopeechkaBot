@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, formatPeriodLabel, formatSignedAmount, paginate, renderScreen } from "./format";
+import {
+  formatBalanceOverview,
+  formatMoney,
+  formatPeriodLabel,
+  formatSignedAmount,
+  paginate,
+  renderScreen,
+} from "./format";
 
 describe("formatMoney", () => {
   it("always shows two decimals and the currency after the number", () => {
@@ -64,6 +71,33 @@ describe("renderScreen", () => {
 
   it("escapes HTML in the title", () => {
     expect(renderScreen({ title: "<script>", lines: [] })).toContain("&lt;script&gt;");
+  });
+});
+
+describe("formatBalanceOverview", () => {
+  it("shows a plain balance when every transaction converted to GEL", () => {
+    expect(formatBalanceOverview({ totalGel: 123.4, unconvertedByCurrency: [] })).toBe("Остаток: 123.40 GEL");
+  });
+
+  it("labels the GEL total as excluding unconverted currencies and lists them separately", () => {
+    const text = formatBalanceOverview({
+      totalGel: 100,
+      unconvertedByCurrency: [{ currency: "USD", amount: 15 }],
+    });
+    expect(text).toContain("Остаток (без валют без курса): 100.00 GEL");
+    expect(text).toContain("15.00 USD");
+  });
+
+  it("never invents a single combined total when currencies could not be converted", () => {
+    const text = formatBalanceOverview({
+      totalGel: 0,
+      unconvertedByCurrency: [
+        { currency: "USD", amount: 15 },
+        { currency: "RUB", amount: 300 },
+      ],
+    });
+    expect(text).toContain("15.00 USD");
+    expect(text).toContain("300.00 RUB");
   });
 });
 

@@ -1,10 +1,24 @@
-import { Bot } from "grammy";
-import { pool } from "../db";
-import { confirmKeyboard, mainKeyboard } from "../keyboards";
+import { Bot, Context } from "grammy";
+import { pool, deleteLastTransaction, getBalanceOverview, getRecentCategories } from "../db";
+import { categoryKeyboard, confirmKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { convertToGel, refreshRatesIfStale } from "../currency";
-import { parseTransactionMessage, isParseError } from "../parser";
-import { flows } from "../features/common";
+import { parseAmountLine, parseTransactionMessage, isParseError } from "../parser";
+import { formatBalanceOverview, formatSignedAmount, PARSE_MODE } from "../format";
+import { Flow, flows } from "../features/common";
 import { safe, safeCallback } from "../middleware/safe";
+
+function confirmText(flow: Flow): string {
+  return `Проверь операцию:\n${formatSignedAmount(flow.type, flow.amount ?? 0, flow.currency ?? "GEL")}\nКатегория: ${flow.category ?? "—"}\nКомментарий: ${flow.note ?? "—"}`;
+}
+
+async function promptCategoryStage(ctx: Context, uid: number, flow: Flow): Promise<void> {
+  const categories = await getRecentCategories(uid, flow.type);
+  flow.categoryOptions = categories;
+  flow.stage = "category";
+  await ctx.reply("Выбери категорию или пришли своё название:", {
+    reply_markup: categoryKeyboard(categories),
+  });
+}
 
 /**
  * The single message:text handler for the bot: drives the multi-step add-transaction
@@ -21,26 +35,41 @@ export function registerTextFlowHandlers(bot: Bot): void {
 
       const flow = flows.get(uid);
       if (flow) {
-        const parsed = parseTransactionMessage(text);
-        if (isParseError(parsed)) {
-          await ctx.reply(parsed.error);
+        if (flow.stage === "amount") {
+          const parsed = parseAmountLine(text);
+          if (isParseError(parsed)) {
+            await ctx.reply(parsed.error);
+            return;
+          }
+          flow.amount = parsed.amount;
+          flow.currency = parsed.currency;
+          flow.note = parsed.note;
+          if (parsed.category) {
+            flow.category = parsed.category;
+            flow.stage = "confirm";
+            await ctx.reply(confirmText(flow), { reply_markup: confirmKeyboard });
+            return;
+          }
+          await promptCategoryStage(ctx, uid, flow);
           return;
         }
-        if (parsed.type !== flow.type) {
-          await ctx.reply(
-            `Для этого шага нужен ${flow.type === "expense" ? "расход (минус)" : "доход (плюс)"}.`,
-          );
+
+        if (flow.stage === "category") {
+          const name = text.trim().slice(0, 60);
+          if (!name) {
+            await ctx.reply("Пришли название категории или выбери из списка.");
+            return;
+          }
+          flow.category = name;
+          flow.stage = "confirm";
+          await ctx.reply(confirmText(flow), { reply_markup: confirmKeyboard });
           return;
         }
-        flow.amount = parsed.amount;
-        flow.currency = parsed.currency;
-        flow.category = parsed.category;
-        flow.note = parsed.note;
-        flow.stage = "confirm";
-        await ctx.reply(
-          `Проверь операцию:\n${flow.type === "expense" ? "Расход" : "Доход"}: ${flow.amount} ${flow.currency}\nКатегория: ${flow.category ?? "—"}\nКомментарий: ${flow.note ?? "—"}`,
-          { reply_markup: confirmKeyboard },
-        );
+
+        // stage === "confirm" — stray text instead of a button tap; the flow stays as-is.
+        await ctx.reply("Используй кнопки ниже, чтобы сохранить или отменить.", {
+          reply_markup: confirmKeyboard,
+        });
         return;
       }
 
@@ -61,6 +90,34 @@ export function registerTextFlowHandlers(bot: Bot): void {
   );
 
   bot.callbackQuery(
+    /^cat:(none|\d+)$/,
+    safeCallback("cat select", async (ctx) => {
+      const uid = ctx.from?.id;
+      const flow = uid ? flows.get(uid) : undefined;
+      if (!uid || !flow || flow.stage !== "category") {
+        await ctx.answerCallbackQuery({ text: "Сценарий уже завершён или отменён", show_alert: true });
+        return;
+      }
+      const raw = ctx.match[1];
+      if (raw === "none") {
+        flow.category = null;
+      } else {
+        const name = flow.categoryOptions?.[Number(raw)];
+        if (!name) {
+          await ctx.answerCallbackQuery({
+            text: "Эта категория больше не действует, выбери другую",
+            show_alert: true,
+          });
+          return;
+        }
+        flow.category = name;
+      }
+      flow.stage = "confirm";
+      await ctx.editMessageText(confirmText(flow), { reply_markup: confirmKeyboard }).catch(() => {});
+    }),
+  );
+
+  bot.callbackQuery(
     /^flow:(save|cancel)$/,
     safeCallback("flow callback", async (ctx) => {
       const uid = ctx.from?.id;
@@ -69,27 +126,56 @@ export function registerTextFlowHandlers(bot: Bot): void {
         await ctx.answerCallbackQuery({ text: "Не удалось определить действие", show_alert: true });
         return;
       }
-      const action = match[1];
-      const flow = flows.get(uid);
-      if (action === "cancel") {
+      if (match[1] === "cancel") {
         flows.delete(uid);
         await ctx.answerCallbackQuery({ text: "Отменено" });
         await ctx.editMessageText("Действие отменено.").catch(() => {});
         return;
       }
+
+      // Delete the flow synchronously, before any await, so a duplicate callback
+      // delivery or a fast double-tap can't insert the same transaction twice.
+      const flow = flows.get(uid);
+      flows.delete(uid);
       if (!flow?.amount || !flow.currency) {
         await ctx.answerCallbackQuery({ text: "Нет операции для сохранения", show_alert: true });
         return;
       }
+
       await refreshRatesIfStale();
       const gel = convertToGel(flow.amount, flow.currency);
       await pool.query(
         "INSERT INTO transactions(user_id,type,amount,currency,amount_gel,category,note) VALUES($1,$2,$3,$4,$5,$6,$7)",
         [uid, flow.type, flow.amount, flow.currency, gel, flow.category ?? null, flow.note ?? null],
       );
-      flows.delete(uid);
+
+      const overview = await getBalanceOverview(uid);
+      const text = [
+        `${formatSignedAmount(flow.type, flow.amount, flow.currency)} сохранено.`,
+        formatBalanceOverview(overview),
+      ].join("\n\n");
       await ctx.answerCallbackQuery({ text: "Сохранено" });
-      await ctx.editMessageText("Операция записана.").catch(() => {});
+      await ctx.editMessageText(text, { reply_markup: undoKeyboard, parse_mode: PARSE_MODE }).catch(() => {});
+    }),
+  );
+
+  bot.callbackQuery(
+    "undo:last",
+    safeCallback("undo:last", async (ctx) => {
+      const uid = ctx.from?.id;
+      if (!uid) {
+        await ctx.answerCallbackQuery();
+        return;
+      }
+      const deleted = await deleteLastTransaction(uid);
+      if (!deleted) {
+        await ctx.answerCallbackQuery({ text: "Нечего отменять — уже отменено", show_alert: true });
+        return;
+      }
+      await ctx.answerCallbackQuery({ text: "Отменено" });
+      await ctx
+        .editMessageText(`Отменено: ${formatSignedAmount(deleted.type, deleted.amount, deleted.currency)}`)
+        .catch(() => {});
     }),
   );
 }
