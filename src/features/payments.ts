@@ -5,6 +5,7 @@ import { convertToGel, isSupportedCurrency, refreshRatesIfStale } from "../curre
 import { confirmActionKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
 import { escapeHtml, formatMoney, formatSignedAmount, renderScreen, PARSE_MODE } from "../format";
+import { recordIdempotentGuardHit } from "../metrics";
 import { safe, safeCallback } from "../middleware/safe";
 
 function paymentLine(p: {
@@ -135,6 +136,7 @@ export function registerPaymentsHandlers(bot: Bot): void {
         return;
       }
       const deleted = await deletePayment(ctx.from.id, Number(ctx.match[1]));
+      if (!deleted) recordIdempotentGuardHit();
       await ctx.answerCallbackQuery({ text: deleted ? "Платёж удалён" : "Уже удалён" });
       await ctx
         .editMessageText(deleted ? "Платёж удалён." : "Платёж уже удалён или не найден.", {
@@ -160,6 +162,7 @@ export function registerPaymentsHandlers(bot: Bot): void {
       }
 
       if (recordingReminder.has(id)) {
+        recordIdempotentGuardHit();
         await ctx.answerCallbackQuery({ text: "Уже обрабатывается" });
         return;
       }

@@ -5,6 +5,7 @@ import { convertToGel, refreshRatesIfStale } from "../currency";
 import { parseAmountLine, parseTransactionMessage, isParseError } from "../parser";
 import { formatBalanceOverview, formatSignedAmount, PARSE_MODE } from "../format";
 import { Flow, flows } from "../features/common";
+import { recordIdempotentGuardHit } from "../metrics";
 import { safe, safeCallback } from "../middleware/safe";
 
 function confirmText(flow: Flow): string {
@@ -145,6 +146,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
       const flow = flows.get(uid);
       flows.delete(uid);
       if (!flow?.amount || !flow.currency) {
+        recordIdempotentGuardHit();
         await ctx.answerCallbackQuery({ text: "Нет операции для сохранения", show_alert: true });
         return;
       }
@@ -183,6 +185,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
       }
       const deleted = await deleteTransactionById(uid, Number(ctx.match[1]));
       if (!deleted) {
+        recordIdempotentGuardHit();
         await ctx.answerCallbackQuery({ text: "Нечего отменять — уже отменено", show_alert: true });
         return;
       }

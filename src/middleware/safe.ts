@@ -1,6 +1,7 @@
 import { Context } from "grammy";
 import { mainKeyboard } from "../keyboards";
 import { logger } from "../logger";
+import { recordHandlerError } from "../metrics";
 
 /** Thrown for input the user can fix themselves — the message is shown to them as-is. */
 export class UserInputError extends Error {}
@@ -19,6 +20,7 @@ export function messageForError(err: unknown): string {
 
 function logFailure(label: string, err: unknown): void {
   logger.error(`${label} failed: ${err instanceof Error ? err.message : String(err)}`);
+  recordHandlerError();
 }
 
 /** Wraps a command/message handler so an unexpected error is logged and never leaks details to the user. */

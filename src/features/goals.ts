@@ -3,6 +3,7 @@ import { closeGoal, contributeToGoal, createGoal, findGoal, listGoals } from "..
 import { confirmActionKeyboard, mainKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
 import { escapeHtml, formatGoalProgress, renderScreen, PARSE_MODE } from "../format";
+import { recordIdempotentGuardHit } from "../metrics";
 import { safe, safeCallback } from "../middleware/safe";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -117,6 +118,7 @@ export function registerGoalsHandlers(bot: Bot): void {
         return;
       }
       const closed = await closeGoal(ctx.from.id, Number(ctx.match[1]));
+      if (!closed) recordIdempotentGuardHit();
       await ctx.answerCallbackQuery({ text: closed ? "Цель закрыта" : "Уже закрыта" });
       await ctx
         .editMessageText(closed ? "Цель закрыта." : "Цель уже закрыта или не найдена.", {

@@ -4,6 +4,7 @@
 
 import { pool } from "./db";
 import { logger } from "./logger";
+import { recordRateFallback } from "./metrics";
 import {
   convertAmountBetween,
   isSupportedCurrency,
@@ -135,6 +136,7 @@ export async function refreshRatesIfStale(): Promise<void> {
     logger.info(`Updated exchange rates from NBG for Georgia date ${today}.`);
   } catch (err) {
     logger.warn(`NBG rate refresh failed; using cached rates if available: ${(err as Error).message}`);
+    recordRateFallback();
   }
 }
 

@@ -22,6 +22,7 @@ import {
 import { logger } from "./logger";
 import { confirmActionKeyboard, mainKeyboard } from "./keyboards";
 import { zonedDayBoundaries, zonedMonthBoundaries } from "./timezone";
+import { recordIdempotentGuardHit } from "./metrics";
 import { safe, safeCallback } from "./middleware/safe";
 
 const HELP_MESSAGE = `<b>Как записать операцию</b> — одной строкой:
@@ -216,6 +217,7 @@ export function registerHandlers(bot: Bot): void {
       }
       const deleted = await deleteTransactionById(userId, Number(ctx.match[1]));
       if (!deleted) {
+        recordIdempotentGuardHit();
         await ctx.answerCallbackQuery({ text: "Уже отменено", show_alert: true });
         await ctx
           .editMessageText("Нечего отменять — уже отменено.", { reply_markup: mainKeyboard })

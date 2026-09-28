@@ -7,6 +7,7 @@ import { registerTrendHandlers } from "./features/trend";
 import { registerSettingsHandlers } from "./features/settings";
 import { registerPaymentsHandlers } from "./features/payments";
 import { registerGoalsHandlers } from "./features/goals";
+import { registerHealthHandlers } from "./features/health";
 
 export function registerFeatureHandlers(bot: Bot): void {
   registerAnalyticsHandlers(bot);
@@ -17,4 +18,5 @@ export function registerFeatureHandlers(bot: Bot): void {
   registerSettingsHandlers(bot);
   registerPaymentsHandlers(bot);
   registerGoalsHandlers(bot);
+  registerHealthHandlers(bot);
 }
