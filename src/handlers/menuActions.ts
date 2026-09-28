@@ -117,44 +117,6 @@ export function registerMenuActionHandlers(bot: Bot): void {
   );
 
   bot.callbackQuery(
-    "action:payments",
-    safeCallback("action:payments", async (ctx) => {
-      const r = await pool.query(
-        "SELECT id,title,amount,currency,due_day FROM recurring_payments WHERE user_id=$1 AND active ORDER BY due_day",
-        [ctx.from.id],
-      );
-      const text = renderScreen({
-        title: "Регулярные платежи",
-        lines: r.rows.map(
-          (x: any) =>
-            `${x.id}. ${escapeHtml(x.title)} — ${formatMoney(x.amount, x.currency)}, день ${x.due_day}`,
-        ),
-        emptyText: "Регулярных платежей нет.",
-      });
-      await editOrReply(ctx, text, { reply_markup: mainKeyboard, parse_mode: PARSE_MODE });
-    }),
-  );
-
-  bot.callbackQuery(
-    "action:goals",
-    safeCallback("action:goals", async (ctx) => {
-      const r = await pool.query(
-        "SELECT id,title,saved_gel,target_gel FROM savings_goals WHERE user_id=$1 AND active ORDER BY id",
-        [ctx.from.id],
-      );
-      const text = renderScreen({
-        title: "Цели накопления",
-        lines: r.rows.map(
-          (x: any) =>
-            `${x.id}. ${escapeHtml(x.title)} — ${formatMoney(x.saved_gel, "GEL")} / ${formatMoney(x.target_gel, "GEL")}`,
-        ),
-        emptyText: "Целей пока нет. Создать: /goal Название сумма\nПополнить: /save ID сумма",
-      });
-      await editOrReply(ctx, text, { reply_markup: mainKeyboard, parse_mode: PARSE_MODE });
-    }),
-  );
-
-  bot.callbackQuery(
     "action:rates",
     safeCallback("action:rates", async (ctx) => {
       await refreshRatesIfStale();

@@ -89,6 +89,13 @@ export function confirmActionKeyboard(yesCallback: string, noCallback: string): 
   return new InlineKeyboard().text("✅ Да", yesCallback).text("❌ Нет", noCallback);
 }
 
+/** Attached to a payment-due reminder — recording the expense always requires this explicit tap. */
+export function paymentReminderKeyboard(paymentId: number): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("✅ Записать", `payrem:${paymentId}:record`)
+    .text("⏭ Не сейчас", `payrem:${paymentId}:skip`);
+}
+
 /** Prev/page-indicator/next row (only shown when there's more than one page) plus a back button. */
 export function paginationKeyboard(
   callbackPrefix: string,

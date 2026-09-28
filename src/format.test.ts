@@ -3,6 +3,7 @@ import {
   formatBalanceOverview,
   formatBudgetCategoryLine,
   formatDelta,
+  formatGoalProgress,
   formatMoney,
   formatPercentDelta,
   formatPeriodLabel,
@@ -213,6 +214,62 @@ describe("formatBudgetCategoryLine", () => {
       rollover: false,
     });
     expect(text).toContain("Без категории");
+  });
+});
+
+describe("formatGoalProgress", () => {
+  const TODAY = new Date("2026-03-15T00:00:00Z");
+
+  it("shows the saved/target ratio and percent with no target date", () => {
+    const text = formatGoalProgress(
+      { title: "Отпуск", savedGel: 250, targetGel: 1000, targetDate: null },
+      TODAY,
+    );
+    expect(text).toContain("250.00 GEL / 1000.00 GEL");
+    expect(text).toContain("(25%)");
+    expect(text).not.toContain("срок");
+  });
+
+  it("caps the displayed percent at 100% even when contributions exceed the target", () => {
+    const text = formatGoalProgress(
+      { title: "Отпуск", savedGel: 1500, targetGel: 1000, targetDate: null },
+      TODAY,
+    );
+    expect(text).toContain("(100%)");
+    expect(text).not.toContain("150%");
+  });
+
+  it("marks a goal as achieved once saved reaches the target, instead of showing a date note", () => {
+    const text = formatGoalProgress(
+      { title: "Отпуск", savedGel: 1000, targetGel: 1000, targetDate: new Date("2026-01-01") },
+      TODAY,
+    );
+    expect(text).toContain("цель достигнута");
+    expect(text).not.toContain("просрочено");
+  });
+
+  it("shows the target date when it's still in the future", () => {
+    const text = formatGoalProgress(
+      { title: "Отпуск", savedGel: 100, targetGel: 1000, targetDate: new Date("2026-06-01") },
+      TODAY,
+    );
+    expect(text).toContain("срок: 01.06.2026");
+    expect(text).not.toContain("просрочено");
+  });
+
+  it("marks an unmet goal as overdue once its target date has passed", () => {
+    const text = formatGoalProgress(
+      { title: "Отпуск", savedGel: 100, targetGel: 1000, targetDate: new Date("2026-01-01") },
+      TODAY,
+    );
+    expect(text).toContain("просрочено");
+    expect(text).toContain("01.01.2026");
+  });
+
+  it("never divides by zero for a zero-target goal", () => {
+    const text = formatGoalProgress({ title: "Пусто", savedGel: 0, targetGel: 0, targetDate: null }, TODAY);
+    expect(text).not.toContain("NaN");
+    expect(text).not.toContain("Infinity");
   });
 });
 

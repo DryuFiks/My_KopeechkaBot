@@ -7,6 +7,7 @@ import { registerMenuActionHandlers } from "./handlers/menuActions";
 import { registerTextFlowHandlers } from "./handlers/textFlow";
 import { registerFeatureHandlers } from "./features";
 import { loadRateCacheFromDb, refreshRatesIfStale } from "./currency";
+import { startPaymentReminders } from "./reminders";
 import { logger } from "./logger";
 
 async function main(): Promise<void> {
@@ -29,6 +30,7 @@ async function main(): Promise<void> {
   registerMenuActionHandlers(bot);
   registerFeatureHandlers(bot);
   registerTextFlowHandlers(bot);
+  startPaymentReminders(bot);
 
   const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, stopping bot...`);

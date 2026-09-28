@@ -178,6 +178,39 @@ export function formatBudgetCategoryLine(row: BudgetCategoryLike): string {
   return `${name}: ${spentText} / ${formatMoney(limit, "GEL")}${rolloverNote} (${sign}${formatMoney(diff, "GEL")}, ${sign}${percent}%)`;
 }
 
+export interface GoalProgressLike {
+  title: string;
+  savedGel: number;
+  targetGel: number;
+  targetDate: Date | null;
+}
+
+function isoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * One savings goal's progress line. The percent is capped at 100% for display even if
+ * contributions exceed the target — the underlying saved amount itself is never capped,
+ * only how the ratio is shown. "Overdue" compares calendar dates only (not time-of-day),
+ * since target_date is a date, not an instant.
+ */
+export function formatGoalProgress(goal: GoalProgressLike, today = new Date()): string {
+  const percent = goal.targetGel > 0 ? Math.min(100, Math.round((goal.savedGel / goal.targetGel) * 100)) : 0;
+  const base = `${escapeHtml(goal.title)}: ${formatMoney(goal.savedGel, "GEL")} / ${formatMoney(goal.targetGel, "GEL")} (${percent}%)`;
+
+  if (goal.targetGel > 0 && goal.savedGel >= goal.targetGel) {
+    return `${base} 🎉 цель достигнута`;
+  }
+  if (goal.targetDate) {
+    if (isoDate(goal.targetDate) < isoDate(today)) {
+      return `${base} ⏰ просрочено (срок был ${formatShortDate(goal.targetDate)})`;
+    }
+    return `${base} · срок: ${formatShortDate(goal.targetDate)}`;
+  }
+  return base;
+}
+
 export interface Page<T> {
   items: T[];
   page: number;
