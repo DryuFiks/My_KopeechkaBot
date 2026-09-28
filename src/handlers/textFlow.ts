@@ -1,6 +1,6 @@
 import { Bot, Context } from "grammy";
 import { deleteTransactionById, getBalanceOverview, getRecentCategories, insertTransaction } from "../db";
-import { categoryKeyboard, confirmKeyboard, emptyKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
+import { cancelKeyboard, categoryKeyboard, confirmKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { convertToGel, refreshRatesIfStale } from "../currency";
 import { parseAmountLine, parseTransactionMessage, isParseError } from "../parser";
 import { formatBalanceOverview, formatSignedAmount, PARSE_MODE } from "../format";
@@ -38,7 +38,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
         if (flow.stage === "amount") {
           const parsed = parseAmountLine(text);
           if (isParseError(parsed)) {
-            await ctx.reply(parsed.error);
+            await ctx.reply(parsed.error, { reply_markup: cancelKeyboard });
             return;
           }
           flow.amount = parsed.amount;
@@ -57,7 +57,9 @@ export function registerTextFlowHandlers(bot: Bot): void {
         if (flow.stage === "category") {
           const name = text.trim().slice(0, 60);
           if (!name) {
-            await ctx.reply("Пришли название категории или выбери из списка.");
+            await ctx.reply("Пришли название категории или выбери из списка.", {
+              reply_markup: cancelKeyboard,
+            });
             return;
           }
           flow.category = name;
@@ -134,7 +136,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
       if (match[1] === "cancel") {
         flows.delete(uid);
         await ctx.answerCallbackQuery({ text: "Отменено" });
-        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
+        await ctx.editMessageText("Действие отменено.", { reply_markup: mainKeyboard }).catch(() => {});
         return;
       }
 
@@ -187,7 +189,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
       await ctx.answerCallbackQuery({ text: "Отменено" });
       await ctx
         .editMessageText(`Отменено: ${formatSignedAmount(deleted.type, deleted.amount, deleted.currency)}`, {
-          reply_markup: emptyKeyboard,
+          reply_markup: mainKeyboard,
         })
         .catch(() => {});
     }),

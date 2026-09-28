@@ -45,12 +45,19 @@ export const serviceKeyboard = new InlineKeyboard()
 export const cancelKeyboard = new InlineKeyboard().text("❌ Отмена", "flow:cancel");
 
 /**
+ * Appends the top-level menu grid as extra rows below an existing keyboard, so a
+ * terminal screen (an undo button, a finished confirmation) still leaves an obvious
+ * next action instead of stranding the user with nothing to tap but scrolling up.
  * Telegram does NOT clear a message's inline keyboard just because editMessageText
- * omits reply_markup — the old buttons stay live and tappable. Pass this explicitly
- * whenever a scenario has ended, so a stale "✅ Да / ❌ Нет" or "Сохранить" can't be
- * tapped again after the action it belonged to is already done.
+ * omits reply_markup — the old buttons would otherwise stay live and tappable, so a
+ * terminal screen must always pass an explicit keyboard, never rely on the default.
  */
-export const emptyKeyboard = new InlineKeyboard();
+function withMainMenuRows(keyboard: InlineKeyboard): InlineKeyboard {
+  for (const row of mainKeyboard.inline_keyboard) {
+    keyboard.row(...row);
+  }
+  return keyboard;
+}
 
 /**
  * Categories are matched to the tapped button by index into the same array the caller
@@ -70,7 +77,7 @@ export const confirmKeyboard = new InlineKeyboard()
 
 /** The specific transaction id is embedded in the callback so a duplicate tap is idempotent. */
 export function undoKeyboard(transactionId: number): InlineKeyboard {
-  return new InlineKeyboard().text("↩️ Отменить", `undo:${transactionId}`);
+  return withMainMenuRows(new InlineKeyboard().text("↩️ Отменить", `undo:${transactionId}`));
 }
 
 /**

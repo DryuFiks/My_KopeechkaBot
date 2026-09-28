@@ -1,6 +1,6 @@
 import { Bot } from "grammy";
 import { pool } from "../db";
-import { confirmActionKeyboard, emptyKeyboard, mainKeyboard } from "../keyboards";
+import { confirmActionKeyboard, mainKeyboard } from "../keyboards";
 import { escapeHtml, formatMoney, renderScreen, PARSE_MODE } from "../format";
 import { safe, safeCallback } from "../middleware/safe";
 
@@ -19,7 +19,7 @@ export function registerPlanningHandlers(bot: Bot): void {
       const usage = "Формат: /category expense Еда [recurring|variable|irregular]";
       const m = /^\/category\s+(expense|income)\s+(.+)$/i.exec(ctx.message?.text ?? "");
       if (!m) {
-        await ctx.reply(usage);
+        await ctx.reply(usage, { reply_markup: mainKeyboard });
         return;
       }
       const type = m[1].toLowerCase();
@@ -32,7 +32,7 @@ export function registerPlanningHandlers(bot: Bot): void {
       }
       const name = rest.slice(0, 60);
       if (!name) {
-        await ctx.reply(usage);
+        await ctx.reply(usage, { reply_markup: mainKeyboard });
         return;
       }
       await pool.query(
@@ -85,7 +85,7 @@ export function registerPlanningHandlers(bot: Bot): void {
       if (!uid) return;
       const m = /^\/save\s+(\d+)\s+(\d+(?:[.,]\d{1,2})?)\s*$/.exec(ctx.message?.text ?? "");
       if (!m) {
-        await ctx.reply("Формат: /save ID_цели сумма");
+        await ctx.reply("Формат: /save ID_цели сумма", { reply_markup: mainKeyboard });
         return;
       }
       const r = await pool.query(
@@ -93,7 +93,7 @@ export function registerPlanningHandlers(bot: Bot): void {
         [Number(m[1]), uid, Number(m[2].replace(",", "."))],
       );
       if (!r.rowCount) {
-        await ctx.reply("Цель не найдена.");
+        await ctx.reply("Цель не найдена.", { reply_markup: mainKeyboard });
         return;
       }
       const x = r.rows[0];
@@ -164,7 +164,7 @@ export function registerPlanningHandlers(bot: Bot): void {
       if (!uid) return;
       const id = Number((ctx.message?.text ?? "").split(/\s+/)[1]);
       if (!Number.isInteger(id) || id < 1) {
-        await ctx.reply("Формат: /deletepayment ID");
+        await ctx.reply("Формат: /deletepayment ID", { reply_markup: mainKeyboard });
         return;
       }
       const r = await pool.query(
@@ -187,7 +187,7 @@ export function registerPlanningHandlers(bot: Bot): void {
     safeCallback("deletepayment confirm", async (ctx) => {
       if (ctx.match[2] === "no") {
         await ctx.answerCallbackQuery({ text: "Отменено" });
-        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
+        await ctx.editMessageText("Действие отменено.", { reply_markup: mainKeyboard }).catch(() => {});
         return;
       }
       const uid = ctx.from?.id;
@@ -200,7 +200,7 @@ export function registerPlanningHandlers(bot: Bot): void {
       await ctx.answerCallbackQuery({ text: r?.rowCount ? "Платёж отключён" : "Уже отключён" });
       await ctx
         .editMessageText(r?.rowCount ? "Платёж отключён." : "Платёж уже отключён или не найден.", {
-          reply_markup: emptyKeyboard,
+          reply_markup: mainKeyboard,
         })
         .catch(() => {});
     }),
@@ -232,7 +232,7 @@ export function registerPlanningHandlers(bot: Bot): void {
     safeCallback("deletegoal confirm", async (ctx) => {
       if (ctx.match[2] === "no") {
         await ctx.answerCallbackQuery({ text: "Отменено" });
-        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
+        await ctx.editMessageText("Действие отменено.", { reply_markup: mainKeyboard }).catch(() => {});
         return;
       }
       const uid = ctx.from?.id;
@@ -245,7 +245,7 @@ export function registerPlanningHandlers(bot: Bot): void {
       await ctx.answerCallbackQuery({ text: r?.rowCount ? "Цель закрыта" : "Уже закрыта" });
       await ctx
         .editMessageText(r?.rowCount ? "Цель закрыта." : "Цель уже закрыта или не найдена.", {
-          reply_markup: emptyKeyboard,
+          reply_markup: mainKeyboard,
         })
         .catch(() => {});
     }),

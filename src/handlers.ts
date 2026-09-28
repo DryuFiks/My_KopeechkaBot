@@ -17,7 +17,7 @@ import {
   PARSE_MODE,
 } from "./format";
 import { logger } from "./logger";
-import { confirmActionKeyboard, emptyKeyboard, mainKeyboard } from "./keyboards";
+import { confirmActionKeyboard, mainKeyboard } from "./keyboards";
 import { safe, safeCallback } from "./middleware/safe";
 
 const HELP_MESSAGE = `<b>Как записать операцию</b> — одной строкой:
@@ -94,7 +94,7 @@ export function registerHandlers(bot: Bot): void {
   bot.command(
     "help",
     safe("/help", async (ctx) => {
-      await ctx.reply(HELP_MESSAGE, { parse_mode: PARSE_MODE });
+      await ctx.reply(HELP_MESSAGE, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
     }),
   );
 
@@ -111,7 +111,9 @@ export function registerHandlers(bot: Bot): void {
         const updated = r.updatedAt ? ` (обновлено ${formatDateShort(r.updatedAt)})` : "";
         return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
       });
-      await ctx.reply(`Текущие курсы (источник: NBG — Национальный банк Грузии):\n${lines.join("\n")}`);
+      await ctx.reply(`Текущие курсы (источник: NBG — Национальный банк Грузии):\n${lines.join("\n")}`, {
+        reply_markup: mainKeyboard,
+      });
     }),
   );
 
@@ -126,7 +128,10 @@ export function registerHandlers(bot: Bot): void {
       const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за сегодня", from, to, summary), { parse_mode: PARSE_MODE });
+      await ctx.reply(formatSummary("Итоги за сегодня", from, to, summary), {
+        parse_mode: PARSE_MODE,
+        reply_markup: mainKeyboard,
+      });
     }),
   );
 
@@ -141,7 +146,10 @@ export function registerHandlers(bot: Bot): void {
       const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за месяц", from, to, summary), { parse_mode: PARSE_MODE });
+      await ctx.reply(formatSummary("Итоги за месяц", from, to, summary), {
+        parse_mode: PARSE_MODE,
+        reply_markup: mainKeyboard,
+      });
     }),
   );
 
@@ -157,7 +165,7 @@ export function registerHandlers(bot: Bot): void {
         lines: txs.map(formatTx),
         emptyText: "Операций пока нет. Отправь первую, например: -20 gel транспорт",
       });
-      await ctx.reply(text, { parse_mode: PARSE_MODE });
+      await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
     }),
   );
 
@@ -169,7 +177,7 @@ export function registerHandlers(bot: Bot): void {
 
       const [last] = await getLastTransactions(userId, 1);
       if (!last) {
-        await ctx.reply("Нечего отменять — операций нет.");
+        await ctx.reply("Нечего отменять — операций нет.", { reply_markup: mainKeyboard });
         return;
       }
       await ctx.reply(`Отменить последнюю операцию?\n${formatTx(last)}`, {
@@ -189,14 +197,14 @@ export function registerHandlers(bot: Bot): void {
       }
       if (ctx.match[2] === "no") {
         await ctx.answerCallbackQuery({ text: "Отменено" });
-        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
+        await ctx.editMessageText("Действие отменено.", { reply_markup: mainKeyboard }).catch(() => {});
         return;
       }
       const deleted = await deleteTransactionById(userId, Number(ctx.match[1]));
       if (!deleted) {
         await ctx.answerCallbackQuery({ text: "Уже отменено", show_alert: true });
         await ctx
-          .editMessageText("Нечего отменять — уже отменено.", { reply_markup: emptyKeyboard })
+          .editMessageText("Нечего отменять — уже отменено.", { reply_markup: mainKeyboard })
           .catch(() => {});
         return;
       }
@@ -204,7 +212,7 @@ export function registerHandlers(bot: Bot): void {
       await ctx
         .editMessageText(`Отменено: ${formatTx(deleted)}`, {
           parse_mode: PARSE_MODE,
-          reply_markup: emptyKeyboard,
+          reply_markup: mainKeyboard,
         })
         .catch(() => {});
     }),

@@ -37,7 +37,7 @@ export function registerAnalyticsHandlers(bot: Bot): void {
         const cat = m[1].trim(),
           limit = Number(m[2].replace(",", "."));
         if (!cat || limit <= 0) {
-          await ctx.reply("Формат: /budget Категория сумма");
+          await ctx.reply("Формат: /budget Категория сумма", { reply_markup: mainKeyboard });
           return;
         }
         const d = monthStart();
@@ -85,6 +85,7 @@ export function registerAnalyticsHandlers(bot: Bot): void {
       ].join("\r\n");
       await ctx.replyWithDocument(new InputFile(Buffer.from("\uFEFF" + csv, "utf8"), "transactions.csv"), {
         caption: "Экспорт последних 5000 операций (CSV)",
+        reply_markup: mainKeyboard,
       });
     }),
   );
