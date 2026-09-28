@@ -1,6 +1,6 @@
 import { Bot, Context } from "grammy";
-import { pool, deleteLastTransaction, getBalanceOverview, getRecentCategories } from "../db";
-import { categoryKeyboard, confirmKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
+import { deleteTransactionById, getBalanceOverview, getRecentCategories, insertTransaction } from "../db";
+import { categoryKeyboard, confirmKeyboard, emptyKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { convertToGel, refreshRatesIfStale } from "../currency";
 import { parseAmountLine, parseTransactionMessage, isParseError } from "../parser";
 import { formatBalanceOverview, formatSignedAmount, PARSE_MODE } from "../format";
@@ -81,11 +81,16 @@ export function registerTextFlowHandlers(bot: Bot): void {
       }
       await refreshRatesIfStale();
       const gel = convertToGel(parsed.amount, parsed.currency);
-      await pool.query(
-        "INSERT INTO transactions(user_id,type,amount,currency,amount_gel,category,note) VALUES($1,$2,$3,$4,$5,$6,$7)",
-        [uid, parsed.type, parsed.amount, parsed.currency, gel, parsed.category, parsed.note],
-      );
-      await ctx.reply("Операция записана.", { reply_markup: mainKeyboard });
+      const saved = await insertTransaction({
+        userId: uid,
+        type: parsed.type,
+        amount: parsed.amount,
+        currency: parsed.currency,
+        amountGel: gel,
+        category: parsed.category,
+        note: parsed.note,
+      });
+      await ctx.reply("Операция записана.", { reply_markup: undoKeyboard(saved.id) });
     }),
   );
 
@@ -129,7 +134,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
       if (match[1] === "cancel") {
         flows.delete(uid);
         await ctx.answerCallbackQuery({ text: "Отменено" });
-        await ctx.editMessageText("Действие отменено.").catch(() => {});
+        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
         return;
       }
 
@@ -144,10 +149,15 @@ export function registerTextFlowHandlers(bot: Bot): void {
 
       await refreshRatesIfStale();
       const gel = convertToGel(flow.amount, flow.currency);
-      await pool.query(
-        "INSERT INTO transactions(user_id,type,amount,currency,amount_gel,category,note) VALUES($1,$2,$3,$4,$5,$6,$7)",
-        [uid, flow.type, flow.amount, flow.currency, gel, flow.category ?? null, flow.note ?? null],
-      );
+      const saved = await insertTransaction({
+        userId: uid,
+        type: flow.type,
+        amount: flow.amount,
+        currency: flow.currency,
+        amountGel: gel,
+        category: flow.category ?? null,
+        note: flow.note ?? null,
+      });
 
       const overview = await getBalanceOverview(uid);
       const text = [
@@ -155,26 +165,30 @@ export function registerTextFlowHandlers(bot: Bot): void {
         formatBalanceOverview(overview),
       ].join("\n\n");
       await ctx.answerCallbackQuery({ text: "Сохранено" });
-      await ctx.editMessageText(text, { reply_markup: undoKeyboard, parse_mode: PARSE_MODE }).catch(() => {});
+      await ctx
+        .editMessageText(text, { reply_markup: undoKeyboard(saved.id), parse_mode: PARSE_MODE })
+        .catch(() => {});
     }),
   );
 
   bot.callbackQuery(
-    "undo:last",
-    safeCallback("undo:last", async (ctx) => {
+    /^undo:(\d+)$/,
+    safeCallback("undo", async (ctx) => {
       const uid = ctx.from?.id;
       if (!uid) {
         await ctx.answerCallbackQuery();
         return;
       }
-      const deleted = await deleteLastTransaction(uid);
+      const deleted = await deleteTransactionById(uid, Number(ctx.match[1]));
       if (!deleted) {
         await ctx.answerCallbackQuery({ text: "Нечего отменять — уже отменено", show_alert: true });
         return;
       }
       await ctx.answerCallbackQuery({ text: "Отменено" });
       await ctx
-        .editMessageText(`Отменено: ${formatSignedAmount(deleted.type, deleted.amount, deleted.currency)}`)
+        .editMessageText(`Отменено: ${formatSignedAmount(deleted.type, deleted.amount, deleted.currency)}`, {
+          reply_markup: emptyKeyboard,
+        })
         .catch(() => {});
     }),
   );

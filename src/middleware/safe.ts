@@ -9,7 +9,8 @@ const GENERIC_ERROR_MESSAGE = "Что-то пошло не так. Попроб�
 const TRANSIENT_ERROR_MESSAGE = "Временная проблема с базой данных. Попробуй ещё раз через минуту.";
 const TRANSIENT_PATTERN = /ECONNREFUSED|ETIMEDOUT|ECONNRESET|timeout|connection terminated/i;
 
-function messageForError(err: unknown): string {
+/** Exported for testing: maps a caught error to the exact text shown to the user. */
+export function messageForError(err: unknown): string {
   if (err instanceof UserInputError) return err.message;
   const text = err instanceof Error ? err.message : String(err);
   if (TRANSIENT_PATTERN.test(text)) return TRANSIENT_ERROR_MESSAGE;

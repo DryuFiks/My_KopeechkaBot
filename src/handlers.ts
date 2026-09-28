@@ -3,7 +3,7 @@ import { getAllRateInfo, refreshRatesIfStale } from "./currency";
 import {
   getLastTransactions,
   getSummaryForRange,
-  deleteLastTransaction,
+  deleteTransactionById,
   Transaction,
   PeriodSummary,
 } from "./db";
@@ -17,8 +17,8 @@ import {
   PARSE_MODE,
 } from "./format";
 import { logger } from "./logger";
-import { mainKeyboard } from "./keyboards";
-import { safe } from "./middleware/safe";
+import { confirmActionKeyboard, emptyKeyboard, mainKeyboard } from "./keyboards";
+import { safe, safeCallback } from "./middleware/safe";
 
 const HELP_MESSAGE = `<b>Как записать операцию</b> — одной строкой:
 <code>-150 rub еда обед</code>   (расход 150 RUB, категория "еда", заметка "обед")
@@ -167,12 +167,46 @@ export function registerHandlers(bot: Bot): void {
       const userId = ctx.from?.id;
       if (!userId) return;
 
-      const deleted = await deleteLastTransaction(userId);
-      if (!deleted) {
+      const [last] = await getLastTransactions(userId, 1);
+      if (!last) {
         await ctx.reply("Нечего отменять — операций нет.");
         return;
       }
-      await ctx.reply(`Отменено: ${formatTx(deleted)}`, { parse_mode: PARSE_MODE });
+      await ctx.reply(`Отменить последнюю операцию?\n${formatTx(last)}`, {
+        parse_mode: PARSE_MODE,
+        reply_markup: confirmActionKeyboard(`undocmd:${last.id}:yes`, `undocmd:${last.id}:no`),
+      });
+    }),
+  );
+
+  bot.callbackQuery(
+    /^undocmd:(\d+):(yes|no)$/,
+    safeCallback("undo confirm", async (ctx) => {
+      const userId = ctx.from?.id;
+      if (!userId) {
+        await ctx.answerCallbackQuery();
+        return;
+      }
+      if (ctx.match[2] === "no") {
+        await ctx.answerCallbackQuery({ text: "Отменено" });
+        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
+        return;
+      }
+      const deleted = await deleteTransactionById(userId, Number(ctx.match[1]));
+      if (!deleted) {
+        await ctx.answerCallbackQuery({ text: "Уже отменено", show_alert: true });
+        await ctx
+          .editMessageText("Нечего отменять — уже отменено.", { reply_markup: emptyKeyboard })
+          .catch(() => {});
+        return;
+      }
+      await ctx.answerCallbackQuery({ text: "Отменено" });
+      await ctx
+        .editMessageText(`Отменено: ${formatTx(deleted)}`, {
+          parse_mode: PARSE_MODE,
+          reply_markup: emptyKeyboard,
+        })
+        .catch(() => {});
     }),
   );
 

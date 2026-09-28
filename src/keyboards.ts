@@ -40,6 +40,14 @@ export const serviceKeyboard = new InlineKeyboard()
 export const cancelKeyboard = new InlineKeyboard().text("❌ Отмена", "flow:cancel");
 
 /**
+ * Telegram does NOT clear a message's inline keyboard just because editMessageText
+ * omits reply_markup — the old buttons stay live and tappable. Pass this explicitly
+ * whenever a scenario has ended, so a stale "✅ Да / ❌ Нет" or "Сохранить" can't be
+ * tapped again after the action it belonged to is already done.
+ */
+export const emptyKeyboard = new InlineKeyboard();
+
+/**
  * Categories are matched to the tapped button by index into the same array the caller
  * stored on the Flow (see handlers/textFlow.ts) — not by encoding the name itself in
  * callback_data, which could exceed Telegram's 64-byte limit for longer/Cyrillic names.
@@ -55,7 +63,19 @@ export const confirmKeyboard = new InlineKeyboard()
   .text("✅ Сохранить", "flow:save")
   .text("❌ Отмена", "flow:cancel");
 
-export const undoKeyboard = new InlineKeyboard().text("↩️ Отменить", "undo:last");
+/** The specific transaction id is embedded in the callback so a duplicate tap is idempotent. */
+export function undoKeyboard(transactionId: number): InlineKeyboard {
+  return new InlineKeyboard().text("↩️ Отменить", `undo:${transactionId}`);
+}
+
+/**
+ * A confirmation prompt for an irreversible action. Both callbacks should embed
+ * everything the handler needs (e.g. a specific row id) — not rely on separately
+ * stored "pending action" state, which a second unrelated confirmation could overwrite.
+ */
+export function confirmActionKeyboard(yesCallback: string, noCallback: string): InlineKeyboard {
+  return new InlineKeyboard().text("✅ Да", yesCallback).text("❌ Нет", noCallback);
+}
 
 /** Prev/page-indicator/next row (only shown when there's more than one page) plus a back button. */
 export function paginationKeyboard(

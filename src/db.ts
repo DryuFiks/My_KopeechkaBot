@@ -104,36 +104,17 @@ export async function getSummaryForRange(userId: number, from: Date, to: Date): 
   };
 }
 
-/** Deletes the most recent transaction for this user only. Returns the deleted row, or null if none exist. */
-export async function deleteLastTransaction(userId: number): Promise<Transaction | null> {
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-    const found = await client.query<Transaction>(
-      `SELECT id FROM transactions
-       WHERE user_id = $1
-       ORDER BY created_at DESC, id DESC
-       LIMIT 1
-       FOR UPDATE`,
-      [userId],
-    );
-    if (found.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return null;
-    }
-    const id = found.rows[0].id;
-    const deleted = await client.query<Transaction>(
-      `DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING *`,
-      [id, userId],
-    );
-    await client.query("COMMIT");
-    return deleted.rows[0] ?? null;
-  } catch (err) {
-    await client.query("ROLLBACK");
-    throw err;
-  } finally {
-    client.release();
-  }
+/**
+ * Deletes one specific transaction (by id, scoped to its owner). Idempotent by design:
+ * undoing the same id twice (a duplicate callback, a double tap) just finds no row the
+ * second time instead of deleting a different, unrelated transaction.
+ */
+export async function deleteTransactionById(userId: number, id: number): Promise<Transaction | null> {
+  const result = await pool.query<Transaction>(
+    `DELETE FROM transactions WHERE id = $1 AND user_id = $2 RETURNING *`,
+    [id, userId],
+  );
+  return result.rows[0] ?? null;
 }
 
 export interface BalanceOverview {

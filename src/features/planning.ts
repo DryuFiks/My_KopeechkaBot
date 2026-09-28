@@ -1,8 +1,8 @@
 import { Bot } from "grammy";
 import { pool } from "../db";
-import { mainKeyboard } from "../keyboards";
+import { confirmActionKeyboard, emptyKeyboard, mainKeyboard } from "../keyboards";
 import { escapeHtml, formatMoney, renderScreen, PARSE_MODE } from "../format";
-import { safe } from "../middleware/safe";
+import { safe, safeCallback } from "../middleware/safe";
 
 export function registerPlanningHandlers(bot: Bot): void {
   bot.command(
@@ -149,10 +149,41 @@ export function registerPlanningHandlers(bot: Bot): void {
         return;
       }
       const r = await pool.query(
-        "UPDATE recurring_payments SET active=FALSE WHERE id=$1 AND user_id=$2 RETURNING id",
+        "SELECT title FROM recurring_payments WHERE id=$1 AND user_id=$2 AND active",
         [id, uid],
       );
-      await ctx.reply(r.rowCount ? "Платёж отключён." : "Платёж не найден.", { reply_markup: mainKeyboard });
+      if (!r.rowCount) {
+        await ctx.reply("Платёж не найден.", { reply_markup: mainKeyboard });
+        return;
+      }
+      await ctx.reply(`Отключить платёж «${escapeHtml(r.rows[0].title)}»?`, {
+        parse_mode: PARSE_MODE,
+        reply_markup: confirmActionKeyboard(`delpay:${id}:yes`, `delpay:${id}:no`),
+      });
+    }),
+  );
+
+  bot.callbackQuery(
+    /^delpay:(\d+):(yes|no)$/,
+    safeCallback("deletepayment confirm", async (ctx) => {
+      if (ctx.match[2] === "no") {
+        await ctx.answerCallbackQuery({ text: "Отменено" });
+        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
+        return;
+      }
+      const uid = ctx.from?.id;
+      const r = uid
+        ? await pool.query(
+            "UPDATE recurring_payments SET active=FALSE WHERE id=$1 AND user_id=$2 AND active RETURNING id",
+            [Number(ctx.match[1]), uid],
+          )
+        : null;
+      await ctx.answerCallbackQuery({ text: r?.rowCount ? "Платёж отключён" : "Уже отключён" });
+      await ctx
+        .editMessageText(r?.rowCount ? "Платёж отключён." : "Платёж уже отключён или не найден.", {
+          reply_markup: emptyKeyboard,
+        })
+        .catch(() => {});
     }),
   );
 
@@ -162,11 +193,42 @@ export function registerPlanningHandlers(bot: Bot): void {
       const uid = ctx.from?.id;
       if (!uid) return;
       const id = Number((ctx.message?.text ?? "").split(/\s+/)[1]);
-      const r = await pool.query(
-        "UPDATE savings_goals SET active=FALSE WHERE id=$1 AND user_id=$2 RETURNING id",
-        [id, uid],
-      );
-      await ctx.reply(r.rowCount ? "Цель закрыта." : "Цель не найдена.", { reply_markup: mainKeyboard });
+      const r = await pool.query("SELECT title FROM savings_goals WHERE id=$1 AND user_id=$2 AND active", [
+        id,
+        uid,
+      ]);
+      if (!r.rowCount) {
+        await ctx.reply("Цель не найдена.", { reply_markup: mainKeyboard });
+        return;
+      }
+      await ctx.reply(`Закрыть цель «${escapeHtml(r.rows[0].title)}»?`, {
+        parse_mode: PARSE_MODE,
+        reply_markup: confirmActionKeyboard(`delgoal:${id}:yes`, `delgoal:${id}:no`),
+      });
+    }),
+  );
+
+  bot.callbackQuery(
+    /^delgoal:(\d+):(yes|no)$/,
+    safeCallback("deletegoal confirm", async (ctx) => {
+      if (ctx.match[2] === "no") {
+        await ctx.answerCallbackQuery({ text: "Отменено" });
+        await ctx.editMessageText("Действие отменено.", { reply_markup: emptyKeyboard }).catch(() => {});
+        return;
+      }
+      const uid = ctx.from?.id;
+      const r = uid
+        ? await pool.query(
+            "UPDATE savings_goals SET active=FALSE WHERE id=$1 AND user_id=$2 AND active RETURNING id",
+            [Number(ctx.match[1]), uid],
+          )
+        : null;
+      await ctx.answerCallbackQuery({ text: r?.rowCount ? "Цель закрыта" : "Уже закрыта" });
+      await ctx
+        .editMessageText(r?.rowCount ? "Цель закрыта." : "Цель уже закрыта или не найдена.", {
+          reply_markup: emptyKeyboard,
+        })
+        .catch(() => {});
     }),
   );
 }
