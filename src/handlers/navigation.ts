@@ -18,6 +18,12 @@ const MENU = {
 } as const;
 
 export function registerNavigationHandlers(bot: Bot): void {
+  // The page-indicator button in paginationKeyboard — nothing to do, just ack the tap.
+  bot.callbackQuery(
+    "noop",
+    safeCallback("noop", async () => {}),
+  );
+
   bot.callbackQuery(
     /^menu:(main|finance|analytics|planning|service)$/,
     safeCallback("navigation", async (ctx) => {

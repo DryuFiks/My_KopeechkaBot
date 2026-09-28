@@ -1,8 +1,8 @@
 import { Bot, InputFile } from "grammy";
 import { pool } from "../db";
 import { mainKeyboard } from "../keyboards";
-import { escapeHtml, PARSE_MODE } from "../format";
-import { money, monthStart, showBudget } from "./common";
+import { escapeHtml, formatMoney, formatPeriodLabel, renderScreen, PARSE_MODE } from "../format";
+import { monthStart, showBudget } from "./common";
 import { safe } from "../middleware/safe";
 
 export function registerAnalyticsHandlers(bot: Bot): void {
@@ -24,7 +24,7 @@ export function registerAnalyticsHandlers(bot: Bot): void {
           `INSERT INTO budgets(user_id,month,category,limit_gel) VALUES($1,$2,$3,$4) ON CONFLICT(user_id,month,category) DO UPDATE SET limit_gel=EXCLUDED.limit_gel`,
           [uid, d, cat, limit],
         );
-        await ctx.reply(`Лимит для «${escapeHtml(cat)}»: ${money(limit)} GEL`, {
+        await ctx.reply(`Лимит для «${escapeHtml(cat)}»: ${formatMoney(limit, "GEL")}`, {
           parse_mode: PARSE_MODE,
           reply_markup: mainKeyboard,
         });
@@ -39,16 +39,20 @@ export function registerAnalyticsHandlers(bot: Bot): void {
     safe("stats", async (ctx) => {
       const uid = ctx.from?.id;
       if (!uid) return;
+      const from = monthStart();
+      const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
       const r = await pool.query(
         `SELECT category,COALESCE(SUM(amount_gel),0) total FROM transactions WHERE user_id=$1 AND type='expense' AND created_at >= $2 AND created_at < $3 GROUP BY category ORDER BY total DESC LIMIT 10`,
-        [uid, monthStart(), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)],
+        [uid, from, to],
       );
-      await ctx.reply(
-        r.rowCount
-          ? `<b>Расходы по категориям за месяц</b>\n${r.rows.map((x: any) => `${escapeHtml(x.category ?? "Без категории")}: ${money(x.total)} GEL`).join("\n")}`
-          : "За этот месяц расходов нет.",
-        { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
-      );
+      const text = renderScreen({
+        title: `Расходы по категориям — ${formatPeriodLabel(from, to)}`,
+        lines: r.rows.map(
+          (x: any) => `${escapeHtml(x.category ?? "Без категории")}: ${formatMoney(x.total, "GEL")}`,
+        ),
+        emptyText: "За этот месяц расходов нет.",
+      });
+      await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
     }),
   );
 

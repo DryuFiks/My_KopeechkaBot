@@ -7,7 +7,15 @@ import {
   Transaction,
   PeriodSummary,
 } from "./db";
-import { escapeHtml, PARSE_MODE } from "./format";
+import {
+  escapeHtml,
+  formatDateShort,
+  formatMoney,
+  formatPeriodLabel,
+  formatSignedAmount,
+  renderScreen,
+  PARSE_MODE,
+} from "./format";
 import { logger } from "./logger";
 import { mainKeyboard } from "./keyboards";
 import { safe } from "./middleware/safe";
@@ -36,26 +44,27 @@ const HELP_MESSAGE = `<b>Как записать операцию</b> — одн
 const START_MESSAGE = `Привет! Я — бот для учёта доходов и расходов.\n\n${HELP_MESSAGE}`;
 
 function formatTx(tx: Transaction): string {
-  const sign = tx.type === "expense" ? "-" : "+";
-  const gel = tx.amount_gel !== null ? `≈ ${tx.amount_gel} GEL` : "курс недоступен";
+  const amountText = formatSignedAmount(tx.type, tx.amount, tx.currency);
+  const gel = tx.amount_gel !== null ? `≈ ${formatMoney(tx.amount_gel, "GEL")}` : "курс недоступен";
   const cat = tx.category ? ` [${escapeHtml(tx.category)}]` : "";
   const note = tx.note ? ` — ${escapeHtml(tx.note)}` : "";
-  const date = tx.created_at.toISOString().slice(0, 16).replace("T", " ");
-  return `${escapeHtml(date)}  ${sign}${tx.amount} ${tx.currency}${cat}${note}  (${gel})`;
+  const date = formatDateShort(tx.created_at);
+  return `${escapeHtml(date)}  ${amountText}${cat}${note}  (${gel})`;
 }
 
-function formatSummary(title: string, summary: PeriodSummary): string {
-  const unconvertedNote =
-    summary.unconverted_count > 0
-      ? `\n⚠️ ${summary.unconverted_count} операц. без курса — не учтены в сумме`
-      : "";
-  return (
-    `<b>${title}</b>\n` +
-    `Доходы: +${summary.income_gel} GEL\n` +
-    `Расходы: -${summary.expense_gel} GEL\n` +
-    `Баланс: ${summary.balance_gel} GEL\n` +
-    `Операций: ${summary.operation_count}${unconvertedNote}`
-  );
+function formatSummary(title: string, from: Date, to: Date, summary: PeriodSummary): string {
+  const lines = [
+    formatPeriodLabel(from, to),
+    "",
+    `Доходы: ${formatSignedAmount("income", summary.income_gel, "GEL")}`,
+    `Расходы: ${formatSignedAmount("expense", summary.expense_gel, "GEL")}`,
+    `Баланс: ${formatMoney(summary.balance_gel, "GEL")}`,
+    `Операций: ${summary.operation_count}`,
+  ];
+  if (summary.unconverted_count > 0) {
+    lines.push(`⚠️ ${summary.unconverted_count} операц. без курса — не учтены в сумме`);
+  }
+  return renderScreen({ title, lines });
 }
 
 export function registerHandlers(bot: Bot): void {
@@ -99,9 +108,7 @@ export function registerHandlers(bot: Bot): void {
           return `${r.currency} → курс недоступен`;
         }
         const staleTag = r.isFallback ? " ⚠️ устаревший (API недоступен)" : "";
-        const updated = r.updatedAt
-          ? ` (обновлено ${r.updatedAt.toISOString().slice(0, 16).replace("T", " ")})`
-          : "";
+        const updated = r.updatedAt ? ` (обновлено ${formatDateShort(r.updatedAt)})` : "";
         return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
       });
       await ctx.reply(`Текущие курсы (источник: NBG — Национальный банк Грузии):\n${lines.join("\n")}`);
@@ -119,7 +126,7 @@ export function registerHandlers(bot: Bot): void {
       const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за сегодня", summary), { parse_mode: PARSE_MODE });
+      await ctx.reply(formatSummary("Итоги за сегодня", from, to, summary), { parse_mode: PARSE_MODE });
     }),
   );
 
@@ -134,7 +141,7 @@ export function registerHandlers(bot: Bot): void {
       const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за месяц", summary), { parse_mode: PARSE_MODE });
+      await ctx.reply(formatSummary("Итоги за месяц", from, to, summary), { parse_mode: PARSE_MODE });
     }),
   );
 
@@ -145,14 +152,12 @@ export function registerHandlers(bot: Bot): void {
       if (!userId) return;
 
       const txs = await getLastTransactions(userId, 10);
-      if (txs.length === 0) {
-        await ctx.reply("Операций пока нет. Отправь первую, например: -20 gel транспорт");
-        return;
-      }
-      const lines = txs.map(formatTx);
-      await ctx.reply(`<b>Последние операции</b>\n${lines.join("\n")}`, {
-        parse_mode: PARSE_MODE,
+      const text = renderScreen({
+        title: "Последние операции",
+        lines: txs.map(formatTx),
+        emptyText: "Операций пока нет. Отправь первую, например: -20 gel транспорт",
       });
+      await ctx.reply(text, { parse_mode: PARSE_MODE });
     }),
   );
 

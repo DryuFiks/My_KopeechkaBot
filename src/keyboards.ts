@@ -49,3 +49,21 @@ export function categoryKeyboard(type: "expense" | "income", categories: string[
 export const confirmKeyboard = new InlineKeyboard()
   .text("✅ Сохранить", "flow:save")
   .text("❌ Отмена", "flow:cancel");
+
+/** Prev/page-indicator/next row (only shown when there's more than one page) plus a back button. */
+export function paginationKeyboard(
+  callbackPrefix: string,
+  page: number,
+  totalPages: number,
+  backCallback: string,
+): InlineKeyboard {
+  const keyboard = new InlineKeyboard();
+  if (totalPages > 1) {
+    if (page > 0) keyboard.text("◀ Назад", `${callbackPrefix}:${page - 1}`);
+    keyboard.text(`${page + 1}/${totalPages}`, "noop");
+    if (page < totalPages - 1) keyboard.text("Далее ▶", `${callbackPrefix}:${page + 1}`);
+    keyboard.row();
+  }
+  keyboard.text("⬅️ Главное меню", backCallback);
+  return keyboard;
+}

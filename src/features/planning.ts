@@ -1,8 +1,7 @@
 import { Bot } from "grammy";
 import { pool } from "../db";
 import { mainKeyboard } from "../keyboards";
-import { escapeHtml, PARSE_MODE } from "../format";
-import { money } from "./common";
+import { escapeHtml, formatMoney, renderScreen, PARSE_MODE } from "../format";
 import { safe } from "../middleware/safe";
 
 export function registerPlanningHandlers(bot: Bot): void {
@@ -40,17 +39,15 @@ export function registerPlanningHandlers(bot: Bot): void {
           "SELECT id,title,saved_gel,target_gel FROM savings_goals WHERE user_id=$1 AND active ORDER BY id",
           [uid],
         );
-        await ctx.reply(
-          r.rowCount
-            ? r.rows
-                .map(
-                  (x: any) =>
-                    `${x.id}. ${escapeHtml(x.title)} — ${money(x.saved_gel)} / ${money(x.target_gel)} GEL`,
-                )
-                .join("\n")
-            : "Целей пока нет. Создай: /goal Название сумма",
-          { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
-        );
+        const text = renderScreen({
+          title: "Цели накопления",
+          lines: r.rows.map(
+            (x: any) =>
+              `${x.id}. ${escapeHtml(x.title)} — ${formatMoney(x.saved_gel, "GEL")} / ${formatMoney(x.target_gel, "GEL")}`,
+          ),
+          emptyText: "Целей пока нет. Создай: /goal Название сумма",
+        });
+        await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
         return;
       }
       await pool.query("INSERT INTO savings_goals(user_id,title,target_gel) VALUES($1,$2,$3)", [
@@ -81,10 +78,10 @@ export function registerPlanningHandlers(bot: Bot): void {
         return;
       }
       const x = r.rows[0];
-      await ctx.reply(`${escapeHtml(x.title)}: ${money(x.saved_gel)} / ${money(x.target_gel)} GEL`, {
-        parse_mode: PARSE_MODE,
-        reply_markup: mainKeyboard,
-      });
+      await ctx.reply(
+        `${escapeHtml(x.title)}: ${formatMoney(x.saved_gel, "GEL")} / ${formatMoney(x.target_gel, "GEL")}`,
+        { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
+      );
     }),
   );
 
@@ -101,17 +98,15 @@ export function registerPlanningHandlers(bot: Bot): void {
           "SELECT id,title,amount,currency,due_day FROM recurring_payments WHERE user_id=$1 AND active ORDER BY due_day",
           [uid],
         );
-        await ctx.reply(
-          r.rowCount
-            ? r.rows
-                .map(
-                  (x: any) =>
-                    `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`,
-                )
-                .join("\n")
-            : "Платежей пока нет. Создание: /payment день сумма валюта название",
-          { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
-        );
+        const text = renderScreen({
+          title: "Регулярные платежи",
+          lines: r.rows.map(
+            (x: any) =>
+              `${x.id}. ${escapeHtml(x.title)} — ${formatMoney(x.amount, x.currency)}, день ${x.due_day}`,
+          ),
+          emptyText: "Платежей пока нет. Создание: /payment день сумма валюта название",
+        });
+        await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
         return;
       }
       await pool.query(
@@ -131,16 +126,15 @@ export function registerPlanningHandlers(bot: Bot): void {
         "SELECT id,title,amount,currency,due_day FROM recurring_payments WHERE user_id=$1 AND active ORDER BY due_day",
         [uid],
       );
-      await ctx.reply(
-        r.rowCount
-          ? r.rows
-              .map(
-                (x: any) => `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`,
-              )
-              .join("\n")
-          : "Регулярных платежей нет.",
-        { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
-      );
+      const text = renderScreen({
+        title: "Регулярные платежи",
+        lines: r.rows.map(
+          (x: any) =>
+            `${x.id}. ${escapeHtml(x.title)} — ${formatMoney(x.amount, x.currency)}, день ${x.due_day}`,
+        ),
+        emptyText: "Регулярных платежей нет.",
+      });
+      await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
     }),
   );
 

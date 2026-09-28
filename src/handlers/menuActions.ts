@@ -1,11 +1,40 @@
 import { Bot } from "grammy";
 import { pool } from "../db";
-import { mainKeyboard } from "../keyboards";
+import { mainKeyboard, paginationKeyboard } from "../keyboards";
 import { refreshRatesIfStale, getAllRateInfo } from "../currency";
 import { flows, showBudget } from "../features/common";
 import { logger } from "../logger";
-import { escapeHtml, PARSE_MODE } from "../format";
+import {
+  escapeHtml,
+  formatDateShort,
+  formatMoney,
+  formatSignedAmount,
+  paginate,
+  renderScreen,
+  PARSE_MODE,
+} from "../format";
 import { safeCallback } from "../middleware/safe";
+
+const HISTORY_PAGE_SIZE = 10;
+const HISTORY_FETCH_LIMIT = 50;
+
+async function renderHistoryPage(userId: number, page: number) {
+  const r = await pool.query(
+    "SELECT * FROM transactions WHERE user_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2",
+    [userId, HISTORY_FETCH_LIMIT],
+  );
+  const lines = r.rows.map((x: any) =>
+    `${formatDateShort(new Date(x.created_at))}  ${formatSignedAmount(x.type, x.amount, x.currency)} ${escapeHtml(x.category ?? "")} ${escapeHtml(x.note ?? "")}`.trim(),
+  );
+  const paged = paginate(lines, page, HISTORY_PAGE_SIZE);
+  const text = renderScreen({
+    title: "История операций",
+    lines: paged.items,
+    emptyText: "Операций пока нет.",
+  });
+  const keyboard = paginationKeyboard("hist:page", paged.page, paged.totalPages, "menu:finance");
+  return { text, keyboard };
+}
 
 const HELP = `Команды:
  /today — итоги за сегодня
@@ -59,19 +88,16 @@ export function registerMenuActionHandlers(bot: Bot): void {
   bot.callbackQuery(
     "action:history",
     safeCallback("action:history", async (ctx) => {
-      const r = await pool.query(
-        "SELECT * FROM transactions WHERE user_id=$1 ORDER BY created_at DESC,id DESC LIMIT 10",
-        [ctx.from.id],
-      );
-      const text = r.rowCount
-        ? r.rows
-            .map(
-              (x: any) =>
-                `${x.type === "expense" ? "−" : "+"}${x.amount} ${x.currency} ${escapeHtml(x.category ?? "")} ${escapeHtml(x.note ?? "")}`,
-            )
-            .join("\n")
-        : "Операций пока нет.";
-      await editOrReply(ctx, text, mainKeyboard, PARSE_MODE);
+      const { text, keyboard } = await renderHistoryPage(ctx.from.id, 0);
+      await editOrReply(ctx, text, keyboard, PARSE_MODE);
+    }),
+  );
+
+  bot.callbackQuery(
+    /^hist:page:(\d+)$/,
+    safeCallback("hist:page", async (ctx) => {
+      const { text, keyboard } = await renderHistoryPage(ctx.from.id, Number(ctx.match[1]));
+      await editOrReply(ctx, text, keyboard, PARSE_MODE);
     }),
   );
 
@@ -82,11 +108,14 @@ export function registerMenuActionHandlers(bot: Bot): void {
         "SELECT id,title,amount,currency,due_day FROM recurring_payments WHERE user_id=$1 AND active ORDER BY due_day",
         [ctx.from.id],
       );
-      const text = r.rowCount
-        ? r.rows
-            .map((x: any) => `${x.id}. ${escapeHtml(x.title)} — ${x.amount} ${x.currency}, день ${x.due_day}`)
-            .join("\n")
-        : "Регулярных платежей нет.";
+      const text = renderScreen({
+        title: "Регулярные платежи",
+        lines: r.rows.map(
+          (x: any) =>
+            `${x.id}. ${escapeHtml(x.title)} — ${formatMoney(x.amount, x.currency)}, день ${x.due_day}`,
+        ),
+        emptyText: "Регулярных платежей нет.",
+      });
       await editOrReply(ctx, text, mainKeyboard, PARSE_MODE);
     }),
   );
@@ -98,14 +127,14 @@ export function registerMenuActionHandlers(bot: Bot): void {
         "SELECT id,title,saved_gel,target_gel FROM savings_goals WHERE user_id=$1 AND active ORDER BY id",
         [ctx.from.id],
       );
-      const text = r.rowCount
-        ? r.rows
-            .map(
-              (x: any) =>
-                `${x.id}. ${escapeHtml(x.title)} — ${Number(x.saved_gel).toFixed(2)} / ${Number(x.target_gel).toFixed(2)} GEL`,
-            )
-            .join("\n")
-        : "Целей пока нет. Создать: /goal Название сумма\nПополнить: /save ID сумма";
+      const text = renderScreen({
+        title: "Цели накопления",
+        lines: r.rows.map(
+          (x: any) =>
+            `${x.id}. ${escapeHtml(x.title)} — ${formatMoney(x.saved_gel, "GEL")} / ${formatMoney(x.target_gel, "GEL")}`,
+        ),
+        emptyText: "Целей пока нет. Создать: /goal Название сумма\nПополнить: /save ID сумма",
+      });
       await editOrReply(ctx, text, mainKeyboard, PARSE_MODE);
     }),
   );
@@ -119,7 +148,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
           ? `${r.currency} → курс недоступен`
           : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`,
       );
-      await editOrReply(ctx, `Курсы валют (NBG):\n${lines.join("\n")}`, mainKeyboard);
+      await editOrReply(ctx, renderScreen({ title: "Курсы валют (NBG)", lines }), mainKeyboard, PARSE_MODE);
     }),
   );
 

@@ -1,7 +1,7 @@
 import { Context } from "grammy";
 import { pool } from "../db";
 import { mainKeyboard } from "../keyboards";
-import { escapeHtml, PARSE_MODE } from "../format";
+import { escapeHtml, formatMoney, formatPeriodLabel, renderScreen, PARSE_MODE } from "../format";
 import type { TransactionType } from "../parser";
 
 export type Flow = {
@@ -32,20 +32,15 @@ export async function showBudget(ctx: Context, userId: number): Promise<void> {
      GROUP BY b.id ORDER BY b.category`,
     [userId, from, to],
   );
-  if (!result.rowCount) {
-    await ctx.reply(
-      "На этот месяц лимиты не заданы. Пришли: /budget Категория сумма (например: /budget Еда 500)",
-      { reply_markup: mainKeyboard },
-    );
-    return;
-  }
   const lines = result.rows.map((row: any) => {
     const spent = Number(row.spent);
     const limit = Number(row.limit_gel);
-    return `${escapeHtml(row.category)}: ${money(spent)} / ${money(limit)} GEL${spent > limit ? " ⚠️" : ""}`;
+    return `${escapeHtml(row.category)}: ${formatMoney(spent, "GEL")} / ${formatMoney(limit, "GEL")}${spent > limit ? " ⚠️" : ""}`;
   });
-  await ctx.reply(`<b>Бюджет за месяц</b>\n${lines.join("\n")}`, {
-    parse_mode: PARSE_MODE,
-    reply_markup: mainKeyboard,
+  const text = renderScreen({
+    title: `Бюджет — ${formatPeriodLabel(from, to)}`,
+    lines,
+    emptyText: "На этот месяц лимиты не заданы. Пришли: /budget Категория сумма (например: /budget Еда 500)",
   });
+  await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
 }
