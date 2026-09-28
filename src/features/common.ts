@@ -2,7 +2,6 @@ import { Context } from "grammy";
 import { pool } from "../db";
 import { mainKeyboard } from "../keyboards";
 import { escapeHtml, PARSE_MODE } from "../format";
-import { logger } from "../logger";
 import type { TransactionType } from "../parser";
 
 export type Flow = {
@@ -19,15 +18,6 @@ export const money = (n: unknown) => Number(n ?? 0).toFixed(2);
 export const monthStart = () => {
   const date = new Date();
   return new Date(date.getFullYear(), date.getMonth(), 1);
-};
-
-export const safe = (label: string, fn: (ctx: Context) => Promise<void>) => async (ctx: Context) => {
-  try {
-    await fn(ctx);
-  } catch (error) {
-    logger.error(`${label}: ${error instanceof Error ? error.message : String(error)}`);
-    await ctx.reply("Не удалось выполнить действие. Попробуй позже.", { reply_markup: mainKeyboard });
-  }
 };
 
 export async function showBudget(ctx: Context, userId: number): Promise<void> {

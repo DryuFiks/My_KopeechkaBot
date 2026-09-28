@@ -2,7 +2,8 @@ import { Bot, InputFile } from "grammy";
 import { pool } from "../db";
 import { mainKeyboard } from "../keyboards";
 import { escapeHtml, PARSE_MODE } from "../format";
-import { money, monthStart, safe, showBudget } from "./common";
+import { money, monthStart, showBudget } from "./common";
+import { safe } from "../middleware/safe";
 
 export function registerAnalyticsHandlers(bot: Bot): void {
   bot.command(

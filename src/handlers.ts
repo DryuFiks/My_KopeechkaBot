@@ -1,8 +1,6 @@
 import { Bot, Context } from "grammy";
-import { parseTransactionMessage, isParseError } from "./parser";
-import { convertToGel, getAllRateInfo, refreshRatesIfStale } from "./currency";
+import { getAllRateInfo, refreshRatesIfStale } from "./currency";
 import {
-  insertTransaction,
   getLastTransactions,
   getSummaryForRange,
   deleteLastTransaction,
@@ -12,6 +10,7 @@ import {
 import { escapeHtml, PARSE_MODE } from "./format";
 import { logger } from "./logger";
 import { mainKeyboard } from "./keyboards";
+import { safe } from "./middleware/safe";
 
 const HELP_MESSAGE = `<b>Как записать операцию</b> — одной строкой:
 <code>-150 rub еда обед</code>   (расход 150 RUB, категория "еда", заметка "обед")
@@ -59,25 +58,6 @@ function formatSummary(title: string, summary: PeriodSummary): string {
   );
 }
 
-// A short, safe message shown to the user for unexpected (non-input) errors.
-// Never includes stack traces, SQL, or connection strings.
-const GENERIC_ERROR_MESSAGE = "Что-то пошло не так. Попробуй ещё раз чуть позже.";
-
-/** Wraps a handler so an unexpected error is logged with context and never leaks details to the user. */
-function safe<C extends Context>(label: string, fn: (ctx: C) => Promise<void>): (ctx: C) => Promise<void> {
-  return async (ctx) => {
-    try {
-      await fn(ctx);
-    } catch (err) {
-      logger.error(`${label} failed: ${(err as Error).message}`);
-      await ctx.reply(GENERIC_ERROR_MESSAGE).catch(() => {
-        // If even the error reply fails (e.g. Telegram API hiccup), there's
-        // nothing more we can safely do here — already logged above.
-      });
-    }
-  };
-}
-
 export function registerHandlers(bot: Bot): void {
   const showMainMenu = async (ctx: Context): Promise<void> => {
     // Remove a persistent ReplyKeyboard left over from an older bot version.
@@ -99,50 +79,6 @@ export function registerHandlers(bot: Bot): void {
     "menu",
     safe("/menu", async (ctx) => {
       await showMainMenu(ctx);
-    }),
-  );
-
-  bot.hears(
-    "📖 Все команды",
-    safe("all commands", async (ctx) => {
-      await ctx.reply(
-        HELP_MESSAGE +
-          `
-
-<b>Дополнительные команды</b>
-/menu — открыть меню
-/budget Категория сумма — задать лимит
-/category expense Еда — добавить категорию расхода
-/category income Зарплата — добавить категорию дохода
-/goal Название сумма — создать цель
-/save ID сумма — пополнить цель
-/payment день сумма валюта название — добавить платёж
-/payments — список платежей
-/deletepayment ID — отключить платёж
-/deletegoal ID — закрыть цель
-
-Кнопки меню: 💰 Финансы, 📊 Аналитика, 🗓 Планирование, 🛠 Сервис.`,
-        { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
-      );
-    }),
-  );
-
-  bot.hears(
-    "💱 Курсы валют",
-    safe("rate button", async (ctx) => {
-      await refreshRatesIfStale();
-      const rates = getAllRateInfo();
-      const lines = rates.map((r) =>
-        r.rateToGel === null
-          ? `${r.currency} → курс недоступен`
-          : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`,
-      );
-      await ctx.reply(
-        `Курсы валют (Национальный банк Грузии):\n${lines.join("\n")}\n\nИсточник: NBG — Национальный банк Грузии`,
-        {
-          reply_markup: mainKeyboard,
-        },
-      );
     }),
   );
 
@@ -234,65 +170,6 @@ export function registerHandlers(bot: Bot): void {
       await ctx.reply(`Отменено: ${formatTx(deleted)}`, { parse_mode: PARSE_MODE });
     }),
   );
-
-  // Plain text messages — attempt to parse as a transaction.
-  bot.on("message:text", async (ctx, next) => {
-    const menuLabels = new Set([
-      "➖ Расход",
-      "➕ Доход",
-      "📊 Бюджет",
-      "🧾 История",
-      "🔁 Платежи",
-      "🎯 Накопления",
-      "📈 Статистика",
-      "⚙️ Настройки",
-      "🔄 Перезапуск",
-      "❌ Отмена",
-      "💰 Финансы",
-      "📊 Аналитика",
-      "🗓 Планирование",
-      "🛠 Сервис",
-      "⬅️ Главное меню",
-    ]);
-    if (menuLabels.has(ctx.message.text.trim())) return next();
-    const userId = ctx.from?.id;
-    if (!userId) return;
-
-    const text = ctx.message.text;
-    if (text.startsWith("/")) return; // unknown command — grammY already routed known ones
-
-    const result = parseTransactionMessage(text);
-    if (isParseError(result)) {
-      await ctx.reply(result.error);
-      return;
-    }
-
-    try {
-      await refreshRatesIfStale();
-      const amountGel = convertToGel(result.amount, result.currency);
-
-      const saved = await insertTransaction({
-        userId,
-        type: result.type,
-        amount: result.amount,
-        currency: result.currency,
-        amountGel,
-        category: result.category,
-        note: result.note,
-      });
-
-      const sign = saved.type === "expense" ? "Расход" : "Доход";
-      const gelText =
-        saved.amount_gel !== null ? `≈ ${saved.amount_gel} GEL` : "курс для этой валюты недоступен";
-      const categoryText = saved.category ? `, категория: ${escapeHtml(saved.category)}` : "";
-      await ctx.reply(`${sign} записан: ${saved.amount} ${saved.currency}${categoryText} (${gelText})`, {
-        parse_mode: PARSE_MODE,
-      });
-    } catch (err) {
-      logger.error(`message:text (insert) failed: ${(err as Error).message}`);
-      await ctx.reply(GENERIC_ERROR_MESSAGE).catch(() => {});
-    }
-  });
 
   bot.catch((err) => {
     logger.error(`Unhandled bot error: ${err.message}`);
