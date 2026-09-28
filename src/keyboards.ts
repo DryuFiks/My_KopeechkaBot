@@ -19,6 +19,8 @@ export const analyticsKeyboard = new InlineKeyboard()
   .text("📊 Бюджет", "action:budget")
   .text("📈 Статистика", "action:stats")
   .row()
+  .text("💡 Шаблон бюджета", "action:budget_template")
+  .row()
   .text("⬅️ Главное меню", "menu:main");
 
 export const planningKeyboard = new InlineKeyboard()

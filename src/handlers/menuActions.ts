@@ -1,18 +1,20 @@
 import { Bot } from "grammy";
-import { pool } from "../db";
+import { pool, getSummaryForRange } from "../db";
 import { mainKeyboard, paginationKeyboard } from "../keyboards";
 import { refreshRatesIfStale, getAllRateInfo } from "../currency";
-import { flows, showBudget } from "../features/common";
+import { flows, monthStart, showBudget } from "../features/common";
 import { logger } from "../logger";
 import {
   escapeHtml,
   formatDateShort,
   formatMoney,
+  formatPeriodLabel,
   formatSignedAmount,
   paginate,
   renderScreen,
   PARSE_MODE,
 } from "../format";
+import { suggestBudgetSplit } from "../budgetRules";
 import { safeCallback } from "../middleware/safe";
 
 const HISTORY_PAGE_SIZE = 10;
@@ -75,6 +77,34 @@ export function registerMenuActionHandlers(bot: Bot): void {
     "action:budget",
     safeCallback("action:budget", async (ctx) => {
       await showBudget(ctx, ctx.from.id);
+    }),
+  );
+
+  bot.callbackQuery(
+    "action:budget_template",
+    safeCallback("action:budget_template", async (ctx) => {
+      const from = monthStart();
+      const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
+      const summary = await getSummaryForRange(ctx.from.id, from, to);
+      const split = suggestBudgetSplit(summary.income_gel);
+      const text = renderScreen({
+        title: `Шаблон бюджета (50/30/20) — ${formatPeriodLabel(from, to)}`,
+        lines:
+          summary.income_gel > 0
+            ? [
+                `На основе дохода за месяц: ${formatMoney(summary.income_gel, "GEL")}`,
+                "",
+                `Обязательные расходы (50%): ${formatMoney(split.essentialsGel, "GEL")}`,
+                `Повседневные траты (30%): ${formatMoney(split.discretionaryGel, "GEL")}`,
+                `Накопления (20%): ${formatMoney(split.savingsGel, "GEL")}`,
+                "",
+                "Это лишь подсказка — задай свои лимиты через /budget Категория сумма.",
+              ]
+            : [],
+        emptyText:
+          "За этот месяц ещё нет дохода, чтобы предложить шаблон. Как только запишешь доход, здесь появится подсказка по 50/30/20 — не обязательное правило, а просто отправная точка.",
+      });
+      await editOrReply(ctx, text, mainKeyboard, PARSE_MODE);
     }),
   );
 
