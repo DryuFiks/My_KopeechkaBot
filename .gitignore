@@ -1,3 +1,6 @@
+# Claude Code project context (local-only, not shared via the repo)
+CLAUDE.md
+
 # Logs
 logs
 *.log
