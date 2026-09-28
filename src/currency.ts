@@ -4,10 +4,15 @@
 
 import { pool } from "./db";
 import { logger } from "./logger";
-import { isSupportedCurrency, SUPPORTED_CURRENCIES, SupportedCurrency } from "./currencies";
+import {
+  convertAmountBetween,
+  isSupportedCurrency,
+  SUPPORTED_CURRENCIES,
+  SupportedCurrency,
+} from "./currencies";
 
 export type { SupportedCurrency };
-export { SUPPORTED_CURRENCIES, isSupportedCurrency };
+export { SUPPORTED_CURRENCIES, isSupportedCurrency, convertAmountBetween };
 
 const NBG_URL = "https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/";
 const FETCH_TIMEOUT_MS = 10000;
@@ -160,4 +165,13 @@ export function convertToGel(amount: number, currency: SupportedCurrency): numbe
   const info = getRateInfo(currency);
   if (info.rateToGel === null) return null;
   return Math.round(amount * info.rateToGel * 100) / 100;
+}
+
+/** Converts an amount from one supported currency to another using the live rate cache. */
+export function convertBetween(
+  amount: number,
+  from: SupportedCurrency,
+  to: SupportedCurrency,
+): number | null {
+  return convertAmountBetween(amount, from, to, (currency) => getRateInfo(currency).rateToGel);
 }

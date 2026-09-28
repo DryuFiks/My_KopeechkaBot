@@ -7,6 +7,9 @@ import {
   Transaction,
   PeriodSummary,
 } from "./db";
+import { getUserSettings } from "./db/settings";
+import { toDisplayCurrency } from "./displayCurrency";
+import type { SupportedCurrency } from "./currencies";
 import {
   escapeHtml,
   formatDateShort,
@@ -18,6 +21,7 @@ import {
 } from "./format";
 import { logger } from "./logger";
 import { confirmActionKeyboard, mainKeyboard } from "./keyboards";
+import { zonedDayBoundaries, zonedMonthBoundaries } from "./timezone";
 import { safe, safeCallback } from "./middleware/safe";
 
 const HELP_MESSAGE = `<b>Как записать операцию</b> — одной строкой:
@@ -52,15 +56,27 @@ function formatTx(tx: Transaction): string {
   return `${escapeHtml(date)}  ${amountText}${cat}${note}  (${gel})`;
 }
 
-function formatSummary(title: string, from: Date, to: Date, summary: PeriodSummary): string {
+function formatSummary(
+  title: string,
+  from: Date,
+  to: Date,
+  summary: PeriodSummary,
+  displayCurrency: SupportedCurrency,
+): string {
+  const income = toDisplayCurrency(summary.income_gel, displayCurrency);
+  const expense = toDisplayCurrency(summary.expense_gel, displayCurrency);
+  const balance = toDisplayCurrency(summary.balance_gel, displayCurrency);
   const lines = [
     formatPeriodLabel(from, to),
     "",
-    `Доходы: ${formatSignedAmount("income", summary.income_gel, "GEL")}`,
-    `Расходы: ${formatSignedAmount("expense", summary.expense_gel, "GEL")}`,
-    `Баланс: ${formatMoney(summary.balance_gel, "GEL")}`,
+    `Доходы: ${formatSignedAmount("income", income.amount, income.currency)}`,
+    `Расходы: ${formatSignedAmount("expense", expense.amount, expense.currency)}`,
+    `Баланс: ${formatMoney(balance.amount, balance.currency)}`,
     `Операций: ${summary.operation_count}`,
   ];
+  if (!income.ok || !expense.ok || !balance.ok) {
+    lines.push(`⚠️ Курс для отображения в ${displayCurrency} недоступен — суммы показаны в GEL`);
+  }
   if (summary.unconverted_count > 0) {
     lines.push(`⚠️ ${summary.unconverted_count} операц. без курса — не учтены в сумме`);
   }
@@ -123,12 +139,11 @@ export function registerHandlers(bot: Bot): void {
       const userId = ctx.from?.id;
       if (!userId) return;
 
-      const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      const settings = await getUserSettings(userId);
+      const { from, to } = zonedDayBoundaries(new Date(), settings.timezone);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за сегодня", from, to, summary), {
+      await ctx.reply(formatSummary("Итоги за сегодня", from, to, summary, settings.displayCurrency), {
         parse_mode: PARSE_MODE,
         reply_markup: mainKeyboard,
       });
@@ -141,12 +156,11 @@ export function registerHandlers(bot: Bot): void {
       const userId = ctx.from?.id;
       if (!userId) return;
 
-      const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), 1);
-      const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const settings = await getUserSettings(userId);
+      const { from, to } = zonedMonthBoundaries(new Date(), settings.timezone);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за месяц", from, to, summary), {
+      await ctx.reply(formatSummary("Итоги за месяц", from, to, summary, settings.displayCurrency), {
         parse_mode: PARSE_MODE,
         reply_markup: mainKeyboard,
       });

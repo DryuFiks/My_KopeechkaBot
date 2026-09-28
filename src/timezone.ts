@@ -51,8 +51,13 @@ function getZonedParts(date: Date, timeZone: string): ZonedParts {
  * clock it shows, and shift by the difference — exact for every real IANA zone except
  * the vanishingly rare case where a DST transition lands exactly at local midnight,
  * which the offset approximation only misses by the transition's own size (usually 1h).
+ *
+ * `month`/`day` may be out of their normal 1-12 / 1-31 range (e.g. month 0 or 13) —
+ * same overflow-normalizes-into-the-next/previous-unit behavior as `Date.UTC`, which
+ * this is built on. Callers (e.g. period.ts) rely on that to roll a Y-M-D triple across
+ * a month/year boundary just by adding/subtracting, without separate carry logic.
  */
-function zonedMidnightUtc(year: number, month: number, day: number, timeZone: string): Date {
+export function zonedDateBoundary(year: number, month: number, day: number, timeZone: string): Date {
   const guess = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
   const shown = getZonedParts(guess, timeZone);
   const shownAsUtc = Date.UTC(shown.year, shown.month - 1, shown.day, shown.hour, shown.minute, shown.second);
@@ -65,24 +70,23 @@ export interface DateRange {
   to: Date;
 }
 
-/** [from, to) boundaries of the calendar day containing `date`, as seen in `timeZone`. */
+/**
+ * [from, to) boundaries of the calendar day containing `date`, as seen in `timeZone`.
+ * `to` is computed as its own boundary (day + 1), never by adding 24h to `from` — that
+ * would be wrong across a DST transition, where a local day isn't exactly 24h long.
+ */
 export function zonedDayBoundaries(date: Date, timeZone: string): DateRange {
   const parts = getZonedParts(date, timeZone);
-  const from = zonedMidnightUtc(parts.year, parts.month, parts.day, timeZone);
-  // Calendar-only arithmetic in the UTC domain to roll the Y-M-D triple forward one
-  // day (handles month/year rollover) — never add 24h to `from`, which would be wrong
-  // across a DST transition.
-  const next = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1));
-  const to = zonedMidnightUtc(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate(), timeZone);
+  const from = zonedDateBoundary(parts.year, parts.month, parts.day, timeZone);
+  const to = zonedDateBoundary(parts.year, parts.month, parts.day + 1, timeZone);
   return { from, to };
 }
 
 /** [from, to) boundaries of the calendar month containing `date`, as seen in `timeZone`. */
 export function zonedMonthBoundaries(date: Date, timeZone: string): DateRange {
   const parts = getZonedParts(date, timeZone);
-  const from = zonedMidnightUtc(parts.year, parts.month, 1, timeZone);
-  const next = new Date(Date.UTC(parts.year, parts.month, 1)); // parts.month is 1-indexed: this is already +1 month
-  const to = zonedMidnightUtc(next.getUTCFullYear(), next.getUTCMonth() + 1, 1, timeZone);
+  const from = zonedDateBoundary(parts.year, parts.month, 1, timeZone);
+  const to = zonedDateBoundary(parts.year, parts.month + 1, 1, timeZone);
   return { from, to };
 }
 

@@ -1,9 +1,11 @@
 import { Bot } from "grammy";
 import { getExpenseSeries, getSummaryForRange } from "../db";
+import { getUserSettings } from "../db/settings";
 import { periodSwitchKeyboard } from "../keyboards/period";
 import { editOrReply } from "../editOrReply";
 import { renderTrendLine } from "../charts";
 import { periodRange, previousPeriodRange, PeriodUnit } from "../period";
+import { zonedToday } from "../timezone";
 import {
   formatDelta,
   formatMoney,
@@ -19,22 +21,27 @@ function isPeriodUnit(value: string): value is PeriodUnit {
 }
 
 async function renderTrend(userId: number, unit: PeriodUnit, offset: number) {
-  const { from, to } = periodRange(unit, offset);
-  const prev = previousPeriodRange(unit, offset);
+  const settings = await getUserSettings(userId);
+  const now = new Date();
+  const { from, to } = periodRange(unit, offset, now, settings.timezone);
+  const prev = previousPeriodRange(unit, offset, now, settings.timezone);
   // A month is shown day-by-day; a quarter/year would be too many points at that
   // granularity, so those roll up to one point per month instead.
   const granularity = unit === "month" ? "day" : "month";
 
   const [series, current, previous] = await Promise.all([
-    getExpenseSeries(userId, from, to, granularity),
+    getExpenseSeries(userId, from, to, granularity, settings.timezone),
     getSummaryForRange(userId, from, to),
     getSummaryForRange(userId, prev.from, prev.to),
   ]);
 
-  const points = series.map((point) => ({
-    label: granularity === "day" ? String(point.bucket.getDate()) : String(point.bucket.getMonth() + 1),
-    valueGel: point.amountGel,
-  }));
+  const points = series.map((point) => {
+    const zoned = zonedToday(settings.timezone, point.bucket);
+    return {
+      label: granularity === "day" ? String(zoned.day) : String(zoned.month),
+      valueGel: point.amountGel,
+    };
+  });
 
   const lines = [
     renderTrendLine(points),

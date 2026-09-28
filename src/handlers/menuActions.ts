@@ -1,8 +1,10 @@
 import { Bot } from "grammy";
 import { pool, getSummaryForRange } from "../db";
+import { getUserSettings } from "../db/settings";
 import { mainKeyboard, paginationKeyboard } from "../keyboards";
 import { refreshRatesIfStale, getAllRateInfo } from "../currency";
-import { flows, monthStart, showBudget } from "../features/common";
+import { zonedMonthBoundaries } from "../timezone";
+import { flows, showBudget } from "../features/common";
 import { editOrReply } from "../editOrReply";
 import { logger } from "../logger";
 import {
@@ -73,8 +75,8 @@ export function registerMenuActionHandlers(bot: Bot): void {
   bot.callbackQuery(
     "action:budget_template",
     safeCallback("action:budget_template", async (ctx) => {
-      const from = monthStart();
-      const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
+      const settings = await getUserSettings(ctx.from.id);
+      const { from, to } = zonedMonthBoundaries(new Date(), settings.timezone);
       const summary = await getSummaryForRange(ctx.from.id, from, to);
       const split = suggestBudgetSplit(summary.income_gel);
       const text = renderScreen({
@@ -172,17 +174,6 @@ export function registerMenuActionHandlers(bot: Bot): void {
     "action:help",
     safeCallback("action:help", async (ctx) => {
       await editOrReply(ctx, HELP, { reply_markup: mainKeyboard });
-    }),
-  );
-
-  bot.callbackQuery(
-    "action:settings",
-    safeCallback("action:settings", async (ctx) => {
-      await editOrReply(
-        ctx,
-        "Настройки: валюта по умолчанию GEL. Доступные валюты: GEL, RUB, USD.\nКоманды: /category, /budget, /payment, /goal, /export",
-        { reply_markup: mainKeyboard },
-      );
     }),
   );
 

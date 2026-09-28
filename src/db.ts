@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import type { TransactionType } from "./parser";
 import type { SupportedCurrency } from "./currencies";
+import { zonedDayBoundaries, zonedMonthBoundaries } from "./timezone";
 import { logger } from "./logger";
 
 const connectionString = process.env.DATABASE_URL;
@@ -235,22 +236,23 @@ export interface ExpenseBucket {
  * Expense totals bucketed by day or by month across [from, to), with every bucket present
  * (zero-filled) even when there was no spending — a trend line must not silently skip
  * empty days. Buckets one query at a time (not SQL date_trunc) so day/month boundaries
- * follow the same local-time range comparison as the rest of the app, not the Postgres
- * session timezone, which could otherwise shift a near-midnight transaction by a day.
+ * follow the user's own timezone (via timezone.ts), not the Postgres session timezone,
+ * which could otherwise shift a near-midnight transaction by a day.
  */
 export async function getExpenseSeries(
   userId: number,
   from: Date,
   to: Date,
   granularity: "day" | "month",
+  timeZone = "Asia/Tbilisi",
 ): Promise<ExpenseBucket[]> {
   const buckets: ExpenseBucket[] = [];
   let cursor = new Date(from);
   while (cursor < to) {
     const next =
       granularity === "day"
-        ? new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1)
-        : new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        ? zonedDayBoundaries(cursor, timeZone).to
+        : zonedMonthBoundaries(cursor, timeZone).to;
     const result = await pool.query<{ total: string }>(
       `SELECT COALESCE(SUM(amount_gel), 0) AS total
        FROM transactions

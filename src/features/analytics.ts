@@ -1,5 +1,6 @@
 import { Bot, InputFile } from "grammy";
 import { pool } from "../db";
+import { getUserSettings } from "../db/settings";
 import { mainKeyboard } from "../keyboards";
 import { escapeHtml, formatMoney, PARSE_MODE } from "../format";
 import { monthStart, showBudget } from "./common";
@@ -12,6 +13,7 @@ export function registerAnalyticsHandlers(bot: Bot): void {
     safe("budget", async (ctx) => {
       const uid = ctx.from?.id;
       if (!uid) return;
+      const settings = await getUserSettings(uid);
 
       const rolloverMatch = /^\/budget\s+rollover\s+(.+?)\s+(on|off)\s*$/i.exec(ctx.message?.text ?? "");
       if (rolloverMatch) {
@@ -19,7 +21,7 @@ export function registerAnalyticsHandlers(bot: Bot): void {
         const enabled = rolloverMatch[2].toLowerCase() === "on";
         const r = await pool.query(
           "UPDATE budgets SET rollover=$4 WHERE user_id=$1 AND month=$2 AND category=$3 RETURNING category",
-          [uid, monthStart(), cat, enabled],
+          [uid, monthStart(settings.timezone), cat, enabled],
         );
         if (!r.rowCount) {
           await ctx.reply(`Сначала задай лимит: /budget ${cat} сумма`, { reply_markup: mainKeyboard });
@@ -40,7 +42,7 @@ export function registerAnalyticsHandlers(bot: Bot): void {
           await ctx.reply("Формат: /budget Категория сумма", { reply_markup: mainKeyboard });
           return;
         }
-        const d = monthStart();
+        const d = monthStart(settings.timezone);
         await pool.query(
           `INSERT INTO budgets(user_id,month,category,limit_gel) VALUES($1,$2,$3,$4) ON CONFLICT(user_id,month,category) DO UPDATE SET limit_gel=EXCLUDED.limit_gel`,
           [uid, d, cat, limit],

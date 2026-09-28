@@ -1,6 +1,9 @@
 import { Bot } from "grammy";
 import { getSummaryForRange } from "../db";
 import { getBudgetRemainingForRange } from "../db/budget";
+import { getUserSettings } from "../db/settings";
+import { toDisplayCurrency } from "../displayCurrency";
+import type { SupportedCurrency } from "../currencies";
 import { periodSwitchKeyboard } from "../keyboards/period";
 import { editOrReply } from "../editOrReply";
 import {
@@ -19,9 +22,24 @@ function isPeriodUnit(value: string): value is PeriodUnit {
   return value === "month" || value === "quarter" || value === "year";
 }
 
+function formatKpiLine(
+  label: string,
+  currentGel: number,
+  previousGel: number,
+  displayCurrency: SupportedCurrency,
+  suffix = "",
+): { line: string; fallback: boolean } {
+  const current = toDisplayCurrency(currentGel, displayCurrency);
+  const delta = toDisplayCurrency(currentGel - previousGel, displayCurrency);
+  const line = `${label}: ${formatMoney(current.amount, current.currency)} (${formatDelta(delta.amount, delta.currency)}, ${formatPercentDelta(currentGel, previousGel)}${suffix})`;
+  return { line, fallback: !current.ok || !delta.ok };
+}
+
 async function renderDashboard(userId: number, unit: PeriodUnit, offset: number) {
-  const { from, to } = periodRange(unit, offset);
-  const prev = previousPeriodRange(unit, offset);
+  const settings = await getUserSettings(userId);
+  const now = new Date();
+  const { from, to } = periodRange(unit, offset, now, settings.timezone);
+  const prev = previousPeriodRange(unit, offset, now, settings.timezone);
 
   const [current, previous, budgetRemaining] = await Promise.all([
     getSummaryForRange(userId, from, to),
@@ -31,19 +49,30 @@ async function renderDashboard(userId: number, unit: PeriodUnit, offset: number)
 
   const netFlow = current.income_gel - current.expense_gel;
   const prevNetFlow = previous.income_gel - previous.expense_gel;
+  const dc = settings.displayCurrency;
+
+  const incomeKpi = formatKpiLine("Доходы", current.income_gel, previous.income_gel, dc, " к пред. периоду");
+  const expenseKpi = formatKpiLine("Расходы", current.expense_gel, previous.expense_gel, dc);
+  const netKpi = formatKpiLine("Чистый поток", netFlow, prevNetFlow, dc);
+  const budgetDisp = budgetRemaining === null ? null : toDisplayCurrency(budgetRemaining, dc);
 
   const lines = [
-    `Доходы: ${formatMoney(current.income_gel, "GEL")} (${formatDelta(current.income_gel - previous.income_gel, "GEL")}, ${formatPercentDelta(current.income_gel, previous.income_gel)} к пред. периоду)`,
-    `Расходы: ${formatMoney(current.expense_gel, "GEL")} (${formatDelta(current.expense_gel - previous.expense_gel, "GEL")}, ${formatPercentDelta(current.expense_gel, previous.expense_gel)})`,
-    `Чистый поток: ${formatMoney(netFlow, "GEL")} (${formatDelta(netFlow - prevNetFlow, "GEL")}, ${formatPercentDelta(netFlow, prevNetFlow)})`,
-    budgetRemaining === null
+    incomeKpi.line,
+    expenseKpi.line,
+    netKpi.line,
+    budgetDisp === null
       ? "Остаток бюджета: лимиты не заданы"
-      : `Остаток бюджета: ${formatMoney(budgetRemaining, "GEL")}`,
+      : `Остаток бюджета: ${formatMoney(budgetDisp.amount, budgetDisp.currency)}`,
   ];
+  const rateFallback =
+    incomeKpi.fallback || expenseKpi.fallback || netKpi.fallback || budgetDisp?.ok === false;
+  if (rateFallback) {
+    lines.push(`⚠️ Курс для отображения в ${dc} недоступен — суммы показаны в GEL`);
+  }
   if (current.unconverted_count > 0) {
     lines.push(`⚠️ ${current.unconverted_count} операц. без курса — не учтены в суммах`);
   }
-  lines.push("", `Обновлено: ${formatDateShort(new Date())}`);
+  lines.push("", `Обновлено: ${formatDateShort(now)}`);
 
   const text = renderScreen({ title: `Дашборд — ${formatPeriodLabel(from, to)}`, lines });
   const keyboard = periodSwitchKeyboard("dash", unit, offset, "menu:analytics");

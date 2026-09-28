@@ -1,5 +1,6 @@
 import { Context } from "grammy";
 import { getBudgetReport } from "../db/budget";
+import { getUserSettings } from "../db/settings";
 import { mainKeyboard } from "../keyboards";
 import {
   formatBudgetCategoryLine,
@@ -9,6 +10,7 @@ import {
   PARSE_MODE,
 } from "../format";
 import { renderBarRow } from "../charts";
+import { zonedMonthBoundaries } from "../timezone";
 import { CATEGORY_KIND_LABEL, CATEGORY_KIND_ORDER } from "../budgetRules";
 import type { BudgetCategoryReport } from "../db/budget";
 import type { TransactionType } from "../parser";
@@ -25,10 +27,7 @@ export type Flow = {
 };
 
 export const flows = new Map<number, Flow>();
-export const monthStart = () => {
-  const date = new Date();
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-};
+export const monthStart = (timeZone = "Asia/Tbilisi") => zonedMonthBoundaries(new Date(), timeZone).from;
 
 /** Bar + the exact plan/fact/deviation line underneath it — the bar alone is never the only source of truth. */
 function formatBudgetRowWithBar(row: BudgetCategoryReport): string[] {
@@ -37,8 +36,8 @@ function formatBudgetRowWithBar(row: BudgetCategoryReport): string[] {
 }
 
 export async function showBudget(ctx: Context, userId: number): Promise<void> {
-  const from = monthStart();
-  const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
+  const settings = await getUserSettings(userId);
+  const { from, to } = zonedMonthBoundaries(new Date(), settings.timezone);
   const report = await getBudgetReport(userId, from, to);
 
   const lines: string[] = [];

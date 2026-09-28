@@ -1,5 +1,6 @@
 import { Bot, InlineKeyboard } from "grammy";
 import { getExpenseCategoryTotals, getTransactionsByCategory } from "../db";
+import { getUserSettings } from "../db/settings";
 import { paginationKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
 import { renderShareList, formatShareRow, ShareRow } from "../charts";
@@ -30,7 +31,8 @@ function statsKeyboard(offset: number, rows: ShareRow[]): InlineKeyboard {
 }
 
 export async function renderStatsScreen(userId: number, offset: number) {
-  const { from, to } = periodRange("month", offset);
+  const settings = await getUserSettings(userId);
+  const { from, to } = periodRange("month", offset, new Date(), settings.timezone);
   const totals = await getExpenseCategoryTotals(userId, from, to);
   const rows = renderShareList(totals);
   const text = renderScreen({
@@ -42,7 +44,8 @@ export async function renderStatsScreen(userId: number, offset: number) {
 }
 
 async function renderDrilldown(userId: number, offset: number, index: number, page: number) {
-  const { from, to } = periodRange("month", offset);
+  const settings = await getUserSettings(userId);
+  const { from, to } = periodRange("month", offset, new Date(), settings.timezone);
   const totals = await getExpenseCategoryTotals(userId, from, to);
   const target = totals[index];
   if (!target) return null;
