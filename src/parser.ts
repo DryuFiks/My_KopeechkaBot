@@ -1,4 +1,4 @@
-import { isSupportedCurrency, SupportedCurrency } from "./currency";
+import { isSupportedCurrency, SupportedCurrency } from "./currencies";
 
 export type TransactionType = "expense" | "income";
 

@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import type { TransactionType } from "./parser";
-import type { SupportedCurrency } from "./currency";
+import type { SupportedCurrency } from "./currencies";
 import { logger } from "./logger";
 
 const connectionString = process.env.DATABASE_URL;

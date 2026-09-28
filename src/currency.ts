@@ -4,9 +4,10 @@
 
 import { pool } from "./db";
 import { logger } from "./logger";
+import { isSupportedCurrency, SUPPORTED_CURRENCIES, SupportedCurrency } from "./currencies";
 
-export type SupportedCurrency = "RUB" | "GEL" | "USD";
-export const SUPPORTED_CURRENCIES: SupportedCurrency[] = ["RUB", "GEL", "USD"];
+export type { SupportedCurrency };
+export { SUPPORTED_CURRENCIES, isSupportedCurrency };
 
 const NBG_URL = "https://nbg.gov.ge/gw/api/ct/monetarypolicy/currencies/en/json/";
 const FETCH_TIMEOUT_MS = 10000;
@@ -40,10 +41,6 @@ function georgiaDate(date = new Date()): string {
   }).formatToParts(date);
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
   return `${get("year")}-${get("month")}-${get("day")}`;
-}
-
-export function isSupportedCurrency(code: string): code is SupportedCurrency {
-  return (SUPPORTED_CURRENCIES as string[]).includes(code.toUpperCase());
 }
 
 export async function loadRateCacheFromDb(): Promise<void> {
