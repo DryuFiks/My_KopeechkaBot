@@ -121,6 +121,45 @@ export function formatBalanceOverview(overview: BalanceOverviewLike): string {
   return lines.join("\n");
 }
 
+export interface BudgetCategoryLike {
+  category: string | null;
+  limitGel: number | null;
+  effectiveLimitGel: number | null;
+  spentGel: number;
+  rollover: boolean;
+}
+
+/**
+ * One category's plan-vs-fact line. Never divides by a zero plan: a zero (or absent)
+ * limit gets a description instead of a percentage. Deviation is shown in both currency
+ * and percent, and stays neutral ("+50.00 GEL, +10%") rather than judgmental wording.
+ */
+export function formatBudgetCategoryLine(row: BudgetCategoryLike): string {
+  const name = row.category ? escapeHtml(row.category) : "Без категории";
+  const spentText = formatMoney(row.spentGel, "GEL");
+
+  if (row.effectiveLimitGel === null) {
+    return `${name}: ${spentText} (без лимита)`;
+  }
+
+  const limit = row.effectiveLimitGel;
+  const rolloverNote =
+    row.rollover && row.limitGel !== null && limit !== row.limitGel
+      ? ` [план ${formatMoney(row.limitGel, "GEL")} + перенос ${formatMoney(limit - row.limitGel, "GEL")}]`
+      : "";
+
+  if (limit === 0) {
+    return row.spentGel === 0
+      ? `${name}: ${spentText} / ${formatMoney(0, "GEL")}`
+      : `${name}: ${spentText} при плане ${formatMoney(0, "GEL")}${rolloverNote}`;
+  }
+
+  const diff = row.spentGel - limit;
+  const sign = diff > 0 ? "+" : "";
+  const percent = Math.round((diff / limit) * 100);
+  return `${name}: ${spentText} / ${formatMoney(limit, "GEL")}${rolloverNote} (${sign}${formatMoney(diff, "GEL")}, ${sign}${percent}%)`;
+}
+
 export interface Page<T> {
   items: T[];
   page: number;

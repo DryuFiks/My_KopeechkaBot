@@ -11,6 +11,26 @@ export function registerAnalyticsHandlers(bot: Bot): void {
     safe("budget", async (ctx) => {
       const uid = ctx.from?.id;
       if (!uid) return;
+
+      const rolloverMatch = /^\/budget\s+rollover\s+(.+?)\s+(on|off)\s*$/i.exec(ctx.message?.text ?? "");
+      if (rolloverMatch) {
+        const cat = rolloverMatch[1].trim();
+        const enabled = rolloverMatch[2].toLowerCase() === "on";
+        const r = await pool.query(
+          "UPDATE budgets SET rollover=$4 WHERE user_id=$1 AND month=$2 AND category=$3 RETURNING category",
+          [uid, monthStart(), cat, enabled],
+        );
+        if (!r.rowCount) {
+          await ctx.reply(`Сначала задай лимит: /budget ${cat} сумма`, { reply_markup: mainKeyboard });
+          return;
+        }
+        await ctx.reply(
+          `Перенос остатка для «${escapeHtml(cat)}»: ${enabled ? "включён" : "выключен"}. Учитывается только положительный остаток предыдущего месяца — перерасход на этот месяц не переносится.`,
+          { parse_mode: PARSE_MODE, reply_markup: mainKeyboard },
+        );
+        return;
+      }
+
       const m = /^\/budget\s+(.+?)\s+(\d+(?:[.,]\d{1,2})?)\s*$/.exec(ctx.message?.text ?? "");
       if (m) {
         const cat = m[1].trim(),

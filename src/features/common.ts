@@ -1,7 +1,14 @@
 import { Context } from "grammy";
-import { pool } from "../db";
+import { getBudgetReport } from "../db/budget";
 import { mainKeyboard } from "../keyboards";
-import { escapeHtml, formatMoney, formatPeriodLabel, renderScreen, PARSE_MODE } from "../format";
+import {
+  formatBudgetCategoryLine,
+  formatMoney,
+  formatPeriodLabel,
+  renderScreen,
+  PARSE_MODE,
+} from "../format";
+import { CATEGORY_KIND_LABEL, CATEGORY_KIND_ORDER } from "../budgetRules";
 import type { TransactionType } from "../parser";
 
 export type Flow = {
@@ -24,20 +31,32 @@ export const monthStart = () => {
 export async function showBudget(ctx: Context, userId: number): Promise<void> {
   const from = monthStart();
   const to = new Date(from.getFullYear(), from.getMonth() + 1, 1);
-  const result = await pool.query(
-    `SELECT b.category,b.limit_gel,COALESCE(SUM(t.amount_gel),0) spent
-     FROM budgets b
-     LEFT JOIN transactions t ON t.user_id=b.user_id AND t.type='expense'
-       AND t.category=b.category AND t.created_at >= $2 AND t.created_at < $3
-     WHERE b.user_id=$1 AND b.month=$2
-     GROUP BY b.id ORDER BY b.category`,
-    [userId, from, to],
-  );
-  const lines = result.rows.map((row: any) => {
-    const spent = Number(row.spent);
-    const limit = Number(row.limit_gel);
-    return `${escapeHtml(row.category)}: ${formatMoney(spent, "GEL")} / ${formatMoney(limit, "GEL")}${spent > limit ? " ⚠️" : ""}`;
-  });
+  const report = await getBudgetReport(userId, from, to);
+
+  const lines: string[] = [];
+  for (const kind of CATEGORY_KIND_ORDER) {
+    const rows = report.filter((row) => row.limitGel !== null && row.kind === kind);
+    if (rows.length === 0) continue;
+    lines.push(`<b>${CATEGORY_KIND_LABEL[kind]}</b>`, ...rows.map(formatBudgetCategoryLine), "");
+  }
+  const noLimit = report.filter((row) => row.limitGel === null);
+  if (noLimit.length > 0) {
+    lines.push("<b>Без лимита</b>", ...noLimit.map(formatBudgetCategoryLine), "");
+  }
+  if (report.length > 0) {
+    const totalPlan = report.reduce((sum, row) => sum + (row.effectiveLimitGel ?? 0), 0);
+    const totalSpent = report.reduce((sum, row) => sum + row.spentGel, 0);
+    lines.push(`Итого по плану: ${formatMoney(totalPlan, "GEL")}`);
+    lines.push(`Итого потрачено: ${formatMoney(totalSpent, "GEL")}`);
+    if (totalPlan > 0) {
+      const diff = totalSpent - totalPlan;
+      const sign = diff > 0 ? "+" : "";
+      const percent = Math.round((diff / totalPlan) * 100);
+      lines.push(`Отклонение: ${sign}${formatMoney(diff, "GEL")} (${sign}${percent}%)`);
+    }
+  }
+  while (lines[lines.length - 1] === "") lines.pop();
+
   const text = renderScreen({
     title: `Бюджет — ${formatPeriodLabel(from, to)}`,
     lines,

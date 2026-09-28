@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatBalanceOverview,
+  formatBudgetCategoryLine,
   formatMoney,
   formatPeriodLabel,
   formatSignedAmount,
@@ -98,6 +99,89 @@ describe("formatBalanceOverview", () => {
     });
     expect(text).toContain("15.00 USD");
     expect(text).toContain("300.00 RUB");
+  });
+});
+
+describe("formatBudgetCategoryLine", () => {
+  it("shows plan/fact and deviation in both currency and percent", () => {
+    const text = formatBudgetCategoryLine({
+      category: "Еда",
+      limitGel: 300,
+      effectiveLimitGel: 300,
+      spentGel: 320,
+      rollover: false,
+    });
+    expect(text).toContain("320.00 GEL / 300.00 GEL");
+    expect(text).toContain("+20.00 GEL");
+    expect(text).toContain("+7%");
+  });
+
+  it("shows a negative deviation when under budget", () => {
+    const text = formatBudgetCategoryLine({
+      category: "Еда",
+      limitGel: 300,
+      effectiveLimitGel: 300,
+      spentGel: 250,
+      rollover: false,
+    });
+    expect(text).toContain("-50.00 GEL");
+    expect(text).toContain("-17%");
+  });
+
+  it("never divides by zero when the effective limit is zero", () => {
+    const spent = formatBudgetCategoryLine({
+      category: "Еда",
+      limitGel: 0,
+      effectiveLimitGel: 0,
+      spentGel: 20,
+      rollover: false,
+    });
+    expect(spent).not.toContain("Infinity");
+    expect(spent).not.toContain("NaN");
+
+    const zero = formatBudgetCategoryLine({
+      category: "Еда",
+      limitGel: 0,
+      effectiveLimitGel: 0,
+      spentGel: 0,
+      rollover: false,
+    });
+    expect(zero).not.toContain("NaN");
+  });
+
+  it("labels a category with spending but no limit instead of omitting it", () => {
+    const text = formatBudgetCategoryLine({
+      category: "Такси",
+      limitGel: null,
+      effectiveLimitGel: null,
+      spentGel: 45,
+      rollover: false,
+    });
+    expect(text).toContain("45.00 GEL");
+    expect(text).toContain("без лимита");
+  });
+
+  it("shows the rollover breakdown when the effective limit differs from the plain limit", () => {
+    const text = formatBudgetCategoryLine({
+      category: "Еда",
+      limitGel: 300,
+      effectiveLimitGel: 350,
+      spentGel: 320,
+      rollover: true,
+    });
+    expect(text).toContain("план 300.00 GEL");
+    expect(text).toContain("перенос 50.00 GEL");
+  });
+
+  it("falls back to a neutral label when the transaction has no category", () => {
+    const text = formatBudgetCategoryLine({
+      category: null,
+      limitGel: null,
+      effectiveLimitGel: null,
+      spentGel: 10,
+      rollover: false,
+    });
+    expect(text).toContain("Без категории");
   });
 });
 

@@ -24,3 +24,13 @@ export function suggestBudgetSplit(monthlyIncomeGel: number): BudgetSplit {
     savingsGel: round2(monthlyIncomeGel * SAVINGS_SHARE),
   };
 }
+
+export type CategoryKind = "recurring" | "variable" | "irregular";
+
+export const CATEGORY_KIND_LABEL: Record<CategoryKind, string> = {
+  recurring: "Обязательные платежи",
+  variable: "Повседневные траты",
+  irregular: "Нерегулярные/крупные",
+};
+
+export const CATEGORY_KIND_ORDER: CategoryKind[] = ["recurring", "variable", "irregular"];
