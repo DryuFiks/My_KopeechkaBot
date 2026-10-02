@@ -63,7 +63,9 @@ export async function deletePayment(userId: number, id: number): Promise<Recurri
   return result.rows[0] ?? null;
 }
 
-export interface RemindablePayment extends RecurringPayment {
+export interface RemindablePayment extends Omit<RecurringPayment, "last_notified"> {
+  /** "YYYY-MM-DD" text — a DATE parsed into a JS Date shifts by the server's UTC offset. */
+  last_notified: string | null;
   timezone: string;
   notify_payments: boolean;
 }
@@ -72,6 +74,7 @@ export interface RemindablePayment extends RecurringPayment {
 export async function getRemindablePayments(): Promise<RemindablePayment[]> {
   const result = await pool.query<RemindablePayment>(
     `SELECT rp.*,
+            rp.last_notified::text AS last_notified,
             COALESCE(us.timezone, 'Asia/Tbilisi') AS timezone,
             COALESCE(us.notify_payments, true) AS notify_payments
      FROM recurring_payments rp
@@ -81,6 +84,7 @@ export async function getRemindablePayments(): Promise<RemindablePayment[]> {
   return result.rows;
 }
 
-export async function markPaymentNotified(id: number): Promise<void> {
-  await pool.query("UPDATE recurring_payments SET last_notified = CURRENT_DATE WHERE id = $1", [id]);
+/** `todayIso` is the owner's local date ("YYYY-MM-DD"), not the DB server's CURRENT_DATE. */
+export async function markPaymentNotified(id: number, todayIso: string): Promise<void> {
+  await pool.query("UPDATE recurring_payments SET last_notified = $2::date WHERE id = $1", [id, todayIso]);
 }
