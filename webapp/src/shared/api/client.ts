@@ -10,12 +10,14 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(res.status === 401 ? "Откройте приложение из Telegram" : `Ошибка ${res.status}`);
+  if (!res.ok)
+    throw new Error(res.status === 401 ? "Откройте приложение из Telegram" : `Ошибка ${res.status}`);
   return (await res.json()) as T;
 }
 
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
   post: <T>(path: string, body: unknown) => request<T>("POST", path, body),
+  put: <T>(path: string, body: unknown) => request<T>("PUT", path, body),
   delete: <T>(path: string) => request<T>("DELETE", path),
 };

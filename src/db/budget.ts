@@ -112,3 +112,43 @@ export async function getBudgetRemainingForRange(
   }
   return hasAnyBudget ? Math.round(total * 100) / 100 : null;
 }
+
+/** Creates or replaces this month's limit; keeps an existing rollover flag untouched. */
+export async function setBudgetLimit(
+  userId: number,
+  month: Date,
+  category: string,
+  limitGel: number,
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO budgets(user_id,month,category,limit_gel) VALUES($1,$2,$3,$4)
+     ON CONFLICT(user_id,month,category) DO UPDATE SET limit_gel=EXCLUDED.limit_gel`,
+    [userId, month, category, limitGel],
+  );
+}
+
+/** Returns false when there was no such limit (already removed) — not an error. */
+export async function deleteBudgetLimit(userId: number, month: Date, category: string): Promise<boolean> {
+  const r = await pool.query("DELETE FROM budgets WHERE user_id=$1 AND month=$2 AND category=$3", [
+    userId,
+    month,
+    category,
+  ]);
+  return (r.rowCount ?? 0) > 0;
+}
+
+/** Returns false when no limit exists yet for the category (a rollover needs a limit first). */
+export async function setBudgetRollover(
+  userId: number,
+  month: Date,
+  category: string,
+  enabled: boolean,
+): Promise<boolean> {
+  const r = await pool.query("UPDATE budgets SET rollover=$4 WHERE user_id=$1 AND month=$2 AND category=$3", [
+    userId,
+    month,
+    category,
+    enabled,
+  ]);
+  return (r.rowCount ?? 0) > 0;
+}

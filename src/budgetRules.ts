@@ -34,3 +34,17 @@ export const CATEGORY_KIND_LABEL: Record<CategoryKind, string> = {
 };
 
 export const CATEGORY_KIND_ORDER: CategoryKind[] = ["recurring", "variable", "irregular"];
+
+/**
+ * Straight-line projection of month-end spending from the pace so far. An estimate, not a
+ * promise: it assumes the remaining days look like the average of the elapsed ones. Returns
+ * null before any day has elapsed (nothing to extrapolate from).
+ */
+export function projectMonthSpending(
+  spentSoFarGel: number,
+  daysElapsed: number,
+  daysInMonth: number,
+): number | null {
+  if (daysElapsed <= 0 || daysInMonth <= 0) return null;
+  return round2((spentSoFarGel / Math.min(daysElapsed, daysInMonth)) * daysInMonth);
+}

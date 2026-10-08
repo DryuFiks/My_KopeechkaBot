@@ -10,12 +10,18 @@ export interface BudgetCategory {
   category: string | null;
   limitGel: number | null;
   spentGel: number;
+  rollover: boolean;
   effectiveLimitGel: number | null;
 }
 
 export interface BudgetData {
   incomeGel: number;
+  expenseGel: number;
   categories: BudgetCategory[];
+  /** Расходы по дням текущего месяца до сегодняшнего дня включительно. */
+  daily: number[];
+  daysInMonth: number;
+  projectedExpenseGel: number | null;
 }
 
 export interface CushionData {
@@ -26,3 +32,10 @@ export interface CushionData {
 export const fetchOverview = () => api.get<Overview>("/overview");
 export const fetchBudget = () => api.get<BudgetData>("/budget");
 export const fetchCushion = () => api.get<CushionData>("/cushion");
+
+export const setBudgetLimit = (category: string, limitGel: number) =>
+  api.put<{ ok: true }>("/budget/limit", { category, limitGel });
+export const removeBudgetLimit = (category: string) =>
+  api.delete<{ deleted: boolean }>(`/budget/limit?category=${encodeURIComponent(category)}`);
+export const setBudgetRollover = (category: string, enabled: boolean) =>
+  api.put<{ ok: true }>("/budget/rollover", { category, enabled });
