@@ -2,34 +2,39 @@ import { Card, ProgressBar, Status } from "@/shared/ui";
 import { formatGel, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
 import { fetchOverview } from "@/entities/budget";
+import { TodayCard, fetchSummary } from "@/entities/plan";
 
 export function OverviewPage() {
   const state = useAsync(fetchOverview);
+  const summary = useAsync(fetchSummary);
   return (
-    <Status state={state}>
-      {({ name, incomeGel, expenseGel }) => (
-        <>
-          <h1>Привет{name ? `, ${name}` : ""}!</h1>
-          <Card title="Этот месяц">
-            <div className="row">
-              <span>Доход</span>
-              <b>{formatGel(incomeGel)}</b>
-            </div>
-            <div className="row">
-              <span>Расходы</span>
-              <b>{formatGel(expenseGel)}</b>
-            </div>
-            <div className="row">
-              <span>Остаток</span>
-              <b>{formatGel(incomeGel - expenseGel)}</b>
-            </div>
-            <ProgressBar
-              value={percent(expenseGel, incomeGel)}
-              label={`${percent(expenseGel, incomeGel)}% дохода потрачено`}
-            />
-          </Card>
-        </>
-      )}
-    </Status>
+    <>
+      <Status state={state}>
+        {({ name, incomeGel, expenseGel }) => (
+          <>
+            <h1>Привет{name ? `, ${name}` : ""}!</h1>
+            <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
+            <Card title="Этот месяц">
+              <div className="row">
+                <span>Доход</span>
+                <b>{formatGel(incomeGel)}</b>
+              </div>
+              <div className="row">
+                <span>Расходы</span>
+                <b>{formatGel(expenseGel)}</b>
+              </div>
+              <div className="row">
+                <span>Остаток</span>
+                <b>{formatGel(incomeGel - expenseGel)}</b>
+              </div>
+              <ProgressBar
+                value={percent(expenseGel, incomeGel)}
+                label={`${percent(expenseGel, incomeGel)}% дохода потрачено`}
+              />
+            </Card>
+          </>
+        )}
+      </Status>
+    </>
   );
 }

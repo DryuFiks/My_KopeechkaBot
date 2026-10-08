@@ -1,0 +1,19 @@
+.hintbox { background: var(--card); border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; font-size: 14px; }
+.hintbox p { margin: 0; }
+.hintbox__example { margin-top: 6px !important; color: var(--hint); }
+.chiprow { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip--soft { background: var(--card); color: var(--text); }
+.dots { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0 0 12px; }
+.dots li { flex: 1; height: 4px; border-radius: 2px; background: rgba(127, 127, 127, 0.3); }
+.dots .is-done { background: var(--accent); opacity: 0.55; }
+.dots .is-active { background: var(--accent); }
+.stepper-nav { display: flex; gap: 8px; margin: 16px 0 8px; }
+.primary { flex: 1; padding: 12px; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; }
+.primary:disabled { opacity: 0.6; }
+.center { display: block; margin: 0 auto; }
+.steps-list { list-style: none; padding: 0; margin: 0 0 12px; }
+.steps-list li { padding: 6px 0; }
+.bignum { font-size: 34px; font-weight: 700; margin: 4px 0; }
+.bignum--tight { color: #d98a00; }
+.bignum--over { color: #d33; }
+.segmented button[role="radio"] { cursor: pointer; }

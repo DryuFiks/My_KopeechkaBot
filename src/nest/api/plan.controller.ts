@@ -11,7 +11,8 @@ import {
   Put,
   UseGuards,
 } from "@nestjs/common";
-import { convertToGel } from "../../currency";
+import { convertToGel, getRateInfo } from "../../currency";
+import { effectiveRateToGel } from "../../currencies";
 import { getSummaryForRange } from "../../db";
 import { listDebts } from "../../db/debts";
 import {
@@ -37,6 +38,7 @@ import {
 } from "../../monthPlan";
 import { totalMinimums } from "../../debtPayoff";
 import { zonedMonthBoundaries } from "../../timezone";
+import type { SupportedCurrency } from "../../currencies";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
 import { currency, money, name, optionalDay } from "./validation";
@@ -48,6 +50,13 @@ async function monthContext(userId: number) {
   const now = new Date();
   const month = zonedMonthBoundaries(now, settings.timezone);
   return { settings, now, month };
+}
+
+/** GEL value of one unit of the user's main currency at their exchanger rate; null if the rate is unknown. */
+function displayRateGel(cur: SupportedCurrency, factor: number): number | null {
+  if (cur === "GEL") return 1;
+  const official = getRateInfo(cur).rateToGel;
+  return official === null ? null : effectiveRateToGel(official, cur, factor);
 }
 
 @Controller("api/plan")
@@ -179,6 +188,7 @@ export class PlanController {
       daysLeft,
       today,
       ratesMissing,
+      displayRateGel: displayRateGel(settings.displayCurrency, settings.exchangeFactor),
       goalTemplates: suggestGoalTemplates(mandatoryGel, freeMonthGel),
       categoryLimits: suggestCategoryLimits(freeMonthGel),
     };

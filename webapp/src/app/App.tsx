@@ -5,6 +5,10 @@ import { BudgetPage } from "@/pages/budget";
 import { DebtsPage } from "@/pages/debts";
 import { CushionPage } from "@/pages/cushion";
 import { GoalsPage } from "@/pages/goals";
+import { OnboardingPage } from "@/pages/onboarding";
+import { fetchSettings } from "@/entities/plan";
+import { Status } from "@/shared/ui";
+import { useAsync } from "@/shared/lib/useAsync";
 import { useBackButton } from "@/shared/lib/useBackButton";
 import { haptic } from "@/shared/lib/telegram";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -17,7 +21,7 @@ const PAGES: Record<TabId, () => JSX.Element> = {
   goals: GoalsPage,
 };
 
-export function App() {
+function Tabs() {
   const [tab, setTab] = useState<TabId>("overview");
   const goHome = useCallback(() => setTab("overview"), []);
   // «Назад» в шапке Telegram возвращает на обзор из любой другой вкладки.
@@ -25,7 +29,7 @@ export function App() {
 
   const Page = PAGES[tab];
   return (
-    <ErrorBoundary>
+    <>
       <main className="page">
         <Page key={tab} />
       </main>
@@ -36,6 +40,17 @@ export function App() {
           setTab(id);
         }}
       />
+    </>
+  );
+}
+
+export function App() {
+  const settings = useAsync(fetchSettings);
+  return (
+    <ErrorBoundary>
+      <Status state={settings}>
+        {(s) => (s.onboarded ? <Tabs /> : <OnboardingPage onFinish={settings.reload} />)}
+      </Status>
     </ErrorBoundary>
   );
 }

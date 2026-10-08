@@ -4,6 +4,7 @@ import { initTelegram } from "@/shared/lib/telegram";
 import { App } from "./App";
 import "./styles/global.css";
 import "./styles/budget.css";
+import "./styles/onboarding.css";
 import "./styles/a11y.css";
 
 initTelegram();
