@@ -6,6 +6,8 @@ import { DebtsPage } from "@/pages/debts";
 import { CushionPage } from "@/pages/cushion";
 import { GoalsPage } from "@/pages/goals";
 import { OnboardingPage } from "@/pages/onboarding";
+import { AwardsPage } from "@/pages/awards";
+import { ProgressToasts } from "@/widgets/progress-toasts";
 import { fetchSettings } from "@/entities/plan";
 import { Status } from "@/shared/ui";
 import { useAsync } from "@/shared/lib/useAsync";
@@ -13,12 +15,15 @@ import { useBackButton } from "@/shared/lib/useBackButton";
 import { haptic } from "@/shared/lib/telegram";
 import { ErrorBoundary } from "./ErrorBoundary";
 
-const PAGES: Record<TabId, () => JSX.Element> = {
+type PageProps = { go: (tab: TabId) => void };
+
+const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   overview: OverviewPage,
   budget: BudgetPage,
   debts: DebtsPage,
   cushion: CushionPage,
   goals: GoalsPage,
+  awards: AwardsPage,
 };
 
 function Tabs() {
@@ -31,7 +36,7 @@ function Tabs() {
   return (
     <>
       <main className="page">
-        <Page key={tab} />
+        <Page key={tab} go={setTab} />
       </main>
       <TabBar
         active={tab}
@@ -48,6 +53,7 @@ export function App() {
   const settings = useAsync(fetchSettings);
   return (
     <ErrorBoundary>
+      <ProgressToasts />
       <Status state={settings}>
         {(s) => (s.onboarded ? <Tabs /> : <OnboardingPage onFinish={settings.reload} />)}
       </Status>

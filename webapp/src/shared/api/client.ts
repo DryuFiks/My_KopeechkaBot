@@ -1,3 +1,4 @@
+import { writeBus } from "@/shared/lib/events";
 import { getWebApp, haptic } from "@/shared/lib/telegram";
 
 /** Человекочитаемая причина по статусу ответа; тексты сервера пользователю не показываем. */
@@ -29,8 +30,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     if (isWrite) haptic("error");
     throw new Error(errorMessage(res.status));
   }
-  if (isWrite) haptic("success");
-  return (await res.json()) as T;
+  const data = (await res.json()) as T;
+  if (isWrite) {
+    haptic("success");
+    writeBus.emit();
+  }
+  return data;
 }
 
 export const api = {

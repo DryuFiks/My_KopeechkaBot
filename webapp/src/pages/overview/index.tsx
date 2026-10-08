@@ -3,10 +3,13 @@ import { formatGel, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
 import { fetchOverview } from "@/entities/budget";
 import { TodayCard, fetchSummary } from "@/entities/plan";
+import { RankCard, fetchProgress } from "@/entities/progress";
+import type { TabId } from "@/widgets/tab-bar";
 
-export function OverviewPage() {
+export function OverviewPage({ go }: { go: (tab: TabId) => void }) {
   const state = useAsync(fetchOverview);
   const summary = useAsync(fetchSummary);
+  const progress = useAsync(fetchProgress);
   return (
     <>
       <Status state={state}>
@@ -14,6 +17,7 @@ export function OverviewPage() {
           <>
             <h1>Привет{name ? `, ${name}` : ""}!</h1>
             <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
+            <Status state={progress}>{(p) => <RankCard p={p} onOpen={() => go("awards")} />}</Status>
             <Card title="Этот месяц">
               <div className="row">
                 <span>Доход</span>
