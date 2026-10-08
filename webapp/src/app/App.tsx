@@ -4,12 +4,14 @@ import { OverviewPage } from "@/pages/overview";
 import { BudgetPage } from "@/pages/budget";
 import { DebtsPage } from "@/pages/debts";
 import { CushionPage } from "@/pages/cushion";
+import { GoalsPage } from "@/pages/goals";
 
 const PAGES: Record<TabId, () => JSX.Element> = {
   overview: OverviewPage,
   budget: BudgetPage,
   debts: DebtsPage,
   cushion: CushionPage,
+  goals: GoalsPage,
 };
 
 export function App() {

@@ -1,10 +1,11 @@
-export type TabId = "overview" | "budget" | "debts" | "cushion";
+export type TabId = "overview" | "budget" | "debts" | "cushion" | "goals";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "overview", label: "🏠 Обзор" },
   { id: "budget", label: "📊 Бюджет" },
   { id: "debts", label: "💳 Долги" },
   { id: "cushion", label: "🛟 Подушка" },
+  { id: "goals", label: "🎯 Цели" },
 ];
 
 export function TabBar({ active, onChange }: { active: TabId; onChange: (id: TabId) => void }) {
