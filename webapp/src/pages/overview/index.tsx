@@ -1,29 +1,35 @@
-import { Card, ProgressBar } from "@/shared/ui";
+import { Card, ProgressBar, Status } from "@/shared/ui";
 import { formatGel, percent } from "@/shared/lib/money";
-import { getUserName } from "@/shared/lib/telegram";
-import { MOCK_MONTH } from "@/entities/budget";
+import { useAsync } from "@/shared/lib/useAsync";
+import { fetchOverview } from "@/entities/budget";
 
 export function OverviewPage() {
-  const { incomeGel, spentGel } = MOCK_MONTH;
+  const state = useAsync(fetchOverview);
   return (
-    <>
-      <h1>Привет, {getUserName()}!</h1>
-      <Card title="Этот месяц">
-        <div className="row">
-          <span>Доход</span>
-          <b>{formatGel(incomeGel)}</b>
-        </div>
-        <div className="row">
-          <span>Расходы</span>
-          <b>{formatGel(spentGel)}</b>
-        </div>
-        <div className="row">
-          <span>Остаток</span>
-          <b>{formatGel(incomeGel - spentGel)}</b>
-        </div>
-        <ProgressBar value={percent(spentGel, incomeGel)} label={`${percent(spentGel, incomeGel)}% дохода потрачено`} />
-      </Card>
-      <p className="hint">Данные-заглушки. Реальные подтянутся из бота на этапе 2.</p>
-    </>
+    <Status state={state}>
+      {({ name, incomeGel, expenseGel }) => (
+        <>
+          <h1>Привет{name ? `, ${name}` : ""}!</h1>
+          <Card title="Этот месяц">
+            <div className="row">
+              <span>Доход</span>
+              <b>{formatGel(incomeGel)}</b>
+            </div>
+            <div className="row">
+              <span>Расходы</span>
+              <b>{formatGel(expenseGel)}</b>
+            </div>
+            <div className="row">
+              <span>Остаток</span>
+              <b>{formatGel(incomeGel - expenseGel)}</b>
+            </div>
+            <ProgressBar
+              value={percent(expenseGel, incomeGel)}
+              label={`${percent(expenseGel, incomeGel)}% дохода потрачено`}
+            />
+          </Card>
+        </>
+      )}
+    </Status>
   );
 }

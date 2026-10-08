@@ -1,3 +1,5 @@
+import { api } from "@/shared/api/client";
+
 export interface Debt {
   id: number;
   name: string;
@@ -6,8 +8,8 @@ export interface Debt {
   minPaymentGel: number;
 }
 
-export const MOCK_DEBTS: Debt[] = [
-  { id: 1, name: "Кредитная карта", balanceGel: 1200, ratePercent: 28, minPaymentGel: 60 },
-  { id: 2, name: "Рассрочка телефон", balanceGel: 600, ratePercent: 0, minPaymentGel: 100 },
-  { id: 3, name: "Кредит на ремонт", balanceGel: 3500, ratePercent: 16, minPaymentGel: 150 },
-];
+export type NewDebt = Omit<Debt, "id">;
+
+export const fetchDebts = () => api.get<Debt[]>("/debts");
+export const createDebt = (d: NewDebt) => api.post<Debt>("/debts", d);
+export const deleteDebt = (id: number) => api.delete<{ deleted: boolean }>(`/debts/${id}`);

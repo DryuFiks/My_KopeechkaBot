@@ -24,3 +24,8 @@ h1 { font-size: 22px; margin: 0 0 12px; }
 .tabbar button { flex: 1; padding: 12px 2px; border: 0; background: none; color: var(--hint); font-size: 12px; }
 .tabbar .is-active { color: var(--accent); font-weight: 600; }
 select { font: inherit; }
+.form { display: grid; gap: 8px; }
+.form input { padding: 10px; border: 1px solid rgba(127,127,127,.3); border-radius: 10px; background: var(--bg); color: var(--text); font: inherit; }
+.form button { padding: 10px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; }
+.form button:disabled { opacity: .6; }
+.link { border: 0; background: none; color: var(--hint); font: inherit; cursor: pointer; }
