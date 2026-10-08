@@ -39,3 +39,15 @@ export const removeBudgetLimit = (category: string) =>
   api.delete<{ deleted: boolean }>(`/budget/limit?category=${encodeURIComponent(category)}`);
 export const setBudgetRollover = (category: string, enabled: boolean) =>
   api.put<{ ok: true }>("/budget/rollover", { category, enabled });
+
+export interface CategoryUsage {
+  transactions: number;
+  budgetMonths: number;
+}
+
+export const fetchCategories = () => api.get<{ categories: string[] }>("/categories");
+export const fetchCategoryUsage = (name: string) =>
+  api.get<CategoryUsage>(`/categories/usage?name=${encodeURIComponent(name)}`);
+/** Удаляет категорию; если в ней есть операции, moveTo (существующая или новая) обязателен. */
+export const deleteCategory = (category: string, moveTo?: string) =>
+  api.post<{ movedTransactions: number; deleted: boolean }>("/categories/delete", { category, moveTo });

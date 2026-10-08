@@ -8,6 +8,7 @@ import { GoalsController } from "./api/goals.controller";
 import { PlanController } from "./api/plan.controller";
 import { SettingsController } from "./api/settings.controller";
 import { ProgressController } from "./api/progress.controller";
+import { CategoriesController } from "./api/categories.controller";
 
 @Module({
   imports: [DatabaseModule, BotModule],
@@ -19,6 +20,7 @@ import { ProgressController } from "./api/progress.controller";
     PlanController,
     SettingsController,
     ProgressController,
+    CategoriesController,
   ],
 })
 export class AppModule {}

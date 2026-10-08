@@ -1,6 +1,7 @@
 import { fetchBudget, SplitCard } from "@/entities/budget";
 import type { BudgetCategory } from "@/entities/budget";
 import { AddLimitForm, LimitControls } from "@/features/edit-budget-limit";
+import { DeleteCategory } from "@/features/delete-category";
 import { BarChart, Card, ProgressBar, Status } from "@/shared/ui";
 import { formatGel, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
@@ -19,6 +20,7 @@ function CategoryRow({ c, onChanged }: { c: BudgetCategory; onChanged: () => voi
       </div>
       {limit !== null && <ProgressBar value={percent(c.spentGel, limit)} label={over ? "лимит превышен" : undefined} />}
       {c.category !== null && <LimitControls row={{ ...c, category: c.category }} onChanged={onChanged} />}
+      {c.category !== null && <DeleteCategory category={c.category} onDone={onChanged} />}
     </div>
   );
 }
