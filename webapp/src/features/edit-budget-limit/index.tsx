@@ -89,6 +89,7 @@ export function AddLimitForm({ known, onAdded }: { known: string[]; onAdded: () 
       <form className="form" onSubmit={submit}>
         <input
           list="known-categories"
+          aria-label="Категория"
           placeholder="Категория"
           value={name}
           maxLength={60}
@@ -101,6 +102,7 @@ export function AddLimitForm({ known, onAdded }: { known: string[]; onAdded: () 
           ))}
         </datalist>
         <input
+          aria-label="Лимит, лари"
           placeholder="Лимит, ₾"
           inputMode="decimal"
           value={limit}

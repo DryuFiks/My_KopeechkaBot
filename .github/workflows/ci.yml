@@ -16,3 +16,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm ci
+        working-directory: webapp
+      - run: npm run check
+        working-directory: webapp

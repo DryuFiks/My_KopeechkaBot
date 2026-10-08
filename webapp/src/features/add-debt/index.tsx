@@ -35,9 +35,9 @@ export function AddDebtForm({ onAdded }: { onAdded: () => void }) {
   return (
     <Card title="Добавить долг">
       <form className="form" onSubmit={submit}>
-        <input placeholder="Название" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} required />
-        <input placeholder="Остаток, ₾" inputMode="decimal" value={balance} onChange={(e) => setBalance(e.target.value)} required />
-        <input placeholder="Ставка, % годовых" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
+        <input aria-label="Название долга" placeholder="Название" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} required />
+        <input aria-label="Остаток долга, лари" placeholder="Остаток, ₾" inputMode="decimal" value={balance} onChange={(e) => setBalance(e.target.value)} required />
+        <input aria-label="Ставка, процентов годовых" placeholder="Ставка, % годовых" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
         <button type="submit" disabled={busy}>
           Добавить
         </button>

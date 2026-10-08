@@ -27,6 +27,7 @@ export function ContributeForm({ goalId, onDone }: { goalId: number; onDone: () 
       <input
         className="inline-input"
         style={{ textAlign: "left", flex: 1 }}
+        aria-label="Сумма пополнения, лари"
         placeholder="Пополнить, ₾"
         inputMode="decimal"
         value={amount}

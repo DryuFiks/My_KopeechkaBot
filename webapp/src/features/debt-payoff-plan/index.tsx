@@ -50,13 +50,14 @@ export function DebtPayoffPlan({ debts, strategy }: { debts: Debt[]; strategy: S
         <span>Платить в месяц, ₾</span>
         <input
           className="inline-input"
+          aria-label="Ежемесячный платёж по долгам, лари"
           inputMode="decimal"
           placeholder={plan ? String(plan.minRequiredGel) : "минимум"}
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
         />
       </label>
-      {error && <p className="hint">{error === "budget below minimum payments" ? "Меньше суммы минимальных платежей" : error}</p>}
+      {error && <p className="hint">{error === "Проверьте введённые данные" ? "Платёж меньше суммы минимальных платежей или введён неверно" : error}</p>}
       {chosen && !error && (
         <>
           {!chosen.feasible ? (

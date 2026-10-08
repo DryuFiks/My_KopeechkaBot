@@ -10,9 +10,14 @@ const TABS: { id: TabId; label: string }[] = [
 
 export function TabBar({ active, onChange }: { active: TabId; onChange: (id: TabId) => void }) {
   return (
-    <nav className="tabbar">
+    <nav className="tabbar" aria-label="Разделы">
       {TABS.map((t) => (
-        <button key={t.id} className={t.id === active ? "is-active" : ""} onClick={() => onChange(t.id)}>
+        <button
+          key={t.id}
+          className={t.id === active ? "is-active" : ""}
+          aria-current={t.id === active ? "page" : undefined}
+          onClick={() => onChange(t.id)}
+        >
           {t.label}
         </button>
       ))}
