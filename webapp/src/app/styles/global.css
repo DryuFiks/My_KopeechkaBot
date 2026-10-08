@@ -1,0 +1,26 @@
+:root {
+  --bg: var(--tg-theme-bg-color, #fff);
+  --text: var(--tg-theme-text-color, #111);
+  --hint: var(--tg-theme-hint-color, #777);
+  --card: var(--tg-theme-secondary-bg-color, #f2f3f5);
+  --accent: var(--tg-theme-button-color, #2481cc);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.4 system-ui, sans-serif; }
+.page { padding: 16px 16px 84px; }
+h1 { font-size: 22px; margin: 0 0 12px; }
+.card { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.card__title { font-size: 15px; margin: 0 0 10px; color: var(--hint); font-weight: 600; }
+.row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; }
+.row-block { margin-bottom: 10px; }
+.hint, small { color: var(--hint); }
+.progress { position: relative; height: 20px; background: rgba(127,127,127,.2); border-radius: 10px; overflow: hidden; margin-top: 6px; }
+.progress__fill { height: 100%; background: var(--accent); }
+.progress__label { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; }
+.segmented { display: flex; gap: 6px; margin-bottom: 12px; }
+.segmented button { flex: 1; padding: 8px; border: 0; border-radius: 10px; background: var(--card); color: var(--text); font: inherit; }
+.segmented .is-active { background: var(--accent); color: #fff; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--card); padding-bottom: env(safe-area-inset-bottom); }
+.tabbar button { flex: 1; padding: 12px 2px; border: 0; background: none; color: var(--hint); font-size: 12px; }
+.tabbar .is-active { color: var(--accent); font-weight: 600; }
+select { font: inherit; }

@@ -150,3 +150,5 @@ graphify-out/
 .graphify*
 .claude/
 DEPLOY.md
+webapp/node_modules
+webapp/dist
