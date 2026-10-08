@@ -7,6 +7,7 @@ import { CushionPage } from "@/pages/cushion";
 import { GoalsPage } from "@/pages/goals";
 import { OnboardingPage } from "@/pages/onboarding";
 import { AwardsPage } from "@/pages/awards";
+import { SettingsPage } from "@/pages/settings";
 import { ProgressToasts } from "@/widgets/progress-toasts";
 import { fetchSettings } from "@/entities/plan";
 import { Status } from "@/shared/ui";
@@ -15,7 +16,7 @@ import { useBackButton } from "@/shared/lib/useBackButton";
 import { haptic } from "@/shared/lib/telegram";
 import { ErrorBoundary } from "./ErrorBoundary";
 
-type PageProps = { go: (tab: TabId) => void };
+type PageProps = { go: (tab: TabId) => void; restartOnboarding: () => void };
 
 const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   overview: OverviewPage,
@@ -24,9 +25,10 @@ const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   cushion: CushionPage,
   goals: GoalsPage,
   awards: AwardsPage,
+  settings: SettingsPage,
 };
 
-function Tabs() {
+function Tabs({ restartOnboarding }: { restartOnboarding: () => void }) {
   const [tab, setTab] = useState<TabId>("overview");
   const goHome = useCallback(() => setTab("overview"), []);
   // «Назад» в шапке Telegram возвращает на обзор из любой другой вкладки.
@@ -36,7 +38,7 @@ function Tabs() {
   return (
     <>
       <main className="page">
-        <Page key={tab} go={setTab} />
+        <Page key={tab} go={setTab} restartOnboarding={restartOnboarding} />
       </main>
       <TabBar
         active={tab}
@@ -55,7 +57,7 @@ export function App() {
     <ErrorBoundary>
       <ProgressToasts />
       <Status state={settings}>
-        {(s) => (s.onboarded ? <Tabs /> : <OnboardingPage onFinish={settings.reload} />)}
+        {(s) => (s.onboarded ? <Tabs restartOnboarding={settings.reload} /> : <OnboardingPage onFinish={settings.reload} />)}
       </Status>
     </ErrorBoundary>
   );

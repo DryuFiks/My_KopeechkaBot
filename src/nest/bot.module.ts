@@ -9,6 +9,21 @@ import { loadRateCacheFromDb, refreshRatesIfStale } from "../currency";
 import { startPaymentReminders } from "../reminders";
 import { logger } from "../logger";
 
+/**
+ * Кнопка рядом с полем ввода, открывающая WebApp. Нужен https-адрес (WEBAPP_URL); сбой не должен
+ * мешать запуску бота. Кнопка «Open» в списке чатов настраивается отдельно в @BotFather (Main Mini App).
+ */
+async function setWebAppMenuButton(bot: Bot): Promise<void> {
+  const url = process.env.WEBAPP_URL;
+  if (!url || !url.startsWith("https://")) return;
+  try {
+    await bot.api.setChatMenuButton({ menu_button: { type: "web_app", text: "Копеечка", web_app: { url } } });
+    logger.info("WebApp menu button set.");
+  } catch (err) {
+    logger.warn(`Could not set the WebApp menu button: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 /** Запускает grammY-бота (long polling) внутри жизненного цикла Nest. Хендлеры пока прежние. */
 @Injectable()
 export class BotService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -32,6 +47,8 @@ export class BotService implements OnApplicationBootstrap, OnApplicationShutdown
     registerTextFlowHandlers(bot);
     startPaymentReminders(bot);
     this.bot = bot;
+
+    await setWebAppMenuButton(bot);
 
     logger.info("Starting bot (polling)...");
     // Не await: start() живёт, пока работает бот, а HTTP-серверу нужно успеть подняться.

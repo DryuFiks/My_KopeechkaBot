@@ -9,6 +9,7 @@ export {
   fetchSettings,
   updateSettings,
   completeOnboarding,
+  resetOnboarding,
   applyBudget,
 } from "./model/api";
 export type {

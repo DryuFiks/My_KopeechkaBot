@@ -36,6 +36,9 @@ export function OverviewPage({ go }: { go: (tab: TabId) => void }) {
                 label={`${percent(expenseGel, incomeGel)}% дохода потрачено`}
               />
             </Card>
+            <button className="link center" onClick={() => go("settings")}>
+              ⚙️ Настройки
+            </button>
           </>
         )}
       </Status>

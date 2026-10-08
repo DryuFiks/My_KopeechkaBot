@@ -1,8 +1,8 @@
-export type TabId = "overview" | "budget" | "debts" | "cushion" | "goals" | "awards";
+export type TabId = "overview" | "budget" | "debts" | "cushion" | "goals" | "awards" | "settings";
 
-/** Вкладки в нижней панели; «Награды» открываются карточкой на «Обзоре» и в панели не показываются. */
+/** Вкладки в нижней панели; «Награды» и «Настройки» открываются с «Обзора» и в панели не показываются. */
 
-const TABS: { id: Exclude<TabId, "awards">; label: string }[] = [
+const TABS: { id: Exclude<TabId, "awards" | "settings">; label: string }[] = [
   { id: "overview", label: "🏠 Обзор" },
   { id: "budget", label: "📊 Бюджет" },
   { id: "debts", label: "💳 Долги" },
