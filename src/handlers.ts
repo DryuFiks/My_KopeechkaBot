@@ -63,10 +63,11 @@ function formatSummary(
   to: Date,
   summary: PeriodSummary,
   displayCurrency: SupportedCurrency,
+  factor: number,
 ): string {
-  const income = toDisplayCurrency(summary.income_gel, displayCurrency);
-  const expense = toDisplayCurrency(summary.expense_gel, displayCurrency);
-  const balance = toDisplayCurrency(summary.balance_gel, displayCurrency);
+  const income = toDisplayCurrency(summary.income_gel, displayCurrency, factor);
+  const expense = toDisplayCurrency(summary.expense_gel, displayCurrency, factor);
+  const balance = toDisplayCurrency(summary.balance_gel, displayCurrency, factor);
   const lines = [
     formatPeriodLabel(from, to),
     "",
@@ -119,6 +120,8 @@ export function registerHandlers(bot: Bot): void {
     "rate",
     safe("/rate", async (ctx) => {
       await refreshRatesIfStale();
+      const uid = ctx.from?.id;
+      const factor = uid ? (await getUserSettings(uid)).exchangeFactor : 1;
       const rates = getAllRateInfo();
       const lines = rates.map((r) => {
         if (r.rateToGel === null) {
@@ -126,7 +129,11 @@ export function registerHandlers(bot: Bot): void {
         }
         const staleTag = r.isFallback ? " ⚠️ устаревший (API недоступен)" : "";
         const updated = r.updatedAt ? ` (обновлено ${formatDateShort(r.updatedAt)})` : "";
-        return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}`;
+        const exchanger =
+          r.currency !== "GEL" && factor !== 1
+            ? `\n   обменник (×${factor}): ${(r.rateToGel * factor).toFixed(4)} GEL`
+            : "";
+        return `${r.currency} → ${r.rateToGel} GEL${updated}${staleTag}${exchanger}`;
       });
       await ctx.reply(`Текущие курсы (источник: NBG — Национальный банк Грузии):\n${lines.join("\n")}`, {
         reply_markup: mainKeyboard,
@@ -144,10 +151,20 @@ export function registerHandlers(bot: Bot): void {
       const { from, to } = zonedDayBoundaries(new Date(), settings.timezone);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за сегодня", from, to, summary, settings.displayCurrency), {
-        parse_mode: PARSE_MODE,
-        reply_markup: mainKeyboard,
-      });
+      await ctx.reply(
+        formatSummary(
+          "Итоги за сегодня",
+          from,
+          to,
+          summary,
+          settings.displayCurrency,
+          settings.exchangeFactor,
+        ),
+        {
+          parse_mode: PARSE_MODE,
+          reply_markup: mainKeyboard,
+        },
+      );
     }),
   );
 
@@ -161,10 +178,13 @@ export function registerHandlers(bot: Bot): void {
       const { from, to } = zonedMonthBoundaries(new Date(), settings.timezone);
 
       const summary = await getSummaryForRange(userId, from, to);
-      await ctx.reply(formatSummary("Итоги за месяц", from, to, summary, settings.displayCurrency), {
-        parse_mode: PARSE_MODE,
-        reply_markup: mainKeyboard,
-      });
+      await ctx.reply(
+        formatSummary("Итоги за месяц", from, to, summary, settings.displayCurrency, settings.exchangeFactor),
+        {
+          parse_mode: PARSE_MODE,
+          reply_markup: mainKeyboard,
+        },
+      );
     }),
   );
 

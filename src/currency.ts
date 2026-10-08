@@ -7,6 +7,7 @@ import { logger } from "./logger";
 import { recordRateFallback } from "./metrics";
 import {
   convertAmountBetween,
+  effectiveRateToGel,
   isSupportedCurrency,
   SUPPORTED_CURRENCIES,
   SupportedCurrency,
@@ -163,10 +164,14 @@ export function getAllRateInfo(): RateInfo[] {
   return SUPPORTED_CURRENCIES.map(getRateInfo);
 }
 
-export function convertToGel(amount: number, currency: SupportedCurrency): number | null {
+/**
+ * `factor` is the user's exchanger factor (1 = official NBG rate). Callers that act on
+ * behalf of a user pass settings.exchangeFactor; omitting it means the official rate.
+ */
+export function convertToGel(amount: number, currency: SupportedCurrency, factor = 1): number | null {
   const info = getRateInfo(currency);
   if (info.rateToGel === null) return null;
-  return Math.round(amount * info.rateToGel * 100) / 100;
+  return Math.round(amount * effectiveRateToGel(info.rateToGel, currency, factor) * 100) / 100;
 }
 
 /** Converts an amount from one supported currency to another using the live rate cache. */
@@ -174,6 +179,10 @@ export function convertBetween(
   amount: number,
   from: SupportedCurrency,
   to: SupportedCurrency,
+  factor = 1,
 ): number | null {
-  return convertAmountBetween(amount, from, to, (currency) => getRateInfo(currency).rateToGel);
+  return convertAmountBetween(amount, from, to, (currency) => {
+    const rate = getRateInfo(currency).rateToGel;
+    return rate === null ? null : effectiveRateToGel(rate, currency, factor);
+  });
 }

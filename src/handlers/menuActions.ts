@@ -120,11 +120,16 @@ export function registerMenuActionHandlers(bot: Bot): void {
     "action:rates",
     safeCallback("action:rates", async (ctx) => {
       await refreshRatesIfStale();
-      const lines = getAllRateInfo().map((r) =>
-        r.rateToGel === null
-          ? `${r.currency} → курс недоступен`
-          : `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`,
-      );
+      const { exchangeFactor } = await getUserSettings(ctx.from.id);
+      const lines = getAllRateInfo().flatMap((r) => {
+        if (r.rateToGel === null) return [`${r.currency} → курс недоступен`];
+        const official = `${r.currency} → ${r.rateToGel.toFixed(4)} GEL${r.isFallback ? " ⚠️ кеш" : ""}`;
+        if (r.currency === "GEL" || exchangeFactor === 1) return [official];
+        return [
+          official,
+          `   обменник (×${exchangeFactor}): ${(r.rateToGel * exchangeFactor).toFixed(4)} GEL`,
+        ];
+      });
       await editOrReply(ctx, renderScreen({ title: "Курсы валют (NBG)", lines }), {
         reply_markup: mainKeyboard,
         parse_mode: PARSE_MODE,

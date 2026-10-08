@@ -4,7 +4,7 @@ import { mainKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
 import { renderScreen, PARSE_MODE } from "../format";
 import { isValidTimeZone } from "../timezone";
-import { SUPPORTED_CURRENCIES, SupportedCurrency } from "../currencies";
+import { SUPPORTED_CURRENCIES, SupportedCurrency, isValidExchangeFactor } from "../currencies";
 import { safe, safeCallback } from "../middleware/safe";
 
 function settingsKeyboard(current: SupportedCurrency): InlineKeyboard {
@@ -27,11 +27,13 @@ function settingsText(settings: UserSettings): string {
     lines: [
       `Валюта отображения: ${settings.displayCurrency}`,
       `Часовой пояс: ${settings.timezone}`,
+      `Коэффициент обменника: ×${settings.exchangeFactor} (1 = официальный курс)`,
       `Напоминания о платежах: ${settings.notifyPayments ? "включены" : "выключены"}`,
       "",
       "Команды:",
       "/settings currency GEL|RUB|USD",
       "/settings timezone &lt;IANA-зона&gt;, например Europe/Moscow",
+      "/settings factor 0.9 — коэффициент обменника, от 0.5 до 1",
       "/settings notify on|off",
       "/settings reset — вернуть настройки по умолчанию",
     ],
@@ -50,6 +52,23 @@ export function registerSettingsHandlers(bot: Bot): void {
       if (currencyMatch) {
         const displayCurrency = currencyMatch[1].toUpperCase() as SupportedCurrency;
         const settings = await updateUserSettings(uid, { displayCurrency });
+        await ctx.reply(settingsText(settings), {
+          parse_mode: PARSE_MODE,
+          reply_markup: settingsKeyboard(settings.displayCurrency),
+        });
+        return;
+      }
+
+      const factorMatch = /^\/settings\s+factor\s+(\d+(?:[.,]\d{1,3})?)\s*$/i.exec(text);
+      if (factorMatch) {
+        const exchangeFactor = Number(factorMatch[1].replace(",", "."));
+        if (!isValidExchangeFactor(exchangeFactor)) {
+          await ctx.reply("Коэффициент должен быть от 0.5 до 1 (1 — официальный курс).", {
+            reply_markup: mainKeyboard,
+          });
+          return;
+        }
+        const settings = await updateUserSettings(uid, { exchangeFactor });
         await ctx.reply(settingsText(settings), {
           parse_mode: PARSE_MODE,
           reply_markup: settingsKeyboard(settings.displayCurrency),

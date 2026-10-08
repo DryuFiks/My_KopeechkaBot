@@ -8,6 +8,29 @@ export function isSupportedCurrency(code: string): code is SupportedCurrency {
   return (SUPPORTED_CURRENCIES as string[]).includes(code.toUpperCase());
 }
 
+export const DEFAULT_EXCHANGE_FACTOR = 0.9;
+export const MIN_EXCHANGE_FACTOR = 0.5;
+export const MAX_EXCHANGE_FACTOR = 1;
+
+/** True for a usable "exchanger" factor: official rate multiplied by a value in [0.5, 1]. */
+export function isValidExchangeFactor(value: number): boolean {
+  return Number.isFinite(value) && value >= MIN_EXCHANGE_FACTOR && value <= MAX_EXCHANGE_FACTOR;
+}
+
+/**
+ * The rate a user actually gets at an exchanger: foreign currency is worth `factor` times
+ * its official value in GEL (factor 0.9 → 1000 ₽ buys 10% fewer lari). GEL itself is never
+ * adjusted. The same effective rate is used in both directions so a round trip is stable
+ * (1000 ₽ → GEL → ₽ gives 1000 ₽ again).
+ */
+export function effectiveRateToGel(
+  officialRateToGel: number,
+  currency: SupportedCurrency,
+  factor: number,
+): number {
+  return currency === "GEL" ? officialRateToGel : officialRateToGel * factor;
+}
+
 /**
  * Pure conversion core: converts via GEL using whatever `rateToGel` function is given.
  * Separate from currency.ts's rate cache so it's testable with a fake rate table — no

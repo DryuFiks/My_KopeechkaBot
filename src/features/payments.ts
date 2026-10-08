@@ -2,6 +2,7 @@ import { Bot, InlineKeyboard } from "grammy";
 import { createPayment, deletePayment, findPayment, listPayments, togglePaymentActive } from "../db/payments";
 import { insertTransaction } from "../db";
 import { convertToGel, isSupportedCurrency, refreshRatesIfStale } from "../currency";
+import { getUserSettings } from "../db/settings";
 import { confirmActionKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
 import { escapeHtml, formatMoney, formatSignedAmount, renderScreen, PARSE_MODE } from "../format";
@@ -175,7 +176,8 @@ export function registerPaymentsHandlers(bot: Bot): void {
         }
         await refreshRatesIfStale();
         const amount = Number(payment.amount);
-        const amountGel = convertToGel(amount, payment.currency);
+        const { exchangeFactor } = await getUserSettings(uid);
+        const amountGel = convertToGel(amount, payment.currency, exchangeFactor);
         const saved = await insertTransaction({
           userId: uid,
           type: "expense",

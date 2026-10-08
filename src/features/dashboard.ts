@@ -27,10 +27,11 @@ function formatKpiLine(
   currentGel: number,
   previousGel: number,
   displayCurrency: SupportedCurrency,
+  factor: number,
   suffix = "",
 ): { line: string; fallback: boolean } {
-  const current = toDisplayCurrency(currentGel, displayCurrency);
-  const delta = toDisplayCurrency(currentGel - previousGel, displayCurrency);
+  const current = toDisplayCurrency(currentGel, displayCurrency, factor);
+  const delta = toDisplayCurrency(currentGel - previousGel, displayCurrency, factor);
   const line = `${label}: ${formatMoney(current.amount, current.currency)} (${formatDelta(delta.amount, delta.currency)}, ${formatPercentDelta(currentGel, previousGel)}${suffix})`;
   return { line, fallback: !current.ok || !delta.ok };
 }
@@ -50,11 +51,19 @@ async function renderDashboard(userId: number, unit: PeriodUnit, offset: number)
   const netFlow = current.income_gel - current.expense_gel;
   const prevNetFlow = previous.income_gel - previous.expense_gel;
   const dc = settings.displayCurrency;
+  const fx = settings.exchangeFactor;
 
-  const incomeKpi = formatKpiLine("Доходы", current.income_gel, previous.income_gel, dc, " к пред. периоду");
-  const expenseKpi = formatKpiLine("Расходы", current.expense_gel, previous.expense_gel, dc);
-  const netKpi = formatKpiLine("Чистый поток", netFlow, prevNetFlow, dc);
-  const budgetDisp = budgetRemaining === null ? null : toDisplayCurrency(budgetRemaining, dc);
+  const incomeKpi = formatKpiLine(
+    "Доходы",
+    current.income_gel,
+    previous.income_gel,
+    dc,
+    fx,
+    " к пред. периоду",
+  );
+  const expenseKpi = formatKpiLine("Расходы", current.expense_gel, previous.expense_gel, dc, fx);
+  const netKpi = formatKpiLine("Чистый поток", netFlow, prevNetFlow, dc, fx);
+  const budgetDisp = budgetRemaining === null ? null : toDisplayCurrency(budgetRemaining, dc, fx);
 
   const lines = [
     incomeKpi.line,

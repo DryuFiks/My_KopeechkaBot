@@ -2,6 +2,7 @@ import { Bot, Context } from "grammy";
 import { deleteTransactionById, getBalanceOverview, getRecentCategories, insertTransaction } from "../db";
 import { cancelKeyboard, categoryKeyboard, confirmKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { convertToGel, refreshRatesIfStale } from "../currency";
+import { getUserSettings } from "../db/settings";
 import { parseAmountLine, parseTransactionMessage, isParseError } from "../parser";
 import { formatBalanceOverview, formatSignedAmount, PARSE_MODE } from "../format";
 import { Flow, flows } from "../features/common";
@@ -83,7 +84,8 @@ export function registerTextFlowHandlers(bot: Bot): void {
         return;
       }
       await refreshRatesIfStale();
-      const gel = convertToGel(parsed.amount, parsed.currency);
+      const { exchangeFactor } = await getUserSettings(uid);
+      const gel = convertToGel(parsed.amount, parsed.currency, exchangeFactor);
       const saved = await insertTransaction({
         userId: uid,
         type: parsed.type,
@@ -152,7 +154,8 @@ export function registerTextFlowHandlers(bot: Bot): void {
       }
 
       await refreshRatesIfStale();
-      const gel = convertToGel(flow.amount, flow.currency);
+      const { exchangeFactor } = await getUserSettings(uid);
+      const gel = convertToGel(flow.amount, flow.currency, exchangeFactor);
       const saved = await insertTransaction({
         userId: uid,
         type: flow.type,

@@ -1,16 +1,21 @@
 import { pool } from "../db";
-import type { SupportedCurrency } from "../currencies";
+import { DEFAULT_EXCHANGE_FACTOR, type SupportedCurrency } from "../currencies";
 
 export interface UserSettings {
   displayCurrency: SupportedCurrency;
   timezone: string;
   notifyPayments: boolean;
+  /** Multiplier on official rates for foreign currency → GEL (exchanger spread); 1 = official. */
+  exchangeFactor: number;
+  onboardedAt: Date | null;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   displayCurrency: "GEL",
   timezone: "Asia/Tbilisi",
   notifyPayments: true,
+  exchangeFactor: DEFAULT_EXCHANGE_FACTOR,
+  onboardedAt: null,
 };
 
 /**
@@ -23,13 +28,20 @@ export async function getUserSettings(userId: number): Promise<UserSettings> {
     display_currency: SupportedCurrency;
     timezone: string;
     notify_payments: boolean;
-  }>("SELECT display_currency, timezone, notify_payments FROM user_settings WHERE user_id = $1", [userId]);
+    exchange_factor: string;
+    onboarded_at: Date | null;
+  }>(
+    "SELECT display_currency, timezone, notify_payments, exchange_factor, onboarded_at FROM user_settings WHERE user_id = $1",
+    [userId],
+  );
   const row = result.rows[0];
   if (!row) return DEFAULT_SETTINGS;
   return {
     displayCurrency: row.display_currency,
     timezone: row.timezone,
     notifyPayments: row.notify_payments,
+    exchangeFactor: Number(row.exchange_factor),
+    onboardedAt: row.onboarded_at,
   };
 }
 
@@ -41,14 +53,16 @@ export async function updateUserSettings(
   const current = await getUserSettings(userId);
   const next: UserSettings = { ...current, ...patch };
   await pool.query(
-    `INSERT INTO user_settings (user_id, display_currency, timezone, notify_payments, updated_at)
-     VALUES ($1, $2, $3, $4, NOW())
+    `INSERT INTO user_settings (user_id, display_currency, timezone, notify_payments, exchange_factor, onboarded_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW())
      ON CONFLICT (user_id) DO UPDATE SET
        display_currency = EXCLUDED.display_currency,
        timezone = EXCLUDED.timezone,
        notify_payments = EXCLUDED.notify_payments,
+       exchange_factor = EXCLUDED.exchange_factor,
+       onboarded_at = EXCLUDED.onboarded_at,
        updated_at = NOW()`,
-    [userId, next.displayCurrency, next.timezone, next.notifyPayments],
+    [userId, next.displayCurrency, next.timezone, next.notifyPayments, next.exchangeFactor, next.onboardedAt],
   );
   return next;
 }
