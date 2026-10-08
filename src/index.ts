@@ -1,50 +1,20 @@
 import "dotenv/config";
-import { Bot } from "grammy";
-import { checkConnection, closePool } from "./db";
-import { registerHandlers } from "./handlers";
-import { registerNavigationHandlers } from "./handlers/navigation";
-import { registerMenuActionHandlers } from "./handlers/menuActions";
-import { registerTextFlowHandlers } from "./handlers/textFlow";
-import { registerFeatureHandlers } from "./features";
-import { loadRateCacheFromDb, refreshRatesIfStale } from "./currency";
-import { startPaymentReminders } from "./reminders";
+import "reflect-metadata";
+import { join } from "path";
+import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
+import { AppModule } from "./nest/app.module";
 import { logger } from "./logger";
 
 async function main(): Promise<void> {
-  const token = process.env.BOT_TOKEN;
-  if (!token) {
-    throw new Error("BOT_TOKEN is not set. Check your .env file.");
-  }
-
-  logger.info("Checking database connection...");
-  await checkConnection();
-  logger.info("Database OK.");
-
-  logger.info("Loading exchange rate cache...");
-  await loadRateCacheFromDb();
-  await refreshRatesIfStale();
-
-  const bot = new Bot(token);
-  registerHandlers(bot);
-  registerNavigationHandlers(bot);
-  registerMenuActionHandlers(bot);
-  registerFeatureHandlers(bot);
-  registerTextFlowHandlers(bot);
-  startPaymentReminders(bot);
-
-  const shutdown = async (signal: string) => {
-    logger.info(`Received ${signal}, stopping bot...`);
-    await bot.stop();
-    await closePool();
-    process.exit(0);
-  };
-  process.once("SIGINT", () => shutdown("SIGINT"));
-  process.once("SIGTERM", () => shutdown("SIGTERM"));
-
-  logger.info("Starting bot (polling)...");
-  await bot.start({
-    onStart: () => logger.info("Bot is running."),
-  });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: ["error", "warn"] });
+  // SIGINT/SIGTERM → onApplicationShutdown у BotService и onModuleDestroy у DatabaseService.
+  app.enableShutdownHooks();
+  // Собранный webapp (webapp/dist) отдаётся с того же origin, что и /api — CORS не нужен.
+  app.useStaticAssets(join(process.cwd(), "webapp", "dist"));
+  const port = Number(process.env.API_PORT) || 3000;
+  await app.listen(port, "127.0.0.1");
+  logger.info(`HTTP listening on 127.0.0.1:${port} (webapp + /api)`);
 }
 
 main().catch((err) => {
