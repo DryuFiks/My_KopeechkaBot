@@ -38,14 +38,33 @@ export function DeleteCategory({ category, onDone }: { category: string; onDone:
     });
   }
 
+  const trash = (
+    <button
+      className="trash"
+      aria-label={`Удалить категорию «${category}»`}
+      title="Удалить категорию"
+      disabled={load.busy || plan !== undefined}
+      onClick={open}
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 6h18" />
+        <path d="M8 6V4h8v2" />
+        <path d="M6 6l1 14h10l1-14" />
+        <path d="M10 11v6M14 11v6" />
+      </svg>
+    </button>
+  );
+
   if (!plan) {
     return (
-      <div>
-        <button className="link" disabled={load.busy} onClick={open}>
-          Удалить категорию
-        </button>
-        {load.error && <small className="hint" role="alert"> {load.error}</small>}
-      </div>
+      <>
+        {trash}
+        {load.error && (
+          <small className="hint" role="alert">
+            {load.error}
+          </small>
+        )}
+      </>
     );
   }
 
@@ -54,7 +73,9 @@ export function DeleteCategory({ category, onDone }: { category: string; onDone:
   const canConfirm = !hasOps || target.length > 0;
 
   return (
-    <div className="delete-panel" role="group" aria-label={`Удаление категории ${category}`}>
+    <>
+      {trash}
+      <div className="delete-panel" role="group" aria-label={`Удаление категории ${category}`}>
       {hasOps ? (
         <>
           <p>
@@ -102,6 +123,7 @@ export function DeleteCategory({ category, onDone }: { category: string; onDone:
           {remove.error}
         </small>
       )}
-    </div>
+      </div>
+    </>
   );
 }

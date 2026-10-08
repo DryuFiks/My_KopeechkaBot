@@ -4,3 +4,8 @@
 .check { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--hint); }
 .bad { color: #d33; }
 .delete-panel { display: grid; gap: 8px; margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--card); } .delete-panel p { margin: 0; } .delete-panel input, .delete-panel select { padding: 8px; border-radius: 8px; border: 1px solid rgba(127,127,127,.3); background: var(--bg); color: var(--text); font: inherit; }
+.row-block--deletable { position: relative; }
+.row-block--deletable > .row:first-child { padding-right: 40px; }
+.trash { position: absolute; top: -6px; right: -6px; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 0; background: none; color: #d33; cursor: pointer; border-radius: 10px; }
+.trash:hover:not(:disabled) { background: rgba(221, 51, 51, 0.12); }
+.trash:disabled { opacity: 0.4; cursor: default; }

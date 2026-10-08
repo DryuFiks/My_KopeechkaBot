@@ -10,7 +10,7 @@ function CategoryRow({ c, onChanged }: { c: BudgetCategory; onChanged: () => voi
   const limit = c.effectiveLimitGel;
   const over = limit !== null && c.spentGel > limit;
   return (
-    <div className="row-block">
+    <div className="row-block row-block--deletable">
       <div className="row">
         <span>{c.category ?? "Без категории"}</span>
         <b className={over ? "bad" : undefined}>
