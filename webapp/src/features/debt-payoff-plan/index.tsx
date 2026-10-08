@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card } from "@/shared/ui";
+import { Card, Hint } from "@/shared/ui";
 import { formatGel } from "@/shared/lib/money";
 import { fetchPlan } from "@/entities/debt";
 import type { Debt, PayoffPlan, PlanComparison, Strategy } from "@/entities/debt";
@@ -46,6 +46,10 @@ export function DebtPayoffPlan({ debts, strategy }: { debts: Debt[]; strategy: S
 
   return (
     <Card title="План погашения">
+      <Hint example="минимальные платежи 210 ₾, вы готовы отдавать 500 ₾ — долги закроются в разы быстрее">
+        Сколько всего вы готовы платить по долгам в месяц. Не меньше суммы минимальных платежей; чем больше, тем быстрее
+        свобода и меньше переплата.
+      </Hint>
       <label className="row">
         <span>Платить в месяц, ₾</span>
         <input
