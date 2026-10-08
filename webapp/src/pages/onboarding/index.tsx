@@ -3,15 +3,17 @@ import { OnboardingStepper } from "@/widgets/onboarding-stepper";
 import { CurrencyStep } from "@/features/choose-currency";
 import { IncomeStep } from "@/features/income-step";
 import { ExpenseStep } from "@/features/expense-step";
+import { GoalTemplatesStep } from "@/features/goal-templates-step";
+import { BudgetTemplatesStep } from "@/features/budget-templates-step";
 import { TodayCard, completeOnboarding, fetchPlan, fetchSettings, fetchSummary } from "@/entities/plan";
 import { Hint, Status } from "@/shared/ui";
 import { useAction } from "@/shared/lib/useAction";
 import { useAsync } from "@/shared/lib/useAsync";
 import { useBackButton } from "@/shared/lib/useBackButton";
 
-const TITLES = ["Добро пожаловать", "Валюта", "Доходы", "Обязательные расходы", "Ваш план на месяц"];
+const TITLES = ["Добро пожаловать", "Валюта", "Доходы", "Обязательные расходы", "Ваш план на месяц", "Цели", "Бюджет"];
 
-/** Первый вход: пять коротких шагов; каждый можно пропустить, данные потом правятся на вкладках. */
+/** Первый вход: семь коротких шагов; каждый можно пропустить, данные потом правятся на вкладках. */
 export function OnboardingPage({ onFinish }: { onFinish: () => void }) {
   const [step, setStep] = useState(0);
   const settings = useAsync(fetchSettings);
@@ -62,11 +64,13 @@ export function OnboardingPage({ onFinish }: { onFinish: () => void }) {
         <>
           <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
           <Hint>
-            Это оценка: чем точнее доходы и обязательные платежи, тем точнее число. Цели и бюджет по категориям
-            настроим на следующих шагах — их можно открыть во вкладках.
+            Это оценка: чем точнее доходы и обязательные платежи, тем точнее число. Дальше — цели и бюджет по
+            категориям: оба шага можно пропустить.
           </Hint>
         </>
       )}
+      {step === 5 && <Status state={summary}>{(s) => <GoalTemplatesStep summary={s} />}</Status>}
+      {step === 6 && <Status state={summary}>{(s) => <BudgetTemplatesStep summary={s} />}</Status>}
       {finish.error && (
         <p className="hint" role="alert">
           {finish.error}

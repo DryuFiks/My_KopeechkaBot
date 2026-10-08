@@ -9,6 +9,7 @@ export {
   fetchSettings,
   updateSettings,
   completeOnboarding,
+  applyBudget,
 } from "./model/api";
 export type {
   Income,
@@ -20,5 +21,7 @@ export type {
   NewIncome,
   NewExpense,
   AllowanceStatus,
+  GoalTemplate,
+  CategoryLimit,
 } from "./model/api";
 export { TodayCard } from "./ui/TodayCard";

@@ -47,6 +47,21 @@ export interface PlanSummary {
   ratesMissing: boolean;
   /** GEL за 1 единицу основной валюты по курсу обменника; null — курса нет, показываем лари. */
   displayRateGel: number | null;
+  goalTemplates: GoalTemplate[];
+  categoryLimits: CategoryLimit[];
+}
+
+export interface GoalTemplate {
+  code: "cushion" | "vacation" | "purchase";
+  title: string;
+  targetGel: number;
+  monthlyGel: number;
+  months: number;
+}
+
+export interface CategoryLimit {
+  category: string;
+  limitGel: number;
 }
 
 export interface Settings {
@@ -86,3 +101,5 @@ export const fetchSettings = () => api.get<Settings>("/settings");
 export const updateSettings = (patch: { displayCurrency?: Currency; exchangeFactor?: number }) =>
   api.put<Settings>("/settings", patch);
 export const completeOnboarding = () => api.post<Settings>("/onboarding/complete", {});
+export const applyBudget = (limits: CategoryLimit[]) =>
+  api.post<{ applied: number }>("/plan/apply-budget", { limits });
