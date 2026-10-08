@@ -7,6 +7,7 @@ import { DebtsController } from "./api/debts.controller";
 import { GoalsController } from "./api/goals.controller";
 import { PlanController } from "./api/plan.controller";
 import { SettingsController } from "./api/settings.controller";
+import { ProgressController } from "./api/progress.controller";
 
 @Module({
   imports: [DatabaseModule, BotModule],
@@ -17,6 +18,7 @@ import { SettingsController } from "./api/settings.controller";
     GoalsController,
     PlanController,
     SettingsController,
+    ProgressController,
   ],
 })
 export class AppModule {}

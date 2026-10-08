@@ -3,6 +3,7 @@ import { createPayment, deletePayment, findPayment, listPayments, togglePaymentA
 import { insertTransaction } from "../db";
 import { convertToGel, isSupportedCurrency, refreshRatesIfStale } from "../currency";
 import { getUserSettings } from "../db/settings";
+import { announceProgress } from "./progress";
 import { confirmActionKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
 import { escapeHtml, formatMoney, formatSignedAmount, renderScreen, PARSE_MODE } from "../format";
@@ -194,6 +195,7 @@ export function registerPaymentsHandlers(bot: Bot): void {
             { reply_markup: undoKeyboard(saved.id), parse_mode: PARSE_MODE },
           )
           .catch(() => {});
+        await announceProgress(ctx, uid);
       } finally {
         recordingReminder.delete(id);
       }

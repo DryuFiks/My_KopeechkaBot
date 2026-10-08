@@ -8,6 +8,7 @@ import { registerSettingsHandlers } from "./features/settings";
 import { registerPaymentsHandlers } from "./features/payments";
 import { registerGoalsHandlers } from "./features/goals";
 import { registerHealthHandlers } from "./features/health";
+import { registerProgressHandlers } from "./features/progress";
 
 export function registerFeatureHandlers(bot: Bot): void {
   registerAnalyticsHandlers(bot);
@@ -19,4 +20,5 @@ export function registerFeatureHandlers(bot: Bot): void {
   registerPaymentsHandlers(bot);
   registerGoalsHandlers(bot);
   registerHealthHandlers(bot);
+  registerProgressHandlers(bot);
 }

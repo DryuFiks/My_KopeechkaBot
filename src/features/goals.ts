@@ -5,6 +5,7 @@ import { editOrReply } from "../editOrReply";
 import { escapeHtml, formatGoalProgress, renderScreen, PARSE_MODE } from "../format";
 import { recordIdempotentGuardHit } from "../metrics";
 import { safe, safeCallback } from "../middleware/safe";
+import { announceProgress } from "./progress";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -53,6 +54,7 @@ export function registerGoalsHandlers(bot: Bot): void {
       }
       await createGoal(uid, m[1].trim().slice(0, 120), Number(m[2].replace(",", ".")), targetDate);
       await ctx.reply("Цель накопления создана.", { reply_markup: mainKeyboard });
+      await announceProgress(ctx, uid);
     }),
   );
 
@@ -78,6 +80,7 @@ export function registerGoalsHandlers(bot: Bot): void {
         targetDate: goal.target_date,
       });
       await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
+      await announceProgress(ctx, uid);
     }),
   );
 
