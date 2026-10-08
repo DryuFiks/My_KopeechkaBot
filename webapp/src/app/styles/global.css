@@ -29,3 +29,4 @@ select { font: inherit; }
 .form button { padding: 10px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font: inherit; }
 .form button:disabled { opacity: .6; }
 .link { border: 0; background: none; color: var(--hint); font: inherit; cursor: pointer; }
+.inline-input { width: 110px; padding: 6px 8px; border: 1px solid rgba(127,127,127,.3); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; text-align: right; }

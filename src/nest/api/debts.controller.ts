@@ -7,8 +7,10 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
+import { simulatePayoff, totalMinimums } from "../../debtPayoff";
 import { createDebt, deleteDebt, listDebts } from "../../db/debts";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
 import type { WebAppUser } from "../../telegramAuth";
@@ -25,6 +27,22 @@ export class DebtsController {
   @Get()
   list(@WebUser() user: WebAppUser) {
     return listDebts(user.id);
+  }
+
+  /** Сравнение стратегий при фиксированном месячном бюджете (по умолчанию — сумма минимальных платежей). */
+  @Get("plan")
+  async plan(@WebUser() user: WebAppUser, @Query("monthly") monthly?: string) {
+    const debts = await listDebts(user.id);
+    const minRequiredGel = totalMinimums(debts);
+    const budget = monthly === undefined || monthly === "" ? minRequiredGel : num(monthly, 1e9);
+    if (budget < minRequiredGel) throw new BadRequestException("budget below minimum payments");
+    if (debts.length > 0 && budget <= 0) throw new BadRequestException("budget must be positive");
+    return {
+      monthlyGel: budget,
+      minRequiredGel,
+      avalanche: simulatePayoff(debts, budget, "avalanche"),
+      snowball: simulatePayoff(debts, budget, "snowball"),
+    };
   }
 
   @Post()
