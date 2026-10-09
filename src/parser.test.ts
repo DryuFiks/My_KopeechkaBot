@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isParseError, parseAmountLine, parseTransactionMessage } from "./parser";
+import { isParseError, parseAmountLine, parseBareAmount, parseTransactionMessage } from "./parser";
 
 describe("parseTransactionMessage", () => {
   it("parses an expense with currency, category and note", () => {
@@ -112,5 +112,22 @@ describe("parseAmountLine", () => {
 
   it("rejects a zero or negative amount", () => {
     expect(isParseError(parseAmountLine("0 GEL"))).toBe(true);
+  });
+});
+
+describe("parseBareAmount", () => {
+  it("accepts plain numbers with dot or comma", () => {
+    expect(parseBareAmount("25")).toBe(25);
+    expect(parseBareAmount(" 25.5 ")).toBe(25.5);
+    expect(parseBareAmount("25,50")).toBe(25.5);
+    expect(parseBareAmount("1 250")).toBe(1250);
+  });
+  it("rejects zero, negatives, words and too many decimals", () => {
+    for (const bad of ["0", "-5", "abc", "25 gel", "1.234", "", "1e5"]) {
+      expect(isParseError(parseBareAmount(bad))).toBe(true);
+    }
+  });
+  it("rejects absurdly large amounts", () => {
+    expect(isParseError(parseBareAmount("99999999999"))).toBe(true);
   });
 });

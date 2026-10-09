@@ -21,7 +21,7 @@ export type Flow = {
   currency?: "RUB" | "GEL" | "USD";
   category?: string | null;
   note?: string | null;
-  stage: "amount" | "category" | "confirm";
+  stage: "currency" | "category" | "newCategory" | "amount" | "confirm" | "comment";
   /** Categories shown at the "category" stage, so cat:<index> callbacks can resolve them. */
   categoryOptions?: string[];
 };

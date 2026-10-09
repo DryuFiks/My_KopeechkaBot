@@ -9,6 +9,7 @@ import { PlanController } from "./api/plan.controller";
 import { SettingsController } from "./api/settings.controller";
 import { ProgressController } from "./api/progress.controller";
 import { CategoriesController } from "./api/categories.controller";
+import { TransactionsController } from "./api/transactions.controller";
 
 @Module({
   imports: [DatabaseModule, BotModule],
@@ -21,6 +22,7 @@ import { CategoriesController } from "./api/categories.controller";
     SettingsController,
     ProgressController,
     CategoriesController,
+    TransactionsController,
   ],
 })
 export class AppModule {}

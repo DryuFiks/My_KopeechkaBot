@@ -1,4 +1,5 @@
 import { InlineKeyboard } from "grammy";
+import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "./currencies";
 
 export const mainKeyboard = new InlineKeyboard()
   .text("💰 Финансы", "menu:finance")
@@ -72,13 +73,35 @@ function withMainMenuRows(keyboard: InlineKeyboard): InlineKeyboard {
  */
 export function categoryKeyboard(categories: string[]) {
   const keyboard = new InlineKeyboard();
-  categories.forEach((category, index) => keyboard.text(category, `cat:${index}`).row());
-  keyboard.text("Без категории", "cat:none").row().text("❌ Отмена", "flow:cancel");
+  categories.forEach((category, index) => {
+    keyboard.text(category, `cat:${index}`);
+    if (index % 2 === 1) keyboard.row();
+  });
+  if (categories.length % 2 === 1) keyboard.row();
+  keyboard.text("➕ Добавить категорию", "cat:new").row();
+  keyboard.text("Без категории", "cat:none").text("❌ Отмена", "flow:cancel");
   return keyboard;
 }
 
-export const confirmKeyboard = new InlineKeyboard()
-  .text("✅ Сохранить", "flow:save")
+/** Currency step of the add-transaction wizard; the user's main currency comes first. */
+export function currencyKeyboard(preferred: SupportedCurrency = "GEL") {
+  const order = [preferred, ...SUPPORTED_CURRENCIES.filter((c) => c !== preferred)];
+  const keyboard = new InlineKeyboard();
+  for (const c of order) keyboard.text(c, `cur:${c}`);
+  return keyboard.row().text("❌ Отмена", "flow:cancel");
+}
+
+/** Save / cancel as before, plus an optional comment (the label says whether one is already set). */
+export function flowConfirmKeyboard(hasNote: boolean) {
+  return new InlineKeyboard()
+    .text("✅ Сохранить", "flow:save")
+    .text("❌ Отмена", "flow:cancel")
+    .row()
+    .text(hasNote ? "💬 Изменить комментарий" : "💬 Добавить комментарий", "flow:comment");
+}
+
+export const commentKeyboard = new InlineKeyboard()
+  .text("Без комментария", "flow:nocomment")
   .text("❌ Отмена", "flow:cancel");
 
 /** The specific transaction id is embedded in the callback so a duplicate tap is idempotent. */

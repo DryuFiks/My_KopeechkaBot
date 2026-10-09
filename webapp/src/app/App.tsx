@@ -8,6 +8,7 @@ import { GoalsPage } from "@/pages/goals";
 import { OnboardingPage } from "@/pages/onboarding";
 import { AwardsPage } from "@/pages/awards";
 import { SettingsPage } from "@/pages/settings";
+import { AddExpensePage } from "@/pages/add-expense";
 import { ProgressToasts } from "@/widgets/progress-toasts";
 import { fetchSettings } from "@/entities/plan";
 import { Status } from "@/shared/ui";
@@ -26,6 +27,7 @@ const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   goals: GoalsPage,
   awards: AwardsPage,
   settings: SettingsPage,
+  "add-expense": AddExpensePage,
 };
 
 function Tabs({ restartOnboarding }: { restartOnboarding: () => void }) {

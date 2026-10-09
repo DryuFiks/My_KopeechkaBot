@@ -1,27 +1,15 @@
-import { Bot, Context } from "grammy";
-import { deleteTransactionById, getBalanceOverview, getRecentCategories, insertTransaction } from "../db";
-import { cancelKeyboard, categoryKeyboard, confirmKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
+import { Bot } from "grammy";
+import { deleteTransactionById, getBalanceOverview, insertTransaction } from "../db";
+import { cancelKeyboard, flowConfirmKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { convertToGel, refreshRatesIfStale } from "../currency";
 import { getUserSettings } from "../db/settings";
 import { announceProgress } from "../features/progress";
-import { parseAmountLine, parseTransactionMessage, isParseError } from "../parser";
+import { parseAmountLine, parseBareAmount, parseTransactionMessage, isParseError } from "../parser";
 import { formatBalanceOverview, formatSignedAmount, PARSE_MODE } from "../format";
-import { Flow, flows } from "../features/common";
+import { flows } from "../features/common";
+import { amountPrompt, confirmText, registerAddFlowHandlers } from "./addFlow";
 import { recordIdempotentGuardHit } from "../metrics";
 import { safe, safeCallback } from "../middleware/safe";
-
-function confirmText(flow: Flow): string {
-  return `Проверь операцию:\n${formatSignedAmount(flow.type, flow.amount ?? 0, flow.currency ?? "GEL")}\nКатегория: ${flow.category ?? "—"}\nКомментарий: ${flow.note ?? "—"}`;
-}
-
-async function promptCategoryStage(ctx: Context, uid: number, flow: Flow): Promise<void> {
-  const categories = await getRecentCategories(uid, flow.type);
-  flow.categoryOptions = categories;
-  flow.stage = "category";
-  await ctx.reply("Выбери категорию или пришли своё название:", {
-    reply_markup: categoryKeyboard(categories),
-  });
-}
 
 /**
  * The single message:text handler for the bot: drives the multi-step add-transaction
@@ -29,6 +17,8 @@ async function promptCategoryStage(ctx: Context, uid: number, flow: Flow): Promi
  * "-150 gel еда обед" format working as a quick path.
  */
 export function registerTextFlowHandlers(bot: Bot): void {
+  registerAddFlowHandlers(bot);
+
   bot.on(
     "message:text",
     safe("text flow", async (ctx) => {
@@ -38,26 +28,12 @@ export function registerTextFlowHandlers(bot: Bot): void {
 
       const flow = flows.get(uid);
       if (flow) {
-        if (flow.stage === "amount") {
-          const parsed = parseAmountLine(text);
-          if (isParseError(parsed)) {
-            await ctx.reply(parsed.error, { reply_markup: cancelKeyboard });
-            return;
-          }
-          flow.amount = parsed.amount;
-          flow.currency = parsed.currency;
-          flow.note = parsed.note;
-          if (parsed.category) {
-            flow.category = parsed.category;
-            flow.stage = "confirm";
-            await ctx.reply(confirmText(flow), { reply_markup: confirmKeyboard });
-            return;
-          }
-          await promptCategoryStage(ctx, uid, flow);
+        if (flow.stage === "currency") {
+          await ctx.reply("Сначала выбери валюту кнопкой выше.", { reply_markup: cancelKeyboard });
           return;
         }
 
-        if (flow.stage === "category") {
+        if (flow.stage === "category" || flow.stage === "newCategory") {
           const name = text.trim().slice(0, 60);
           if (!name) {
             await ctx.reply("Пришли название категории или выбери из списка.", {
@@ -66,14 +42,44 @@ export function registerTextFlowHandlers(bot: Bot): void {
             return;
           }
           flow.category = name;
+          flow.stage = "amount";
+          await ctx.reply(amountPrompt(flow), { reply_markup: cancelKeyboard });
+          return;
+        }
+
+        if (flow.stage === "amount") {
+          const bare = parseBareAmount(text);
+          if (!isParseError(bare)) {
+            flow.amount = bare;
+            flow.stage = "confirm";
+            await ctx.reply(confirmText(flow), { reply_markup: flowConfirmKeyboard(Boolean(flow.note)) });
+            return;
+          }
+          // Still understand the classic one-liner ("25 gel еда обед") at this step.
+          const parsed = parseAmountLine(text);
+          if (isParseError(parsed)) {
+            await ctx.reply(bare.error, { reply_markup: cancelKeyboard });
+            return;
+          }
+          flow.amount = parsed.amount;
+          flow.currency = parsed.currency;
+          if (parsed.category) flow.category = parsed.category;
+          if (parsed.note) flow.note = parsed.note;
           flow.stage = "confirm";
-          await ctx.reply(confirmText(flow), { reply_markup: confirmKeyboard });
+          await ctx.reply(confirmText(flow), { reply_markup: flowConfirmKeyboard(Boolean(flow.note)) });
+          return;
+        }
+
+        if (flow.stage === "comment") {
+          flow.note = text.slice(0, 200);
+          flow.stage = "confirm";
+          await ctx.reply(confirmText(flow), { reply_markup: flowConfirmKeyboard(true) });
           return;
         }
 
         // stage === "confirm" — stray text instead of a button tap; the flow stays as-is.
         await ctx.reply("Используй кнопки ниже, чтобы сохранить или отменить.", {
-          reply_markup: confirmKeyboard,
+          reply_markup: flowConfirmKeyboard(Boolean(flow.note)),
         });
         return;
       }
@@ -124,8 +130,9 @@ export function registerTextFlowHandlers(bot: Bot): void {
         }
         flow.category = name;
       }
-      flow.stage = "confirm";
-      await ctx.editMessageText(confirmText(flow), { reply_markup: confirmKeyboard }).catch(() => {});
+      flow.stage = "amount";
+      await ctx.answerCallbackQuery();
+      await ctx.editMessageText(amountPrompt(flow), { reply_markup: cancelKeyboard }).catch(() => {});
     }),
   );
 

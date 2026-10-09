@@ -111,3 +111,21 @@ export function parseAmountLine(rawText: string): ParsedAmountLine | ParseError 
   const [, rawAmount, rest] = match;
   return parseAmountAndRest(rawAmount, rest);
 }
+
+const BARE_NUMBER_PATTERN = /^(\d+(?:[.,]\d{1,2})?)$/;
+const MAX_AMOUNT = 1_000_000_000;
+
+/**
+ * The wizard has already asked for currency and category, so at the amount step the user
+ * just types a number ("25", "25.5", "25,5"). Anything else is rejected here and the caller
+ * may still try the classic one-line format.
+ */
+export function parseBareAmount(rawText: string): number | ParseError {
+  const text = rawText.trim().replace(/\s+/g, "");
+  const match = BARE_NUMBER_PATTERN.exec(text);
+  if (!match) return { error: "Введи сумму числом, например 25 или 25.5" };
+  const amount = Number(match[1].replace(",", "."));
+  if (!(amount > 0) || amount > MAX_AMOUNT)
+    return { error: "Сумма должна быть больше нуля и не слишком большой." };
+  return amount;
+}

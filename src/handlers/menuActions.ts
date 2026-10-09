@@ -3,8 +3,9 @@ import { pool, getSummaryForRange } from "../db";
 import { getUserSettings } from "../db/settings";
 import { mainKeyboard, paginationKeyboard } from "../keyboards";
 import { refreshRatesIfStale, getAllRateInfo } from "../currency";
+import { startAddFlow } from "./addFlow";
 import { zonedMonthBoundaries } from "../timezone";
-import { flows, showBudget } from "../features/common";
+import { showBudget } from "../features/common";
 import { editOrReply } from "../editOrReply";
 import { logger } from "../logger";
 import {
@@ -55,13 +56,7 @@ export function registerMenuActionHandlers(bot: Bot): void {
     /^action:(expense|income)$/,
     safeCallback("action:expense|income", async (ctx) => {
       const type = ctx.match[1] === "expense" ? "expense" : "income";
-      const uid = ctx.from.id;
-      flows.set(uid, { type, stage: "amount" });
-      await editOrReply(
-        ctx,
-        `Введи сумму ${type === "expense" ? "расхода" : "дохода"}, например: 25 GEL Еда обед\nИли только сумму — предложу выбрать категорию: 25 GEL`,
-        { reply_markup: mainKeyboard },
-      );
+      await startAddFlow(ctx, ctx.from.id, type);
     }),
   );
 
