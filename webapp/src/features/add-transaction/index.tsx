@@ -85,7 +85,10 @@ export function AddTransaction({ type, onClose }: { type: TransactionType; onClo
 
       {step === "currency" && (
         <>
-          <Hint>В какой валюте вы заплатили? Основная валюта показана первой.</Hint>
+          <Hint>
+            {type === "expense" ? "В какой валюте вы заплатили?" : "В какой валюте вы получили деньги?"} Основная
+            валюта показана первой.
+          </Hint>
           <Status state={settings}>
             {(s) => {
               const order = [s.displayCurrency, ...ALL_CURRENCIES.filter((c) => c !== s.displayCurrency)];

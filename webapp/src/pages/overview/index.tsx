@@ -19,6 +19,9 @@ export function OverviewPage({ go }: { go: (tab: TabId) => void }) {
             <button className="primary wide" onClick={() => go("add-expense")}>
               ➖ Добавить расход
             </button>
+            <button className="primary wide" onClick={() => go("add-income")}>
+              ➕ Добавить доход
+            </button>
             <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
             <Status state={progress}>{(p) => <RankCard p={p} onOpen={() => go("awards")} />}</Status>
             <Card title="Этот месяц">
