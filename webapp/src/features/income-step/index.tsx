@@ -14,7 +14,8 @@ const MODES: { mode: IncomeMode; label: string }[] = [
 const MODE_HINT: Record<IncomeMode, string> = {
   fixed: "Одна и та же сумма каждый месяц.",
   range: "Доход плавает: укажите минимум и максимум — считаем по среднему.",
-  actual: "Сумма каждый раз разная: отмечайте, сколько получили. Если не отметили — берём среднее за прошлые месяцы.",
+  actual:
+    "Сумма каждый раз разная: отмечайте, сколько получили. Если не отметили — берём среднее за прошлые месяцы.",
 };
 
 function describe(i: Income): string {
@@ -25,7 +26,9 @@ function describe(i: Income): string {
 }
 
 function ReceivedInput({ income, onChanged }: { income: Income; onChanged: () => void }) {
-  const [value, setValue] = useState(income.receivedThisMonth === null ? "" : String(income.receivedThisMonth));
+  const [value, setValue] = useState(
+    income.receivedThisMonth === null ? "" : String(income.receivedThisMonth),
+  );
   const { error, busy, run } = useAction(onChanged);
   return (
     <div className="limit-controls">
@@ -37,7 +40,11 @@ function ReceivedInput({ income, onChanged }: { income: Income; onChanged: () =>
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
-      <button className="chip" disabled={busy} onClick={() => run(() => markReceived(income.id, parseAmount(value)))}>
+      <button
+        className="chip"
+        disabled={busy}
+        onClick={() => run(() => markReceived(income.id, parseAmount(value)))}
+      >
         Отметить
       </button>
       {error && <small className="hint">{error}</small>}
@@ -89,7 +96,11 @@ export function IncomeStep({ plan, onChanged }: { plan: PlanData; onChanged: () 
             </span>
             <span>
               <b>{formatMoney(i.expectedAmount, i.currency)}</b>{" "}
-              <button className="link" aria-label={`Удалить ${i.name}`} onClick={() => del.run(() => removeIncome(i.id))}>
+              <button
+                className="link"
+                aria-label={`Удалить ${i.name}`}
+                onClick={() => del.run(() => removeIncome(i.id))}
+              >
                 ✕
               </button>
             </span>
@@ -100,7 +111,14 @@ export function IncomeStep({ plan, onChanged }: { plan: PlanData; onChanged: () 
 
       <form className="form" onSubmit={submit}>
         <ChipRow label="Быстрый выбор источника" options={NAMES} onPick={setName} />
-        <input aria-label="Название источника" placeholder="Название" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} required />
+        <input
+          aria-label="Название источника"
+          placeholder="Название"
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
         <div className="segmented" role="radiogroup" aria-label="Тип дохода">
           {MODES.map((m) => (
             <button
@@ -118,7 +136,11 @@ export function IncomeStep({ plan, onChanged }: { plan: PlanData; onChanged: () 
         <p className="hint">{MODE_HINT[mode]}</p>
         <div className="row">
           <label htmlFor="income-currency">Валюта дохода</label>
-          <select id="income-currency" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
+          <select
+            id="income-currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as Currency)}
+          >
             {(["GEL", "RUB", "USD"] as Currency[]).map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -127,12 +149,33 @@ export function IncomeStep({ plan, onChanged }: { plan: PlanData; onChanged: () 
           </select>
         </div>
         {mode === "fixed" && (
-          <input aria-label="Сумма в месяц" placeholder={`Сумма в месяц, ${CURRENCY_SIGN[currency]}`} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          <input
+            aria-label="Сумма в месяц"
+            placeholder={`Сумма в месяц, ${CURRENCY_SIGN[currency]}`}
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
         )}
         {mode === "range" && (
           <>
-            <input aria-label="Минимум в месяц" placeholder={`Минимум, ${CURRENCY_SIGN[currency]}`} inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} required />
-            <input aria-label="Максимум в месяц" placeholder={`Максимум, ${CURRENCY_SIGN[currency]}`} inputMode="decimal" value={max} onChange={(e) => setMax(e.target.value)} required />
+            <input
+              aria-label="Минимум в месяц"
+              placeholder={`Минимум, ${CURRENCY_SIGN[currency]}`}
+              inputMode="decimal"
+              value={min}
+              onChange={(e) => setMin(e.target.value)}
+              required
+            />
+            <input
+              aria-label="Максимум в месяц"
+              placeholder={`Максимум, ${CURRENCY_SIGN[currency]}`}
+              inputMode="decimal"
+              value={max}
+              onChange={(e) => setMax(e.target.value)}
+              required
+            />
           </>
         )}
         <button type="submit" disabled={busy}>

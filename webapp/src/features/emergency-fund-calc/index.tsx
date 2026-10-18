@@ -3,7 +3,13 @@ import { Card, ProgressBar } from "@/shared/ui";
 import { formatGel, percent } from "@/shared/lib/money";
 
 /** Подушка безопасности: сколько месяцев расходов покрывают накопления (цель 3–6). */
-export function EmergencyFundCalc({ monthlyExpenses, savings }: { monthlyExpenses: number; savings: number }) {
+export function EmergencyFundCalc({
+  monthlyExpenses,
+  savings,
+}: {
+  monthlyExpenses: number;
+  savings: number;
+}) {
   const [targetMonths, setTargetMonths] = useState(3);
   const months = monthlyExpenses > 0 ? savings / monthlyExpenses : 0;
   const target = monthlyExpenses * targetMonths;

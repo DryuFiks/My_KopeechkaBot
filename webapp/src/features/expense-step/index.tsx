@@ -27,8 +27,8 @@ export function ExpenseStep({ plan, onChanged }: { plan: PlanData; onChanged: ()
   return (
     <>
       <Hint example="аренда жилья 800 ₾; коммуналка 120 ₾; интернет 30 ₾">
-        Платежи, которые нужно внести в любом случае. Еду и развлечения сюда не добавляйте — они появятся в бюджете.
-        Кредиты и рассрочки лучше завести во вкладке «Долги»: их минимальные платежи мы учтём сами.
+        Платежи, которые нужно внести в любом случае. Еду и развлечения сюда не добавляйте — они появятся в
+        бюджете. Кредиты и рассрочки лучше завести во вкладке «Долги»: их минимальные платежи мы учтём сами.
       </Hint>
 
       {plan.expenses.map((e) => (
@@ -36,7 +36,11 @@ export function ExpenseStep({ plan, onChanged }: { plan: PlanData; onChanged: ()
           <span>{e.name}</span>
           <span>
             <b>{formatMoney(e.amount, e.currency)}</b>{" "}
-            <button className="link" aria-label={`Удалить ${e.name}`} onClick={() => del.run(() => removeExpense(e.id))}>
+            <button
+              className="link"
+              aria-label={`Удалить ${e.name}`}
+              onClick={() => del.run(() => removeExpense(e.id))}
+            >
               ✕
             </button>
           </span>
@@ -45,11 +49,29 @@ export function ExpenseStep({ plan, onChanged }: { plan: PlanData; onChanged: ()
 
       <form className="form" onSubmit={submit}>
         <ChipRow label="Быстрый выбор расхода" options={NAMES} onPick={setName} />
-        <input aria-label="Название расхода" placeholder="Название" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} required />
-        <input aria-label="Сумма в месяц" placeholder={`Сумма в месяц, ${CURRENCY_SIGN[currency]}`} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        <input
+          aria-label="Название расхода"
+          placeholder="Название"
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <input
+          aria-label="Сумма в месяц"
+          placeholder={`Сумма в месяц, ${CURRENCY_SIGN[currency]}`}
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          required
+        />
         <div className="row">
           <label htmlFor="expense-currency">Валюта</label>
-          <select id="expense-currency" value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
+          <select
+            id="expense-currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as Currency)}
+          >
             {(["GEL", "RUB", "USD"] as Currency[]).map((c) => (
               <option key={c} value={c}>
                 {c}

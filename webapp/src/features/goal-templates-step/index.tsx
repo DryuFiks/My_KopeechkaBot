@@ -76,13 +76,19 @@ export function GoalTemplatesStep({ summary }: { summary: PlanSummary }) {
       </Hint>
       {noMoney && (
         <p className="hint">
-          Пока свободных денег нет, поэтому срок не посчитать. Вернитесь к доходам и расходам или пропустите шаг.
+          Пока свободных денег нет, поэтому срок не посчитать. Вернитесь к доходам и расходам или пропустите
+          шаг.
         </p>
       )}
       <Status state={goals}>
         {(g) =>
           summary.goalTemplates.map((t) => (
-            <Template key={t.code} t={t} taken={g.goals.some((x) => x.title === t.title)} onCreated={goals.reload} />
+            <Template
+              key={t.code}
+              t={t}
+              taken={g.goals.some((x) => x.title === t.title)}
+              onCreated={goals.reload}
+            />
           ))
         }
       </Status>

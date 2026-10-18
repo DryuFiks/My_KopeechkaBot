@@ -1,6 +1,7 @@
 import { fetchGoals, GoalCard } from "@/entities/goal";
 import { ContributeForm } from "@/features/contribute-goal";
 import { AddGoalForm } from "@/features/add-goal";
+import { DeleteGoal } from "@/features/delete-goal";
 import { formatGel } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
 import { Status } from "@/shared/ui";
@@ -14,12 +15,21 @@ export function GoalsPage() {
         {(d) => (
           <>
             <p className="hint">
-              Свободные деньги в месяц (среднее за 90 дней): <b>{formatGel(d.monthlySavingsGel)}</b>. Прогноз для каждой цели считается
-              так, будто все они идут на неё одну.
+              Свободные деньги в месяц (среднее за 90 дней): <b>{formatGel(d.monthlySavingsGel)}</b>. Прогноз
+              для каждой цели считается так, будто все они идут на неё одну.
             </p>
             {d.goals.length === 0 && <p className="hint">Целей пока нет. Создай первую ниже.</p>}
             {d.goals.map((g) => (
-              <GoalCard key={g.id} goal={g} actions={<ContributeForm goalId={g.id} onDone={state.reload} />} />
+              <GoalCard
+                key={g.id}
+                goal={g}
+                actions={
+                  <>
+                    <ContributeForm goalId={g.id} onDone={state.reload} />
+                    <DeleteGoal goalId={g.id} onDone={state.reload} />
+                  </>
+                }
+              />
             ))}
           </>
         )}

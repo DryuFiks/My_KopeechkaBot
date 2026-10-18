@@ -34,9 +34,36 @@ export function AddGoalForm({ onAdded }: { onAdded: () => void }) {
   return (
     <Card title="Новая цель">
       <form className="form" onSubmit={submit}>
-        <input aria-label="Название цели" placeholder="Название" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} required />
-        <input aria-label="Сумма цели, лари" placeholder="Сумма, ₾" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} required />
-        <input type="date" aria-label="Срок (необязательно)" value={date} onChange={(e) => setDate(e.target.value)} />
+        <input
+          aria-label="Название цели"
+          placeholder="Название"
+          value={title}
+          maxLength={120}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+        <input
+          aria-label="Сумма цели, лари"
+          placeholder="Сумма, ₾"
+          inputMode="decimal"
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          required
+        />
+        <div className="row">
+          <input
+            type="date"
+            style={{ flex: 1 }}
+            aria-label="Срок (необязательно)"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+          {date && (
+            <button type="button" className="chip" onClick={() => setDate("")}>
+              Сбросить дату
+            </button>
+          )}
+        </div>
         <button type="submit" disabled={busy}>
           Создать
         </button>

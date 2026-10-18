@@ -18,13 +18,7 @@ const TITLE: Record<TransactionType, string> = { expense: "Новый расхо
  * Мастер добавления операции — те же шаги, что и в чате: валюта → категория → сумма →
  * проверка (сохранить / отмена, комментарий по желанию).
  */
-export function AddTransaction({
-  type,
-  onClose,
-}: {
-  type: TransactionType;
-  onClose: () => void;
-}) {
+export function AddTransaction({ type, onClose }: { type: TransactionType; onClose: () => void }) {
   const settings = useAsync(fetchSettings);
   const categories = useAsync(() => fetchCategoryOptions(type));
   const [step, setStep] = useState<Step>("currency");
@@ -49,9 +43,7 @@ export function AddTransaction({
           {sign}
           {formatMoney(value, currency)}
         </p>
-        <p className="hint">
-          {category ? `Категория: ${category}.` : "Без категории."} Операция записана.
-        </p>
+        <p className="hint">{category ? `Категория: ${category}.` : "Без категории."} Операция записана.</p>
         <div className="stepper-nav">
           <button
             className="chip chip--soft"
@@ -184,9 +176,7 @@ export function AddTransaction({
             if (isValidAmount(value)) setStep(nextStep("amount"));
           }}
         >
-          <Hint>
-            {category ? `Категория: ${category}. ` : "Без категории. "}Введите сумму числом.
-          </Hint>
+          <Hint>{category ? `Категория: ${category}. ` : "Без категории. "}Введите сумму числом.</Hint>
           <input
             aria-label={`Сумма, ${currency}`}
             placeholder={`Сумма, ${CURRENCY_SIGN[currency]}`}

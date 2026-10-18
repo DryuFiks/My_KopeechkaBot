@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { applyBudget } from "@/entities/plan";
 import type { CategoryLimit, PlanSummary } from "@/entities/plan";
 import { Hint } from "@/shared/ui";
@@ -6,33 +6,53 @@ import { formatGel } from "@/shared/lib/money";
 import { parseAmount, useAction } from "@/shared/lib/useAction";
 
 /** Шаг 7: лимиты на повседневные траты — стартовая точка, которую можно править. */
-export function BudgetTemplatesStep({ summary }: { summary: PlanSummary }) {
+export function BudgetTemplatesStep({
+  summary,
+  registerApply,
+}: {
+  summary: PlanSummary;
+  /** Лимиты, которые не нажали «Применить», применятся при «Готово» — иначе они молча терялись. */
+  registerApply?: (apply: (() => Promise<unknown>) | null) => void;
+}) {
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(summary.categoryLimits.map((l) => [l.category, String(l.limitGel)])),
   );
   const [applied, setApplied] = useState(false);
   const { error, busy, run } = useAction();
 
+  const collect = (): CategoryLimit[] =>
+    summary.categoryLimits
+      .map((l) => ({ category: l.category, limitGel: parseAmount(values[l.category] ?? "") }))
+      .filter((l) => l.limitGel > 0);
+
+  useEffect(() => {
+    if (!registerApply || summary.categoryLimits.length === 0) return;
+    registerApply(() => {
+      const limits = collect();
+      return applied || limits.length === 0 ? Promise.resolve() : applyBudget(limits);
+    });
+    return () => registerApply(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, applied, summary]);
+
   if (summary.categoryLimits.length === 0) {
     return (
       <Hint>
-        Свободных денег на месяц пока нет, поэтому лимиты предложить нечем. Их можно задать позже на вкладке «Бюджет».
+        Свободных денег на месяц пока нет, поэтому лимиты предложить нечем. Их можно задать позже на вкладке
+        «Бюджет».
       </Hint>
     );
   }
 
   async function apply() {
-    const limits: CategoryLimit[] = summary.categoryLimits
-      .map((l) => ({ category: l.category, limitGel: parseAmount(values[l.category] ?? "") }))
-      .filter((l) => l.limitGel > 0);
-    if (await run(() => applyBudget(limits))) setApplied(true);
+    if (await run(() => applyBudget(collect()))) setApplied(true);
   }
 
   return (
     <>
       <Hint example="свободно 1600 ₾: 20% откладываем, на остальное — по категориям (еда, транспорт…)">
-        Это лишь отправная точка, не правило. Поправьте суммы под себя и нажмите «Применить» — лимиты появятся во
-        вкладке «Бюджет» на этот месяц.
+        Это лишь отправная точка, не правило. Поправьте суммы под себя и нажмите «Применить» — лимиты появятся
+        во вкладке «Бюджет» на этот месяц.
       </Hint>
       {summary.categoryLimits.map((l) => (
         <div key={l.category} className="row">
@@ -52,7 +72,10 @@ export function BudgetTemplatesStep({ summary }: { summary: PlanSummary }) {
       <button className="primary" onClick={apply} disabled={busy}>
         {applied ? "Применено ✓ (можно изменить и применить снова)" : "Применить лимиты"}
       </button>
-      <p className="hint">Суммы указаны в лари. Всего: {formatGel(Object.values(values).reduce((s, v) => s + (parseAmount(v) || 0), 0))}</p>
+      <p className="hint">
+        Суммы указаны в лари. Всего:{" "}
+        {formatGel(Object.values(values).reduce((s, v) => s + (parseAmount(v) || 0), 0))}
+      </p>
       {error && (
         <p className="hint" role="alert">
           {error}

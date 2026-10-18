@@ -46,7 +46,17 @@ export function DeleteCategory({ category, onDone }: { category: string; onDone:
       disabled={load.busy || plan !== undefined}
       onClick={open}
     >
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
         <path d="M3 6h18" />
         <path d="M8 6V4h8v2" />
         <path d="M6 6l1 14h10l1-14" />
@@ -76,53 +86,56 @@ export function DeleteCategory({ category, onDone }: { category: string; onDone:
     <>
       {trash}
       <div className="delete-panel" role="group" aria-label={`Удаление категории ${category}`}>
-      {hasOps ? (
-        <>
+        {hasOps ? (
+          <>
+            <p>
+              В «{category}» {plan.usage.transactions} {plural(plan.usage.transactions)}. Куда их перенести?
+              Лимиты категории тоже перейдут туда.
+            </p>
+            <label htmlFor={`move-${category}`} className="hint">
+              Перенести в
+            </label>
+            <select id={`move-${category}`} value={choice} onChange={(e) => setChoice(e.target.value)}>
+              {plan.others.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+              <option value={NEW}>➕ Новая категория…</option>
+            </select>
+            {choice === NEW && (
+              <input
+                aria-label="Название новой категории"
+                placeholder="Название новой категории"
+                value={newName}
+                maxLength={60}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+            )}
+          </>
+        ) : (
           <p>
-            В «{category}» {plan.usage.transactions} {plural(plan.usage.transactions)}. Куда их перенести? Лимиты
-            категории тоже перейдут туда.
+            В «{category}» нет операций. Удалить категорию
+            {plan.usage.budgetMonths > 0 ? " вместе с её лимитами" : ""}?
           </p>
-          <label htmlFor={`move-${category}`} className="hint">
-            Перенести в
-          </label>
-          <select id={`move-${category}`} value={choice} onChange={(e) => setChoice(e.target.value)}>
-            {plan.others.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-            <option value={NEW}>➕ Новая категория…</option>
-          </select>
-          {choice === NEW && (
-            <input
-              aria-label="Название новой категории"
-              placeholder="Название новой категории"
-              value={newName}
-              maxLength={60}
-              onChange={(e) => setNewName(e.target.value)}
-            />
-          )}
-        </>
-      ) : (
-        <p>В «{category}» нет операций. Удалить категорию{plan.usage.budgetMonths > 0 ? " вместе с её лимитами" : ""}?</p>
-      )}
-      <div className="limit-controls">
-        <button
-          className="chip"
-          disabled={remove.busy || !canConfirm}
-          onClick={() => remove.run(() => deleteCategory(category, hasOps ? target : undefined))}
-        >
-          {hasOps ? "Перенести и удалить" : "Удалить"}
-        </button>
-        <button className="chip chip--soft" disabled={remove.busy} onClick={() => setPlan(undefined)}>
-          Отмена
-        </button>
-      </div>
-      {remove.error && (
-        <small className="hint" role="alert">
-          {remove.error}
-        </small>
-      )}
+        )}
+        <div className="limit-controls">
+          <button
+            className="chip"
+            disabled={remove.busy || !canConfirm}
+            onClick={() => remove.run(() => deleteCategory(category, hasOps ? target : undefined))}
+          >
+            {hasOps ? "Перенести и удалить" : "Удалить"}
+          </button>
+          <button className="chip chip--soft" disabled={remove.busy} onClick={() => setPlan(undefined)}>
+            Отмена
+          </button>
+        </div>
+        {remove.error && (
+          <small className="hint" role="alert">
+            {remove.error}
+          </small>
+        )}
       </div>
     </>
   );

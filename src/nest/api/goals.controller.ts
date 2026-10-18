@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -10,7 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { getSummaryForRange } from "../../db";
-import { contributeToGoal, createGoal, listGoals, type SavingsGoal } from "../../db/goals";
+import { closeGoal, contributeToGoal, createGoal, listGoals, type SavingsGoal } from "../../db/goals";
 import { averageMonthlySavings, monthsToGoal, requiredMonthly } from "../../savingsForecast";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
 import type { WebAppUser } from "../../telegramAuth";
@@ -86,5 +87,11 @@ export class GoalsController {
     const g = await contributeToGoal(user.id, id, positive(body.amountGel, 1e9));
     if (!g) throw new NotFoundException();
     return present(g, 0, new Date());
+  }
+
+  /** Soft delete (active=FALSE); an already removed goal is not an error. */
+  @Delete(":id")
+  async remove(@WebUser() user: WebAppUser, @Param("id", ParseIntPipe) id: number) {
+    return { deleted: (await closeGoal(user.id, id)) !== null };
   }
 }

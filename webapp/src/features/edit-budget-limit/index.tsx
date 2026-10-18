@@ -46,7 +46,11 @@ export function LimitControls({
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
-      <button className="chip" disabled={busy} onClick={() => run(() => setBudgetLimit(row.category, parse(value)))}>
+      <button
+        className="chip"
+        disabled={busy}
+        onClick={() => run(() => setBudgetLimit(row.category, parse(value)))}
+      >
         Сохранить
       </button>
       {hasLimit && (

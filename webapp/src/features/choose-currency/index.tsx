@@ -35,7 +35,8 @@ export function CurrencyStep({ settings, onChanged }: { settings: Settings; onCh
       </div>
 
       <Hint example="официальный курс 31 ₽ за ₾, обменник даёт на 10% меньше — ставим ×0,9">
-        В обменнике курс хуже официального. Коэффициент уменьшает, сколько лари вы получаете за рубли и доллары.
+        В обменнике курс хуже официального. Коэффициент уменьшает, сколько лари вы получаете за рубли и
+        доллары.
       </Hint>
       <div className="segmented" role="radiogroup" aria-label="Коэффициент обменника">
         {FACTORS.map((f) => (

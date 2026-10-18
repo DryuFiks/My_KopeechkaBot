@@ -25,5 +25,6 @@ export interface GoalsData {
 export const fetchGoals = () => api.get<GoalsData>("/goals");
 export const createGoal = (g: { title: string; targetGel: number; targetDate?: string }) =>
   api.post<Goal>("/goals", g);
+export const deleteGoal = (id: number) => api.delete<{ deleted: boolean }>(`/goals/${id}`);
 export const contributeToGoal = (id: number, amountGel: number) =>
   api.post<Goal>(`/goals/${id}/contribute`, { amountGel });
