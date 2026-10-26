@@ -103,4 +103,5 @@ export const updateSettings = (patch: { displayCurrency?: Currency; exchangeFact
 export const completeOnboarding = () => api.post<Settings>("/onboarding/complete", {});
 export const applyBudget = (limits: CategoryLimit[]) =>
   api.post<{ applied: number }>("/plan/apply-budget", { limits });
+export const eraseAccount = () => api.post<{ removed: number }>("/account/erase", { confirm: true });
 export const resetOnboarding = () => api.post<Settings>("/onboarding/reset", {});

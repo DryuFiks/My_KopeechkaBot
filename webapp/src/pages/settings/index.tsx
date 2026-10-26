@@ -1,4 +1,5 @@
 import { CurrencyStep } from "@/features/choose-currency";
+import { EraseAccount } from "@/features/erase-account";
 import { IncomeStep } from "@/features/income-step";
 import { ExpenseStep } from "@/features/expense-step";
 import { fetchPlan, fetchSettings, resetOnboarding } from "@/entities/plan";
@@ -37,6 +38,7 @@ export function SettingsPage({ restartOnboarding }: { restartOnboarding: () => v
           </p>
         )}
       </Card>
+      <EraseAccount onErased={restartOnboarding} />
     </>
   );
 }

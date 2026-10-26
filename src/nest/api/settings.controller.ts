@@ -1,5 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Post, Put, UseGuards } from "@nestjs/common";
 import { isValidExchangeFactor } from "../../currencies";
+import { eraseUserData } from "../../db/eraseUser";
 import { getUserSettings, updateUserSettings } from "../../db/settings";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
@@ -38,6 +39,13 @@ export class SettingsController {
   @Post("onboarding/complete")
   async complete(@WebUser() user: WebAppUser) {
     return present(await updateUserSettings(user.id, { onboardedAt: new Date() }));
+  }
+
+  /** Erases all of the caller's data (user id from signed initData only); `confirm: true` guards against stray calls. */
+  @Post("account/erase")
+  async erase(@WebUser() user: WebAppUser, @Body() body: Record<string, unknown>) {
+    if (body.confirm !== true) throw new BadRequestException("confirmation required");
+    return { removed: await eraseUserData(user.id) };
   }
 
   @Post("onboarding/reset")

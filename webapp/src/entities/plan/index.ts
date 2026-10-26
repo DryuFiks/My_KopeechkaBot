@@ -10,6 +10,7 @@ export {
   updateSettings,
   completeOnboarding,
   resetOnboarding,
+  eraseAccount,
   applyBudget,
 } from "./model/api";
 export type {
