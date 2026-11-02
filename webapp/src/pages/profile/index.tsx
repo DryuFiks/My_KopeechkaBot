@@ -1,9 +1,9 @@
 import { AchievementGrid, RankCard, fetchProgress } from "@/entities/progress";
 import { SettingsPage } from "@/pages/settings";
-import { Hint, Status } from "@/shared/ui";
+import { CollapsibleCard, Hint, Status } from "@/shared/ui";
 import { useAsync } from "@/shared/lib/useAsync";
 
-/** Профиль: ранг и награды, ниже — настройки. */
+/** Профиль: текущий ранг; награды и настройки свёрнуты до одной строки. */
 export function ProfilePage({ restartOnboarding }: { restartOnboarding: () => void }) {
   const progress = useAsync(fetchProgress);
   return (
@@ -13,11 +13,13 @@ export function ProfilePage({ restartOnboarding }: { restartOnboarding: () => vo
         {(p) => (
           <>
             <RankCard p={p} />
-            <Hint>
-              Опыт дают регулярные записи, план месяца, цели и накопления. Ранг и полученные достижения никогда не
-              отбираются.
-            </Hint>
-            <AchievementGrid items={p.achievements} fresh={p.newlyUnlocked} />
+            <CollapsibleCard title="Ранги и достижения">
+              <Hint>
+                Опыт дают регулярные записи, план месяца, цели и накопления. Ранг и полученные достижения
+                никогда не отбираются.
+              </Hint>
+              <AchievementGrid items={p.achievements} fresh={p.newlyUnlocked} />
+            </CollapsibleCard>
           </>
         )}
       </Status>

@@ -10,7 +10,6 @@ import { BarChart, Card, DonutChart, donutColor, Status } from "@/shared/ui";
 import { monthLabel } from "@/shared/lib/date";
 import { formatGel, formatMoney, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
-import { MonthLimits } from "@/widgets/month-limits";
 
 function TransactionRow({ t }: { t: HistoryTransaction }) {
   const sign = t.type === "income" ? "+" : "−";
@@ -80,18 +79,9 @@ function Delta({ now, before }: { now: number; before: number | undefined }) {
   );
 }
 
-function MonthView({
-  month,
-  previous,
-  current,
-}: {
-  month: string;
-  previous?: HistoryMonth;
-  current: boolean;
-}) {
+function MonthView({ month, previous }: { month: string; previous?: HistoryMonth }) {
   const state = useAsync(() => fetchHistoryMonth(month));
   const [view, setView] = useState<"donut" | "days">("donut");
-  const [limits, setLimits] = useState(false);
   return (
     <Status state={state}>
       {(d) => (
@@ -147,21 +137,6 @@ function MonthView({
               <b className={d.closingGel < 0 ? "bad" : undefined}>{formatGel(d.closingGel)}</b>
             </div>
           </Card>
-          {current && (
-            <>
-              <button
-                className="chip chip--soft chip--block"
-                onClick={(e) => {
-                  e.currentTarget.blur();
-                  setLimits((v) => !v);
-                }}
-                aria-expanded={limits}
-              >
-                {limits ? "Скрыть лимиты" : "Лимиты и прогноз"}
-              </button>
-              {limits && <MonthLimits onChanged={state.reload} />}
-            </>
-          )}
           <Transactions month={month} />
         </>
       )}
@@ -169,7 +144,7 @@ function MonthView({
   );
 }
 
-/** Вкладка «Бюджет»: месяцы чипами, траты кольцом или по дням, категории, лимиты текущего месяца и операции. */
+/** Вкладка «Бюджет»: месяцы чипами, траты кольцом или по дням, категории и операции. Лимиты — на вкладке «Лимиты». */
 export function HistoryPage() {
   const state = useAsync(fetchHistory);
   const [picked, setPicked] = useState<string>();
@@ -195,12 +170,7 @@ export function HistoryPage() {
                   </button>
                 ))}
               </div>
-              <MonthView
-                key={selected.month}
-                month={selected.month}
-                previous={months[at - 1]}
-                current={at === months.length - 1}
-              />
+              <MonthView key={selected.month} month={selected.month} previous={months[at - 1]} />
             </>
           );
         }}

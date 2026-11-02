@@ -3,7 +3,7 @@ import { EraseAccount } from "@/features/erase-account";
 import { IncomeStep } from "@/features/income-step";
 import { ExpenseStep } from "@/features/expense-step";
 import { fetchPlan, fetchSettings, resetOnboarding } from "@/entities/plan";
-import { Card, Hint, Status } from "@/shared/ui";
+import { CollapsibleCard, Hint, Status } from "@/shared/ui";
 import { useAction } from "@/shared/lib/useAction";
 import { useAsync } from "@/shared/lib/useAsync";
 
@@ -12,19 +12,28 @@ export function SettingsPage({ restartOnboarding }: { restartOnboarding: () => v
   const settings = useAsync(fetchSettings);
   const plan = useAsync(fetchPlan);
   const restart = useAction(restartOnboarding);
+  const s = settings.data;
+  const currencyNote = s
+    ? s.exchangeFactor === 1
+      ? s.displayCurrency
+      : `${s.displayCurrency} · ×${s.exchangeFactor}`
+    : undefined;
   return (
     <>
       <h2>Настройки</h2>
-      <Card title="Валюта и курс">
+      <CollapsibleCard title="Валюта и курс" note={currencyNote}>
         <Status state={settings}>{(s) => <CurrencyStep settings={s} onChanged={settings.reload} />}</Status>
-      </Card>
-      <Card title="Доходы">
+      </CollapsibleCard>
+      <CollapsibleCard title="Доходы" note={plan.data ? String(plan.data.incomes.length) : undefined}>
         <Status state={plan}>{(p) => <IncomeStep plan={p} onChanged={plan.reload} />}</Status>
-      </Card>
-      <Card title="Обязательные расходы">
+      </CollapsibleCard>
+      <CollapsibleCard
+        title="Обязательные расходы"
+        note={plan.data ? String(plan.data.expenses.length) : undefined}
+      >
         <Status state={plan}>{(p) => <ExpenseStep plan={p} onChanged={plan.reload} />}</Status>
-      </Card>
-      <Card title="Первый вход">
+      </CollapsibleCard>
+      <CollapsibleCard title="Первый вход">
         <Hint>
           Мастер снова проведёт по шагам: валюта, доходы, обязательные расходы, цели и бюджет. Уже введённые
           данные не удаляются — вы увидите их и сможете поправить.
@@ -37,7 +46,7 @@ export function SettingsPage({ restartOnboarding }: { restartOnboarding: () => v
             {restart.error}
           </p>
         )}
-      </Card>
+      </CollapsibleCard>
       <EraseAccount onErased={restartOnboarding} />
     </>
   );

@@ -1,4 +1,5 @@
 export { Card } from "./Card";
+export { CollapsibleCard } from "./CollapsibleCard";
 export { ProgressBar } from "./ProgressBar";
 export { PlanFactBar } from "./PlanFactBar";
 export { Status } from "./Status";

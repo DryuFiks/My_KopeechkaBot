@@ -4,6 +4,7 @@ import { OverviewPage } from "@/pages/overview";
 import { DebtsPage } from "@/pages/debts";
 import { GoalsPage } from "@/pages/goals";
 import { HistoryPage } from "@/pages/history";
+import { LimitsPage } from "@/pages/limits";
 import { OnboardingPage } from "@/pages/onboarding";
 import { ProfilePage } from "@/pages/profile";
 import { AddExpensePage, AddIncomePage } from "@/pages/add-expense";
@@ -20,6 +21,7 @@ type PageProps = { go: (tab: TabId) => void; restartOnboarding: () => void };
 const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   overview: OverviewPage,
   history: HistoryPage,
+  limits: LimitsPage,
   debts: DebtsPage,
   goals: GoalsPage,
   profile: ProfilePage,
@@ -56,7 +58,13 @@ export function App() {
     <ErrorBoundary>
       <ProgressToasts />
       <Status state={settings}>
-        {(s) => (s.onboarded ? <Tabs restartOnboarding={settings.reload} /> : <OnboardingPage onFinish={settings.reload} />)}
+        {(s) =>
+          s.onboarded ? (
+            <Tabs restartOnboarding={settings.reload} />
+          ) : (
+            <OnboardingPage onFinish={settings.reload} />
+          )
+        }
       </Status>
     </ErrorBoundary>
   );

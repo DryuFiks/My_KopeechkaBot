@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { eraseAccount } from "@/entities/plan";
-import { Card, Hint } from "@/shared/ui";
+import { CollapsibleCard, Hint } from "@/shared/ui";
 import { useAction } from "@/shared/lib/useAction";
 
 const CONFIRM_WORD = "УДАЛИТЬ";
@@ -12,7 +12,7 @@ export function EraseAccount({ onErased }: { onErased: () => void }) {
   const { error, busy, run } = useAction(onErased);
 
   return (
-    <Card title="Стереть все данные">
+    <CollapsibleCard title="Стереть все данные">
       <Hint>
         Удалятся операции, категории, лимиты, цели, долги, доходы, расходы, настройки и награды. Вернуть их
         будет нельзя. После этого приложение откроется как при первом входе.
@@ -49,6 +49,6 @@ export function EraseAccount({ onErased }: { onErased: () => void }) {
           {error}
         </p>
       )}
-    </Card>
+    </CollapsibleCard>
   );
 }

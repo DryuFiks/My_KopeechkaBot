@@ -1,17 +1,12 @@
 export type TabId =
-  | "overview"
-  | "history"
-  | "debts"
-  | "goals"
-  | "profile"
-  | "add-expense"
-  | "add-income";
+  "overview" | "history" | "limits" | "debts" | "goals" | "profile" | "add-expense" | "add-income";
 
 /** Вкладки в нижней панели; добавление операций открывается кнопками с «Обзора» и в панели не показывается. */
 
 const TABS: { id: Exclude<TabId, "add-expense" | "add-income">; label: string }[] = [
   { id: "overview", label: "🏠 Обзор" },
   { id: "history", label: "📊 Бюджет" },
+  { id: "limits", label: "🎚 Лимиты" },
   { id: "debts", label: "💳 Долги" },
   { id: "goals", label: "🎯 Цели" },
   { id: "profile", label: "👤 Профиль" },
