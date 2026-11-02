@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import { TabBar, type TabId } from "@/widgets/tab-bar";
 import { OverviewPage } from "@/pages/overview";
-import { BudgetPage } from "@/pages/budget";
 import { DebtsPage } from "@/pages/debts";
 import { GoalsPage } from "@/pages/goals";
 import { HistoryPage } from "@/pages/history";
@@ -20,7 +19,6 @@ type PageProps = { go: (tab: TabId) => void; restartOnboarding: () => void };
 
 const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   overview: OverviewPage,
-  budget: BudgetPage,
   history: HistoryPage,
   debts: DebtsPage,
   goals: GoalsPage,

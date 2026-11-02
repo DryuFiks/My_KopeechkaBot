@@ -6,10 +6,11 @@ import {
   type HistoryMonth,
   type HistoryTransaction,
 } from "@/entities/history";
-import { BarChart, Card, ProgressBar, Status } from "@/shared/ui";
+import { BarChart, Card, DonutChart, donutColor, Status } from "@/shared/ui";
 import { monthLabel } from "@/shared/lib/date";
 import { formatGel, formatMoney, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
+import { MonthLimits } from "@/widgets/month-limits";
 
 function TransactionRow({ t }: { t: HistoryTransaction }) {
   const sign = t.type === "income" ? "+" : "−";
@@ -68,96 +69,122 @@ function Transactions({ month }: { month: string }) {
   );
 }
 
-function MonthDetail({ month, onBack }: { month: string; onBack: () => void }) {
+function Delta({ now, before }: { now: number; before: number | undefined }) {
+  if (before === undefined) return null;
+  const diff = now - before;
+  if (Math.abs(diff) < 0.005) return null;
+  return (
+    <span className={`spend-delta${diff > 0 ? " bad" : ""}`} title="К прошлому месяцу">
+      {diff > 0 ? "↑" : "↓"} {formatGel(Math.abs(diff))}
+    </span>
+  );
+}
+
+function MonthView({ month, previous, current }: { month: string; previous?: HistoryMonth; current: boolean }) {
   const state = useAsync(() => fetchHistoryMonth(month));
+  const [view, setView] = useState<"donut" | "days">("donut");
+  const [limits, setLimits] = useState(false);
   return (
-    <>
-      <button className="link" onClick={onBack}>
-        ‹ Все месяцы
-      </button>
-      <h1>{monthLabel(month)}</h1>
-      <Status state={state}>
-        {(d) => (
-          <>
-            <Card title="Итоги месяца">
-              <div className="row">
-                <span>Остаток с прошлых месяцев</span>
-                <b>{formatGel(d.openingGel)}</b>
+    <Status state={state}>
+      {(d) => (
+        <>
+          <div className="spend-total">
+            <b>{formatGel(d.expenseGel)}</b>
+            <Delta now={d.expenseGel} before={previous?.expenseGel} />
+          </div>
+          <p className="hint">Траты</p>
+          {d.expenseGel > 0 && (
+            <div className="segmented" role="group" aria-label="Вид диаграммы">
+              <button className={view === "donut" ? "is-active" : ""} onClick={() => setView("donut")}>
+                Категории
+              </button>
+              <button className={view === "days" ? "is-active" : ""} onClick={() => setView("days")}>
+                По дням
+              </button>
+            </div>
+          )}
+          {d.expenseGel > 0 && view === "donut" && (
+            <DonutChart
+              values={d.categories.map((c) => c.amountGel)}
+              label={`Расходы по категориям: ${monthLabel(month)}`}
+              caption={monthLabel(month).split(" ")[0]}
+            />
+          )}
+          {d.expenseGel > 0 && view === "days" && (
+            <BarChart values={d.daily} total={d.daysInMonth} label={`Расходы по дням: ${monthLabel(month)}`} />
+          )}
+          <Card title="Категории">
+            {d.categories.length === 0 && <p className="hint">Расходов за месяц нет.</p>}
+            {d.categories.map((c, i) => (
+              <div key={c.category ?? "none"} className="row">
+                <span>
+                  <span className="cat-dot" style={{ background: donutColor(i) }} />
+                  {c.category ?? "Без категории"} <small>{percent(c.amountGel, d.expenseGel)}%</small>
+                </span>
+                <b>{formatGel(c.amountGel)}</b>
               </div>
-              <div className="row">
-                <span>Доход</span>
-                <b>{formatGel(d.incomeGel)}</b>
-              </div>
-              <div className="row">
-                <span>Расходы</span>
-                <b>{formatGel(d.expenseGel)}</b>
-              </div>
-              <div className="row">
-                <span>Остаток на конец месяца</span>
-                <b className={d.closingGel < 0 ? "bad" : undefined}>{formatGel(d.closingGel)}</b>
-              </div>
-            </Card>
-            <Card title="Расходы по дням">
-              {d.daily.length > 0 ? (
-                <BarChart values={d.daily} total={d.daysInMonth} label={`Расходы по дням: ${monthLabel(month)}`} />
-              ) : (
-                <p className="hint">Расходов за месяц нет.</p>
-              )}
-            </Card>
-            <Card title="Расходы по категориям">
-              {d.categories.length === 0 && <p className="hint">Расходов за месяц нет.</p>}
-              {d.categories.map((c) => (
-                <div key={c.category ?? "none"} className="row-block">
-                  <div className="row">
-                    <span>{c.category ?? "Без категории"}</span>
-                    <b>{formatGel(c.amountGel)}</b>
-                  </div>
-                  <ProgressBar value={percent(c.amountGel, d.expenseGel)} />
-                </div>
-              ))}
-            </Card>
-            <Transactions month={month} />
-          </>
-        )}
-      </Status>
-    </>
+            ))}
+          </Card>
+          <Card title="Итоги месяца">
+            <div className="month-summary">
+              <span>Остаток с прошлых</span>
+              <b>{formatGel(d.openingGel)}</b>
+              <span>Доход</span>
+              <b>{formatGel(d.incomeGel)}</b>
+              <span>Остаток на конец</span>
+              <b className={d.closingGel < 0 ? "bad" : undefined}>{formatGel(d.closingGel)}</b>
+            </div>
+          </Card>
+          {current && (
+            <>
+              <button className="chip chip--soft" onClick={() => setLimits((v) => !v)} aria-expanded={limits}>
+                {limits ? "Скрыть лимиты" : "Лимиты и прогноз"}
+              </button>
+              {limits && <MonthLimits onChanged={state.reload} />}
+            </>
+          )}
+          <Transactions month={month} />
+        </>
+      )}
+    </Status>
   );
 }
 
-function MonthButton({ m, onOpen }: { m: HistoryMonth; onOpen: () => void }) {
-  return (
-    <button className="history-month" onClick={onOpen}>
-      <span className="row">
-        <b>{monthLabel(m.month)}</b>
-        <b className={m.closingGel < 0 ? "bad" : undefined}>{formatGel(m.closingGel)}</b>
-      </span>
-      <span className="row">
-        <small>
-          Доход {formatGel(m.incomeGel)} · Расходы {formatGel(m.expenseGel)}
-        </small>
-        <small>{m.operations} оп.</small>
-      </span>
-    </button>
-  );
-}
-
-/** История по месяцам: итоги, остаток, категории и полный список операций любого прошлого месяца. */
+/** Вкладка «Бюджет»: месяцы чипами, траты кольцом или по дням, категории, лимиты текущего месяца и операции. */
 export function HistoryPage() {
   const state = useAsync(fetchHistory);
-  const [month, setMonth] = useState<string | null>(null);
-  if (month) return <MonthDetail key={month} month={month} onBack={() => setMonth(null)} />;
+  const [picked, setPicked] = useState<string>();
   return (
     <>
-      <h1>История</h1>
+      <h1>Бюджет</h1>
       <Status state={state}>
-        {({ months }) => (
-          <>
-            <p className="hint">Остаток переходит из месяца в месяц и копится с первой записанной операции.</p>
-            {months.map((m) => (
-              <MonthButton key={m.month} m={m} onOpen={() => setMonth(m.month)} />
-            ))}
-          </>
-        )}
+        {({ months }) => {
+          const found = months.findIndex((m) => m.month === picked);
+          const at = found >= 0 ? found : months.length - 1;
+          const selected = months[at];
+          if (!selected) return <p className="hint">Операций пока нет.</p>;
+          return (
+            <>
+              <div className="month-chips" role="group" aria-label="Месяц">
+                {[...months].reverse().map((m) => (
+                  <button
+                    key={m.month}
+                    className={`chip${m.month === selected.month ? " is-active" : ""}`}
+                    onClick={() => setPicked(m.month)}
+                  >
+                    {monthLabel(m.month)}
+                  </button>
+                ))}
+              </div>
+              <MonthView
+                key={selected.month}
+                month={selected.month}
+                previous={months[at - 1]}
+                current={at === months.length - 1}
+              />
+            </>
+          );
+        }}
       </Status>
     </>
   );

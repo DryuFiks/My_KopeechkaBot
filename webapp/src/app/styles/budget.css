@@ -17,3 +17,18 @@
 .trash { position: absolute; top: -6px; right: -6px; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 0; background: none; color: #d33; cursor: pointer; border-radius: 10px; }
 .trash:hover:not(:disabled) { background: rgba(221, 51, 51, 0.12); }
 .trash:disabled { opacity: 0.4; cursor: default; }
+.month-chips { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 12px; padding: 0 16px; scrollbar-width: none; }
+.month-chips::-webkit-scrollbar { display: none; }
+.month-chips .chip { flex: none; background: var(--card); color: var(--text); }
+.month-chips .chip.is-active { background: var(--accent); color: #fff; }
+.spend-total { display: flex; align-items: center; gap: 10px; }
+.spend-total b { font-size: 32px; line-height: 1.1; }
+.spend-delta { padding: 2px 8px; border-radius: 10px; background: var(--card); font-size: 13px; }
+.donut { position: relative; width: 220px; max-width: 100%; margin: 8px auto 12px; }
+.donut svg { display: block; width: 100%; transform: rotate(0deg); }
+.donut__track { fill: none; stroke: rgba(127, 127, 127, 0.15); stroke-width: 5; }
+.donut__caption { position: absolute; inset: 0; display: grid; place-items: center; color: var(--hint); }
+.cat-row { display: block; width: 100%; padding: 8px 0; border: 0; background: none; color: var(--text); font: inherit; text-align: left; }
+.cat-row .row { gap: 8px; }
+.cat-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; display: inline-block; }
+.month-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }

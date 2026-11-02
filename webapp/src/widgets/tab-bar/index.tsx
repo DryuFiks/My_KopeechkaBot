@@ -1,6 +1,5 @@
 export type TabId =
   | "overview"
-  | "budget"
   | "history"
   | "debts"
   | "goals"
@@ -12,8 +11,7 @@ export type TabId =
 
 const TABS: { id: Exclude<TabId, "add-expense" | "add-income">; label: string }[] = [
   { id: "overview", label: "🏠 Обзор" },
-  { id: "budget", label: "📊 Бюджет" },
-  { id: "history", label: "🗓 История" },
+  { id: "history", label: "📊 Бюджет" },
   { id: "debts", label: "💳 Долги" },
   { id: "goals", label: "🎯 Цели" },
   { id: "profile", label: "👤 Профиль" },
