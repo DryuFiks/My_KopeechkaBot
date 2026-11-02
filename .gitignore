@@ -1,5 +1,3 @@
-# Claude Code project context (local-only, not shared via the repo)
-CLAUDE.md
 
 # Logs
 logs
@@ -149,6 +147,6 @@ vite.config.ts.timestamp-*
 graphify-out/
 .graphify*
 .claude/
-DEPLOY.md
 webapp/node_modules
 webapp/dist
+DEPLOY.local.md
