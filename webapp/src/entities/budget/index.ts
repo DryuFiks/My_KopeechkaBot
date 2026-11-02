@@ -10,5 +10,5 @@ export {
   deleteCategory,
 } from "./model/api";
 export type { Overview, BudgetData, BudgetCategory, CushionData, CategoryUsage } from "./model/api";
-export { suggestSplit } from "./lib/split";
+export { splitAfterMandatory } from "./lib/split";
 export { SplitCard } from "./ui/SplitCard";

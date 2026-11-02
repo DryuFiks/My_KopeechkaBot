@@ -113,6 +113,26 @@ export async function getBudgetRemainingForRange(
   return hasAnyBudget ? Math.round(total * 100) / 100 : null;
 }
 
+/**
+ * Starts a new month with last month's limits (and rollover flags) so the budget doesn't come up
+ * empty on the 1st. Does nothing when the month already has any limit, so it is safe to call on
+ * every read and never overwrites what the user set.
+ */
+export async function copyLimitsFromPreviousMonth(
+  userId: number,
+  month: Date,
+  prevMonth: Date,
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO budgets(user_id,month,category,limit_gel,rollover)
+     SELECT user_id, $2, category, limit_gel, rollover FROM budgets
+     WHERE user_id = $1 AND month = $3
+       AND NOT EXISTS (SELECT 1 FROM budgets WHERE user_id = $1 AND month = $2)
+     ON CONFLICT (user_id, month, category) DO NOTHING`,
+    [userId, month, prevMonth],
+  );
+}
+
 /** Creates or replaces this month's limit; keeps an existing rollover flag untouched. */
 export async function setBudgetLimit(
   userId: number,

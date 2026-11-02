@@ -14,7 +14,7 @@ export function SettingsPage({ restartOnboarding }: { restartOnboarding: () => v
   const restart = useAction(restartOnboarding);
   return (
     <>
-      <h1>Настройки</h1>
+      <h2>Настройки</h2>
       <Card title="Валюта и курс">
         <Status state={settings}>{(s) => <CurrencyStep settings={s} onChanged={settings.reload} />}</Status>
       </Card>

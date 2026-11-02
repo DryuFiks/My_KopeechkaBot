@@ -1,6 +1,12 @@
 import { BadRequestException, Body, Controller, Delete, Get, Put, Query, UseGuards } from "@nestjs/common";
 import { getExpenseSeries, getSummaryForRange } from "../../db";
-import { deleteBudgetLimit, getBudgetReport, setBudgetLimit, setBudgetRollover } from "../../db/budget";
+import {
+  copyLimitsFromPreviousMonth,
+  deleteBudgetLimit,
+  getBudgetReport,
+  setBudgetLimit,
+  setBudgetRollover,
+} from "../../db/budget";
 import { listGoals } from "../../db/goals";
 import { getUserSettings } from "../../db/settings";
 import { projectMonthSpending } from "../../budgetRules";
@@ -34,6 +40,8 @@ export class FinanceController {
     const now = new Date();
     const { from, to } = zonedMonthBoundaries(now, settings.timezone);
     const untilEndOfToday = zonedDayBoundaries(now, settings.timezone).to;
+    const prev = zonedMonthBoundaries(new Date(from.getTime() - 1), settings.timezone);
+    await copyLimitsFromPreviousMonth(user.id, from, prev.from);
     const [s, categories, daily] = await Promise.all([
       getSummaryForRange(user.id, from, to),
       getBudgetReport(user.id, from, to),

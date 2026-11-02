@@ -1,25 +1,46 @@
-import { Card, ProgressBar } from "@/shared/ui";
+import { Card, PlanFactBar } from "@/shared/ui";
 import { formatGel } from "@/shared/lib/money";
-import { suggestSplit } from "../lib/split";
+import { splitAfterMandatory } from "../lib/split";
 
-export function SplitCard({ income }: { income: number }) {
-  const s = suggestSplit(income);
-  const rows: [string, number, number][] = [
-    ["Обязательные", s.essentials, 50],
-    ["Повседневные", s.discretionary, 30],
-    ["Накопления", s.savings, 20],
-  ];
+/**
+ * Куда пойдут деньги месяца: обязательные платежи, затем повседневные траты и накопления.
+ * `income` — фактический доход месяца, а пока он не пришёл — плановый.
+ */
+export function SplitCard({
+  income,
+  mandatory,
+  expense,
+  planned,
+}: {
+  income: number;
+  mandatory: number;
+  expense: number;
+  planned: boolean;
+}) {
+  const s = splitAfterMandatory(income, mandatory, expense);
   return (
-    <Card title="Шаблон 50/30/20">
-      {rows.map(([name, amount, share]) => (
-        <div key={name} className="row-block">
-          <div className="row">
-            <span>{name}</span>
-            <b>{formatGel(amount)}</b>
-          </div>
-          <ProgressBar value={share} label={`${share}%`} />
-        </div>
-      ))}
+    <Card title="Куда пойдут деньги">
+      {planned && <p className="hint">Доход этого месяца ещё не поступил — считаем от планового.</p>}
+      <PlanFactBar
+        title="Обязательные"
+        plan={s.essentials}
+        fact={s.essentialsSpent}
+        planText={formatGel(s.essentials)}
+        factText={formatGel(s.essentialsSpent)}
+      />
+      <PlanFactBar
+        title="Повседневные"
+        plan={s.discretionary}
+        fact={s.discretionarySpent}
+        planText={formatGel(s.discretionary)}
+        factText={formatGel(s.discretionarySpent)}
+        over={s.discretionarySpent > s.discretionary}
+      />
+      <div className="row">
+        <span>Накопления</span>
+        <b>{formatGel(s.savings)}</b>
+      </div>
+      <p className="hint">Остаток сверх обязательных делится 60% на повседневные и 40% на накопления.</p>
     </Card>
   );
 }

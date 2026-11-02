@@ -10,6 +10,7 @@ import { SettingsController } from "./api/settings.controller";
 import { ProgressController } from "./api/progress.controller";
 import { CategoriesController } from "./api/categories.controller";
 import { TransactionsController } from "./api/transactions.controller";
+import { HistoryController } from "./api/history.controller";
 
 @Module({
   imports: [DatabaseModule, BotModule],
@@ -23,6 +24,7 @@ import { TransactionsController } from "./api/transactions.controller";
     ProgressController,
     CategoriesController,
     TransactionsController,
+    HistoryController,
   ],
 })
 export class AppModule {}

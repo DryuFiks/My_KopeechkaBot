@@ -1,13 +1,22 @@
-export type TabId = "overview" | "budget" | "debts" | "cushion" | "goals" | "awards" | "settings" | "add-expense" | "add-income";
+export type TabId =
+  | "overview"
+  | "budget"
+  | "history"
+  | "debts"
+  | "goals"
+  | "profile"
+  | "add-expense"
+  | "add-income";
 
-/** Вкладки в нижней панели; «Награды» и «Настройки» открываются с «Обзора» и в панели не показываются. */
+/** Вкладки в нижней панели; добавление операций открывается кнопками с «Обзора» и в панели не показывается. */
 
-const TABS: { id: Exclude<TabId, "awards" | "settings" | "add-expense" | "add-income">; label: string }[] = [
+const TABS: { id: Exclude<TabId, "add-expense" | "add-income">; label: string }[] = [
   { id: "overview", label: "🏠 Обзор" },
   { id: "budget", label: "📊 Бюджет" },
+  { id: "history", label: "🗓 История" },
   { id: "debts", label: "💳 Долги" },
-  { id: "cushion", label: "🛟 Подушка" },
   { id: "goals", label: "🎯 Цели" },
+  { id: "profile", label: "👤 Профиль" },
 ];
 
 export function TabBar({ active, onChange }: { active: TabId; onChange: (id: TabId) => void }) {
