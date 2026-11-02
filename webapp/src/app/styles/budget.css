@@ -3,6 +3,14 @@
 .limit-controls .inline-input { width: 90px; text-align: left; }
 .check { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--hint); }
 .bad { color: #d33; }
+.planfact { margin: 10px 0; }
+.planfact__bar { height: 8px; margin-top: 4px; border-radius: 4px; overflow: hidden; background: rgba(127, 127, 127, 0.2); }
+.planfact__fill { height: 100%; border-radius: 4px; }
+.planfact__fill--plan { background: var(--hint); opacity: 0.55; }
+.planfact__fill--fact { background: var(--accent); }
+.planfact__fill--over { background: #d33; }
+.history-month { display: block; width: 100%; margin-bottom: 8px; padding: 12px 14px; border: 0; border-radius: 14px; background: var(--card); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.history-month .row { padding: 2px 0; }
 .delete-panel { display: grid; gap: 8px; margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--card); } .delete-panel p { margin: 0; } .delete-panel input, .delete-panel select { padding: 8px; border-radius: 8px; border: 1px solid rgba(127,127,127,.3); background: var(--bg); color: var(--text); font: inherit; }
 .row-block--deletable { position: relative; }
 .row-block--deletable > .row:first-child { padding-right: 40px; }

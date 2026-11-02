@@ -3,11 +3,10 @@ import { TabBar, type TabId } from "@/widgets/tab-bar";
 import { OverviewPage } from "@/pages/overview";
 import { BudgetPage } from "@/pages/budget";
 import { DebtsPage } from "@/pages/debts";
-import { CushionPage } from "@/pages/cushion";
 import { GoalsPage } from "@/pages/goals";
+import { HistoryPage } from "@/pages/history";
 import { OnboardingPage } from "@/pages/onboarding";
-import { AwardsPage } from "@/pages/awards";
-import { SettingsPage } from "@/pages/settings";
+import { ProfilePage } from "@/pages/profile";
 import { AddExpensePage, AddIncomePage } from "@/pages/add-expense";
 import { ProgressToasts } from "@/widgets/progress-toasts";
 import { fetchSettings } from "@/entities/plan";
@@ -22,11 +21,10 @@ type PageProps = { go: (tab: TabId) => void; restartOnboarding: () => void };
 const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   overview: OverviewPage,
   budget: BudgetPage,
+  history: HistoryPage,
   debts: DebtsPage,
-  cushion: CushionPage,
   goals: GoalsPage,
-  awards: AwardsPage,
-  settings: SettingsPage,
+  profile: ProfilePage,
   "add-expense": AddExpensePage,
   "add-income": AddIncomePage,
 };

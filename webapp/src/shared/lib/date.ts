@@ -6,6 +6,27 @@ export function addMonths(date: Date, months: number): Date {
   return result;
 }
 
+const MONTHS = [
+  "Январь",
+  "Февраль",
+  "Март",
+  "Апрель",
+  "Май",
+  "Июнь",
+  "Июль",
+  "Август",
+  "Сентябрь",
+  "Октябрь",
+  "Ноябрь",
+  "Декабрь",
+];
+
+/** «2026-11» → «Ноябрь 2026». */
+export function monthLabel(key: string): string {
+  const [year, month] = key.split("-").map(Number);
+  return `${MONTHS[month - 1] ?? key} ${year}`;
+}
+
 /** YYYY-MM-DD по местному времени (toISOString сдвинул бы день). */
 export function toDateString(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");

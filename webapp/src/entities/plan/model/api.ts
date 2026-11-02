@@ -37,7 +37,15 @@ export type AllowanceStatus = "ok" | "tight" | "over";
 export interface PlanSummary {
   displayCurrency: Currency;
   exchangeFactor: number;
+  /** Плановый (ожидаемый) доход месяца — «фикса»; в доступные деньги не входит. */
   incomeGel: number;
+  /** Остаток, пришедший из прошлых месяцев. */
+  carryOverGel: number;
+  /** Доход, который реально поступил в этом месяце. */
+  factIncomeGel: number;
+  expenseGel: number;
+  /** carryOver + factIncome − expense. */
+  balanceGel: number;
   mandatoryGel: number;
   debtMinimumsGel: number;
   freeMonthGel: number;

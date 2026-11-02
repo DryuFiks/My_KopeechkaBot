@@ -84,6 +84,31 @@ export function todayAllowance(params: {
   return { remainingGel, perDayGel, status };
 }
 
+/**
+ * Same idea as todayAllowance, but based on money the user really has: the balance carried over
+ * from earlier months plus income actually received this month. The planned income (the "fixa")
+ * is only used to judge whether the daily amount is tight — it never adds to what can be spent.
+ */
+export function factAllowance(params: {
+  carryOverGel: number;
+  factIncomeGel: number;
+  plannedIncomeGel: number;
+  mandatoryGel: number;
+  expenseSoFarGel: number;
+  daysLeft: number;
+  daysInMonth: number;
+}): TodayAllowance {
+  const { carryOverGel, factIncomeGel, plannedIncomeGel, mandatoryGel, expenseSoFarGel } = params;
+  const available = carryOverGel + factIncomeGel;
+  const remainingGel = round2(available - Math.max(mandatoryGel, expenseSoFarGel));
+  const perDayGel = remainingGel > 0 ? round2(remainingGel / Math.max(1, params.daysLeft)) : 0;
+  const plannedPerDay =
+    Math.max(0, Math.max(plannedIncomeGel, available) - mandatoryGel) / Math.max(1, params.daysInMonth);
+  const status: AllowanceStatus =
+    remainingGel <= 0 ? "over" : perDayGel < plannedPerDay * 0.5 ? "tight" : "ok";
+  return { remainingGel, perDayGel, status };
+}
+
 export interface GoalTemplate {
   code: "cushion" | "vacation" | "purchase";
   title: string;

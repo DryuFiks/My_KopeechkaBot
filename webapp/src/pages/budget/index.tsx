@@ -1,6 +1,7 @@
 import { fetchBudget, SplitCard } from "@/entities/budget";
 import type { BudgetCategory } from "@/entities/budget";
 import { AddLimitForm, LimitControls } from "@/features/edit-budget-limit";
+import { fetchSummary } from "@/entities/plan";
 import { DeleteCategory } from "@/features/delete-category";
 import { BarChart, Card, ProgressBar, Status } from "@/shared/ui";
 import { formatGel, percent } from "@/shared/lib/money";
@@ -27,6 +28,7 @@ function CategoryRow({ c, onChanged }: { c: BudgetCategory; onChanged: () => voi
 
 export function BudgetPage() {
   const state = useAsync(fetchBudget);
+  const summary = useAsync(fetchSummary);
   return (
     <>
       <h1>Бюджет</h1>
@@ -49,7 +51,16 @@ export function BudgetPage() {
                 <p className="hint">При таком темпе расходы превысят доход месяца.</p>
               )}
             </Card>
-            <SplitCard income={d.incomeGel} />
+            <Status state={summary}>
+              {(s) => (
+                <SplitCard
+                  income={s.factIncomeGel > 0 ? s.factIncomeGel : s.incomeGel}
+                  planned={s.factIncomeGel <= 0}
+                  mandatory={s.mandatoryGel}
+                  expense={s.expenseGel}
+                />
+              )}
+            </Status>
             <Card title="Лимиты по категориям">
               {d.categories.length === 0 && <p className="hint">Лимитов и трат за месяц пока нет.</p>}
               {d.categories.map((c) => (

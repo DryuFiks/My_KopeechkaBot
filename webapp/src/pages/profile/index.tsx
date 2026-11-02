@@ -1,13 +1,15 @@
 import { AchievementGrid, RankCard, fetchProgress } from "@/entities/progress";
+import { SettingsPage } from "@/pages/settings";
 import { Hint, Status } from "@/shared/ui";
 import { useAsync } from "@/shared/lib/useAsync";
 
-export function AwardsPage() {
-  const state = useAsync(fetchProgress);
+/** Профиль: ранг и награды, ниже — настройки. */
+export function ProfilePage({ restartOnboarding }: { restartOnboarding: () => void }) {
+  const progress = useAsync(fetchProgress);
   return (
     <>
-      <h1>Награды</h1>
-      <Status state={state}>
+      <h1>Профиль</h1>
+      <Status state={progress}>
         {(p) => (
           <>
             <RankCard p={p} />
@@ -19,6 +21,7 @@ export function AwardsPage() {
           </>
         )}
       </Status>
+      <SettingsPage restartOnboarding={restartOnboarding} />
     </>
   );
 }

@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { convertToGel, getRateInfo } from "../../currency";
 import { effectiveRateToGel } from "../../currencies";
-import { getSummaryForRange } from "../../db";
+import { getBalanceBefore, getSummaryForRange } from "../../db";
 import { listDebts } from "../../db/debts";
 import {
   createIncomeSource,
@@ -31,10 +31,10 @@ import { getUserSettings } from "../../db/settings";
 import {
   daysLeftInMonth,
   expectedMonthlyAmount,
+  factAllowance,
   freeMoney,
   suggestCategoryLimits,
   suggestGoalTemplates,
-  todayAllowance,
 } from "../../monthPlan";
 import { totalMinimums } from "../../debtPayoff";
 import { zonedMonthBoundaries } from "../../timezone";
@@ -146,9 +146,10 @@ export class PlanController {
   async summary(@WebUser() user: WebAppUser) {
     const plan = await this.plan(user);
     const { settings, now, month } = await monthContext(user.id);
-    const [debts, spent] = await Promise.all([
+    const [debts, spent, carryOverGel] = await Promise.all([
       listDebts(user.id),
       getSummaryForRange(user.id, month.from, month.to),
+      getBalanceBefore(user.id, month.from),
     ]);
 
     let ratesMissing = false;
@@ -169,8 +170,17 @@ export class PlanController {
 
     const daysInMonth = Math.round((month.to.getTime() - month.from.getTime()) / 86_400_000);
     const daysLeft = daysLeftInMonth(now, settings.timezone);
-    const today = todayAllowance({
-      incomeGel,
+    // Income really received: logged income transactions or "received" marks, whichever is larger
+    // (a mark and a logged income for the same payday must not be added together).
+    const receiptsGel = plan.incomes.reduce(
+      (s, i) => s + (i.receivedThisMonth === null ? 0 : toGel(i.receivedThisMonth, i.currency)),
+      0,
+    );
+    const factIncomeGel = round2(Math.max(spent.income_gel, receiptsGel));
+    const today = factAllowance({
+      carryOverGel,
+      factIncomeGel,
+      plannedIncomeGel: incomeGel,
       mandatoryGel,
       expenseSoFarGel: spent.expense_gel,
       daysLeft,
@@ -181,6 +191,10 @@ export class PlanController {
       displayCurrency: settings.displayCurrency,
       exchangeFactor: settings.exchangeFactor,
       incomeGel,
+      carryOverGel,
+      factIncomeGel,
+      expenseGel: spent.expense_gel,
+      balanceGel: round2(carryOverGel + factIncomeGel - spent.expense_gel),
       mandatoryGel,
       debtMinimumsGel,
       freeMonthGel,

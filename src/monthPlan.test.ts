@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   daysLeftInMonth,
   expectedMonthlyAmount,
+  factAllowance,
   freeMoney,
   suggestCategoryLimits,
   suggestGoalTemplates,
@@ -79,6 +80,36 @@ describe("freeMoney / todayAllowance", () => {
       daysInMonth: 30,
     });
     expect(over).toEqual({ remainingGel: -200, perDayGel: 0, status: "over" });
+  });
+});
+
+describe("factAllowance", () => {
+  const base = {
+    carryOverGel: 0,
+    factIncomeGel: 0,
+    plannedIncomeGel: 3000,
+    mandatoryGel: 1400,
+    expenseSoFarGel: 0,
+    daysLeft: 20,
+    daysInMonth: 30,
+  };
+  it("does not count the planned income that has not been received", () => {
+    const a = factAllowance({ ...base, expenseSoFarGel: 85.5 });
+    expect(a).toEqual({ remainingGel: -1400, perDayGel: 0, status: "over" });
+  });
+  it("counts the carried-over balance and received income", () => {
+    const a = factAllowance({ ...base, carryOverGel: 600, factIncomeGel: 2000, expenseSoFarGel: 500 });
+    expect(a.remainingGel).toBe(1200);
+    expect(a.perDayGel).toBe(60);
+    expect(a.status).toBe("ok");
+  });
+  it("counts spending beyond the mandatory total as optional", () => {
+    const a = factAllowance({ ...base, factIncomeGel: 3000, expenseSoFarGel: 2000, daysLeft: 10 });
+    expect(a.remainingGel).toBe(1000);
+    expect(a.perDayGel).toBe(100);
+  });
+  it("flags a tight month", () => {
+    expect(factAllowance({ ...base, factIncomeGel: 3000, expenseSoFarGel: 2900 }).status).toBe("tight");
   });
 });
 

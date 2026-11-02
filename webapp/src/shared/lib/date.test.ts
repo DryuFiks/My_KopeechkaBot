@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonths, toDateString } from "./date";
+import { addMonths, monthLabel, toDateString } from "./date";
 
 describe("addMonths", () => {
   it("adds whole months", () => {
@@ -11,6 +11,13 @@ describe("addMonths", () => {
   });
   it("crosses the year boundary", () => {
     expect(toDateString(addMonths(new Date(2026, 10, 15), 3))).toBe("2027-02-15");
+  });
+});
+
+describe("monthLabel", () => {
+  it("names the month in Russian with the year", () => {
+    expect(monthLabel("2026-11")).toBe("Ноябрь 2026");
+    expect(monthLabel("2027-01")).toBe("Январь 2027");
   });
 });
 

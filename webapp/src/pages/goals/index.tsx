@@ -1,4 +1,6 @@
+import { fetchCushion } from "@/entities/budget";
 import { fetchGoals, GoalCard } from "@/entities/goal";
+import { EmergencyFundCalc } from "@/features/emergency-fund-calc";
 import { ContributeForm } from "@/features/contribute-goal";
 import { AddGoalForm } from "@/features/add-goal";
 import { DeleteGoal } from "@/features/delete-goal";
@@ -8,9 +10,14 @@ import { Status } from "@/shared/ui";
 
 export function GoalsPage() {
   const state = useAsync(fetchGoals);
+  const cushion = useAsync(fetchCushion);
   return (
     <>
-      <h1>Цели</h1>
+      <h1>Цели и подушка</h1>
+      <Status state={cushion}>
+        {(c) => <EmergencyFundCalc monthlyExpenses={c.avgMonthlyExpensesGel} savings={c.savingsGel} />}
+      </Status>
+      <p className="hint">Накопления — сумма твоих целей. Расходы — среднее за последние 90 дней.</p>
       <Status state={state}>
         {(d) => (
           <>

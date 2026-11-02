@@ -3,6 +3,7 @@ import type { TransactionType } from "./parser";
 import type { SupportedCurrency } from "./currencies";
 import { zonedDayBoundaries, zonedMonthBoundaries } from "./timezone";
 import { logger } from "./logger";
+import type { MonthTotals } from "./historyMonths";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -154,6 +155,18 @@ export async function getBalanceOverview(userId: number): Promise<BalanceOvervie
   };
 }
 
+/** Balance (income minus expense, in GEL) of everything before `before` — what carries into that month. */
+export async function getBalanceBefore(userId: number, before: Date): Promise<number> {
+  const result = await pool.query<{ total: string | null }>(
+    `SELECT COALESCE(SUM(amount_gel) FILTER (WHERE type = 'income'), 0)
+          - COALESCE(SUM(amount_gel) FILTER (WHERE type = 'expense'), 0) AS total
+     FROM transactions
+     WHERE user_id = $1 AND created_at < $2`,
+    [userId, before],
+  );
+  return Math.round(parseFloat(result.rows[0]?.total ?? "0") * 100) / 100;
+}
+
 /**
  * Categories the user already uses for this transaction type: most-used from their
  * transaction history, merged with any categories they created explicitly but never
@@ -223,6 +236,49 @@ export async function getTransactionsByCategory(
      ORDER BY created_at DESC, id DESC
      LIMIT 200`,
     [userId, category, from, to],
+  );
+  return result.rows;
+}
+
+/** Income/expense totals per calendar month ("YYYY-MM" in the user's timezone), months with no operations omitted. */
+export async function getMonthlyTotals(userId: number, timeZone: string): Promise<MonthTotals[]> {
+  const result = await pool.query<{
+    month: string;
+    income_gel: string;
+    expense_gel: string;
+    operations: string;
+  }>(
+    `SELECT to_char(created_at AT TIME ZONE $2, 'YYYY-MM') AS month,
+            COALESCE(SUM(amount_gel) FILTER (WHERE type = 'income'), 0)  AS income_gel,
+            COALESCE(SUM(amount_gel) FILTER (WHERE type = 'expense'), 0) AS expense_gel,
+            COUNT(*) AS operations
+     FROM transactions
+     WHERE user_id = $1
+     GROUP BY 1`,
+    [userId, timeZone],
+  );
+  return result.rows.map((row) => ({
+    month: row.month,
+    incomeGel: parseFloat(row.income_gel),
+    expenseGel: parseFloat(row.expense_gel),
+    operations: parseInt(row.operations, 10),
+  }));
+}
+
+/** One page of the user's operations in [from, to), newest first. */
+export async function getTransactionsForRange(
+  userId: number,
+  from: Date,
+  to: Date,
+  limit: number,
+  offset: number,
+): Promise<Transaction[]> {
+  const result = await pool.query<Transaction>(
+    `SELECT * FROM transactions
+     WHERE user_id = $1 AND created_at >= $2 AND created_at < $3
+     ORDER BY created_at DESC, id DESC
+     LIMIT $4 OFFSET $5`,
+    [userId, from, to, limit, offset],
   );
   return result.rows;
 }
