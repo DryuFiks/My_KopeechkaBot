@@ -31,3 +31,6 @@ select { font: inherit; }
 .link { border: 0; background: none; color: var(--hint); font: inherit; cursor: pointer; }
 .inline-input { width: 110px; padding: 6px 8px; border: 1px solid rgba(127,127,127,.3); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; text-align: right; }
 .chip { padding: 6px 14px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font: inherit; }
+.chip--block { display: block; margin: 0 0 12px; }
+.amount { white-space: nowrap; flex-shrink: 0; }
+.chip--soft[aria-expanded="true"] { background: var(--accent); color: #fff; }

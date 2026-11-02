@@ -22,7 +22,7 @@ function TransactionRow({ t }: { t: HistoryTransaction }) {
         <small> · {day}</small>
         {t.note && <small> · {t.note}</small>}
       </span>
-      <b>
+      <b className="amount">
         {sign}
         {formatMoney(t.amount, t.currency)}
       </b>
@@ -80,7 +80,15 @@ function Delta({ now, before }: { now: number; before: number | undefined }) {
   );
 }
 
-function MonthView({ month, previous, current }: { month: string; previous?: HistoryMonth; current: boolean }) {
+function MonthView({
+  month,
+  previous,
+  current,
+}: {
+  month: string;
+  previous?: HistoryMonth;
+  current: boolean;
+}) {
   const state = useAsync(() => fetchHistoryMonth(month));
   const [view, setView] = useState<"donut" | "days">("donut");
   const [limits, setLimits] = useState(false);
@@ -111,7 +119,11 @@ function MonthView({ month, previous, current }: { month: string; previous?: His
             />
           )}
           {d.expenseGel > 0 && view === "days" && (
-            <BarChart values={d.daily} total={d.daysInMonth} label={`Расходы по дням: ${monthLabel(month)}`} />
+            <BarChart
+              values={d.daily}
+              total={d.daysInMonth}
+              label={`Расходы по дням: ${monthLabel(month)}`}
+            />
           )}
           <Card title="Категории">
             {d.categories.length === 0 && <p className="hint">Расходов за месяц нет.</p>}
@@ -137,7 +149,14 @@ function MonthView({ month, previous, current }: { month: string; previous?: His
           </Card>
           {current && (
             <>
-              <button className="chip chip--soft" onClick={() => setLimits((v) => !v)} aria-expanded={limits}>
+              <button
+                className="chip chip--soft chip--block"
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  setLimits((v) => !v);
+                }}
+                aria-expanded={limits}
+              >
                 {limits ? "Скрыть лимиты" : "Лимиты и прогноз"}
               </button>
               {limits && <MonthLimits onChanged={state.reload} />}
