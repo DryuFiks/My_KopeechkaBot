@@ -34,9 +34,9 @@ export function initTelegram(): void {
   const app = getWebApp();
   app?.ready();
   app?.expand();
-  // Цвета шапки и фона берём из темы Telegram, чтобы приложение не выбивалось из интерфейса.
+  // Шапка и фон — второстепенный цвет темы, как фон страницы (--color-bg): без полосы на стыке.
   app?.setHeaderColor?.("secondary_bg_color");
-  app?.setBackgroundColor?.("bg_color");
+  app?.setBackgroundColor?.("secondary_bg_color");
 }
 
 export function getUserName(): string {

@@ -1,0 +1,90 @@
+/*
+ * Дизайн-токены Копеечки (MKB-048). Единственное место с конкретными цветами и размерами:
+ * в остальных стилях и компонентах — только var(--…), без #hex и rgba.
+ * Цвета берутся из темы Telegram (--tg-theme-*, их задаёт клиент); запасные значения — для запуска вне Telegram.
+ * Раскладка как в настройках Telegram: фон страницы — второстепенный цвет темы, карточки — цвет секций.
+ */
+:root {
+  /* Поверхности и текст */
+  --color-bg: var(--tg-theme-secondary-bg-color, #f1f2f6);
+  --color-surface: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #ffffff));
+  --color-text: var(--tg-theme-text-color, #111418);
+  --color-text-muted: var(--tg-theme-hint-color, #7c8591);
+  --color-accent: var(--tg-theme-button-color, #2481cc);
+  --color-on-accent: var(--tg-theme-button-text-color, #ffffff);
+  --color-link: var(--tg-theme-link-color, var(--color-accent));
+  /* Нейтральные заливки поверх любой поверхности (светлой и тёмной) */
+  --color-fill: rgba(127, 127, 127, 0.1);
+  --color-track: rgba(127, 127, 127, 0.18);
+  --color-border: rgba(127, 127, 127, 0.24);
+
+  /* Смысловые цвета */
+  --color-success: #2e9e5b;
+  --color-warning: #d98a00;
+  --color-danger: var(--tg-theme-destructive-text-color, #e5484d);
+  --color-income: var(--color-success);
+  --color-accent-soft: rgba(36, 129, 204, 0.12);
+  --color-success-soft: rgba(46, 158, 91, 0.14);
+  --color-warning-soft: rgba(217, 138, 0, 0.14);
+  --color-danger-soft: rgba(229, 72, 77, 0.12);
+
+  /* Категории на графиках */
+  --chart-1: #4cc9d8;
+  --chart-2: #5aa9f0;
+  --chart-3: #8b7cf0;
+  --chart-4: #e07ad0;
+  --chart-5: #f2a65a;
+  --chart-6: #7bd88f;
+  --chart-7: #e8d44d;
+  --chart-8: #9aa5b1;
+
+  /* Отступы — сетка 4 px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Скругления */
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --radius-pill: 999px;
+
+  /* Типографика */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", Roboto, "Segoe UI", system-ui, sans-serif;
+  --text-xs: 12px;
+  --text-s: 14px;
+  --text-m: 16px;
+  --text-l: 20px;
+  --text-xl: 24px;
+  --text-display: 34px;
+
+  /* Тени, размеры, движение */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --tap-size: 44px;
+  --tabbar-height: 56px;
+  --duration: 160ms;
+}
+
+/* Мягкие оттенки от фактического цвета кнопки темы — там, где браузер умеет color-mix. */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  :root {
+    --color-accent-soft: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    --color-danger-soft: color-mix(in srgb, var(--color-danger) 14%, transparent);
+  }
+}
+
+/* Тёмная тема вне Telegram (внутри Telegram цвета приходят из --tg-theme-*). */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: var(--tg-theme-secondary-bg-color, #0e1621);
+    --color-surface: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #17212b));
+    --color-text: var(--tg-theme-text-color, #f5f5f5);
+    --color-text-muted: var(--tg-theme-hint-color, #8b98a5);
+    --color-success: #3fb871;
+    --shadow-card: none;
+  }
+}

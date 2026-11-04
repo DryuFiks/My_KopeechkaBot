@@ -18,7 +18,7 @@ export function EraseAccount({ onErased }: { onErased: () => void }) {
         будет нельзя. После этого приложение откроется как при первом входе.
       </Hint>
       {!open ? (
-        <button className="chip" onClick={() => setOpen(true)}>
+        <button className="chip chip--danger" onClick={() => setOpen(true)}>
           Стереть всё и начать заново
         </button>
       ) : (
@@ -36,7 +36,11 @@ export function EraseAccount({ onErased }: { onErased: () => void }) {
             autoFocus
             onChange={(e) => setWord(e.target.value)}
           />
-          <button type="submit" disabled={busy || word.trim().toUpperCase() !== CONFIRM_WORD}>
+          <button
+            type="submit"
+            className="danger"
+            disabled={busy || word.trim().toUpperCase() !== CONFIRM_WORD}
+          >
             Стереть безвозвратно
           </button>
           <button type="button" className="link" disabled={busy} onClick={() => setOpen(false)}>

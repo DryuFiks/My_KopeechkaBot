@@ -9,7 +9,7 @@ export function DeleteGoal({ goalId, onDone }: { goalId: number; onDone: () => v
 
   if (!confirming) {
     return (
-      <button type="button" className="chip" onClick={() => setConfirming(true)}>
+      <button type="button" className="chip chip--danger" onClick={() => setConfirming(true)}>
         Удалить цель
       </button>
     );
@@ -17,10 +17,15 @@ export function DeleteGoal({ goalId, onDone }: { goalId: number; onDone: () => v
   return (
     <div className="row">
       <span>Удалить цель?</span>
-      <button type="button" className="chip" disabled={busy} onClick={() => run(() => deleteGoal(goalId))}>
+      <button
+        type="button"
+        className="chip chip--danger"
+        disabled={busy}
+        onClick={() => run(() => deleteGoal(goalId))}
+      >
         Да, удалить
       </button>
-      <button type="button" className="chip" disabled={busy} onClick={() => setConfirming(false)}>
+      <button type="button" className="chip chip--soft" disabled={busy} onClick={() => setConfirming(false)}>
         Отмена
       </button>
       {error && <small className="hint">{error}</small>}

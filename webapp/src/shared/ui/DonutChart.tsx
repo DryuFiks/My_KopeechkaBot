@@ -1,8 +1,9 @@
 import { donutSlices } from "@/shared/lib/donut";
 
-export const DONUT_COLORS = ["#4cc9d8", "#5aa9f0", "#8b7cf0", "#e07ad0", "#f2a65a", "#7bd88f", "#e8d44d", "#9aa5b1"];
+/** Цвета категорий — токены --chart-1…8 (tokens.css). */
+const CHART_COLORS = 8;
 
-export const donutColor = (index: number): string => DONUT_COLORS[index % DONUT_COLORS.length];
+export const donutColor = (index: number): string => `var(--chart-${(index % CHART_COLORS) + 1})`;
 
 /** Кольцо по категориям: цвет дуги совпадает с цветом точки в списке (donutColor по тому же индексу). */
 export function DonutChart({ values, label, caption }: { values: number[]; label: string; caption: string }) {
@@ -20,7 +21,7 @@ export function DonutChart({ values, label, caption }: { values: number[]; label
               r="15.915"
               pathLength={100}
               fill="none"
-              stroke={donutColor(i)}
+              style={{ stroke: donutColor(i) }}
               strokeWidth="5"
               strokeDasharray={`${Math.max(s.share - 0.6, 0.1)} ${100 - Math.max(s.share - 0.6, 0.1)}`}
               strokeDashoffset={25 - s.start}
