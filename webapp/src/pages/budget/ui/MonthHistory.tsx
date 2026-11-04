@@ -8,35 +8,48 @@ import {
   type HistoryMonth,
   type HistoryTransaction,
 } from "@/entities/history";
+import { EditTransaction } from "@/features/edit-transaction";
 import { BarChart, Card, DonutChart, donutColor, Status } from "@/shared/ui";
 import { monthLabel } from "@/shared/lib/date";
 import { formatGel, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
 
-function Transactions({ month }: { month: string }) {
+function Transactions({ month, onChanged }: { month: string; onChanged: () => void }) {
   const [items, setItems] = useState<HistoryTransaction[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [editing, setEditing] = useState<HistoryTransaction>();
 
-  const loadMore = () => {
+  const load = (offset: number) => {
     setBusy(true);
-    fetchHistoryTransactions(month, items.length)
+    fetchHistoryTransactions(month, offset)
       .then((page) => {
-        setItems((prev) => [...prev, ...page.items]);
+        setItems((prev) => (offset === 0 ? page.items : [...prev, ...page.items]));
         setHasMore(page.hasMore);
         setError(undefined);
       })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : "Ошибка"))
       .finally(() => setBusy(false));
   };
+  const loadMore = () => load(items.length);
 
   // Первая страница подгружается кнопкой, чтобы тяжёлый список не мешал открытию месяца.
   return (
     <Card title="Операции">
       {items.map((t) => (
-        <TransactionRow key={t.id} t={t} />
+        <TransactionRow key={t.id} t={t} onSelect={setEditing} />
       ))}
+      {editing && (
+        <EditTransaction
+          t={editing}
+          onClose={() => setEditing(undefined)}
+          onChanged={() => {
+            load(0);
+            onChanged();
+          }}
+        />
+      )}
       {items.length === 0 && !hasMore && <p className="hint">Операций за месяц нет.</p>}
       {error && (
         <p className="hint" role="alert">
@@ -121,7 +134,7 @@ function MonthView({ month, previous }: { month: string; previous?: HistoryMonth
               <b className={d.closingGel < 0 ? "bad" : undefined}>{formatGel(d.closingGel)}</b>
             </div>
           </Card>
-          <Transactions month={month} />
+          <Transactions month={month} onChanged={state.reload} />
         </>
       )}
     </Status>

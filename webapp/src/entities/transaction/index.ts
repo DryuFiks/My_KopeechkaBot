@@ -1,2 +1,2 @@
-export { fetchCategoryOptions, createTransaction, undoTransaction } from "./model/api";
-export type { NewTransaction, CreatedTransaction, TransactionType } from "./model/api";
+export { fetchCategoryOptions, createTransaction, undoTransaction, updateTransaction } from "./model/api";
+export type { NewTransaction, CreatedTransaction, TransactionType, TransactionEdit } from "./model/api";
