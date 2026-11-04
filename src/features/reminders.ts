@@ -31,4 +31,17 @@ export function registerReminderHandlers(bot: Bot): void {
         .catch(() => {});
     }),
   );
+
+  // MKB-058: the digest itself stays in the chat, only the button goes away.
+  bot.callbackQuery(
+    "digest:off",
+    safeCallback("digest:off", async (ctx) => {
+      await updateUserSettings(ctx.from.id, { weeklyDigest: false });
+      await ctx.answerCallbackQuery({
+        text: "Итоги недели выключены. Включить — /settings",
+        show_alert: true,
+      });
+      await ctx.editMessageReplyMarkup({ reply_markup: new InlineKeyboard() }).catch(() => {});
+    }),
+  );
 }

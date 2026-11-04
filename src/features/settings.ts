@@ -18,6 +18,8 @@ function settingsKeyboard(current: SupportedCurrency): InlineKeyboard {
     .row()
     .text("🌙 Вечернее напоминание: переключить", "settings:evening:toggle")
     .row()
+    .text("📊 Итоги недели: переключить", "settings:digest:toggle")
+    .row()
     .text("↩️ Сбросить настройки", "settings:reset")
     .row()
     .text("⬅️ Главное меню", "menu:main");
@@ -32,6 +34,7 @@ function settingsText(settings: UserSettings): string {
       `Коэффициент обменника: ×${settings.exchangeFactor} (1 = официальный курс)`,
       `Напоминания о платежах: ${settings.notifyPayments ? "включены" : "выключены"}`,
       `Вечернее напоминание «записать траты?»: ${settings.remindEvening ? `включено, в ${settings.remindHour}:00` : "выключено"}`,
+      `Итоги недели по воскресеньям в 19:00: ${settings.weeklyDigest ? "включены" : "выключены"}`,
       "",
       "Команды:",
       "/settings currency GEL|RUB|USD",
@@ -39,6 +42,7 @@ function settingsText(settings: UserSettings): string {
       "/settings factor 0.9 — коэффициент обменника, от 0.5 до 1",
       "/settings notify on|off",
       "/settings evening on|off — вечернее напоминание (время — в мини-приложении)",
+      "/settings digest on|off — итоги недели",
       "/settings reset — вернуть настройки по умолчанию",
     ],
   });
@@ -98,13 +102,12 @@ export function registerSettingsHandlers(bot: Bot): void {
         return;
       }
 
-      const notifyMatch = /^\/settings\s+(notify|evening)\s+(on|off)\s*$/i.exec(text);
+      const notifyMatch = /^\/settings\s+(notify|evening|digest)\s+(on|off)\s*$/i.exec(text);
       if (notifyMatch) {
         const on = notifyMatch[2].toLowerCase() === "on";
-        const settings = await updateUserSettings(
-          uid,
-          notifyMatch[1].toLowerCase() === "notify" ? { notifyPayments: on } : { remindEvening: on },
-        );
+        const field = { notify: "notifyPayments", evening: "remindEvening", digest: "weeklyDigest" } as const;
+        const key = field[notifyMatch[1].toLowerCase() as keyof typeof field];
+        const settings = await updateUserSettings(uid, { [key]: on });
         await ctx.reply(settingsText(settings), {
           parse_mode: PARSE_MODE,
           reply_markup: settingsKeyboard(settings.displayCurrency),
@@ -171,6 +174,18 @@ export function registerSettingsHandlers(bot: Bot): void {
     safeCallback("settings:evening", async (ctx) => {
       const current = await getUserSettings(ctx.from.id);
       const settings = await updateUserSettings(ctx.from.id, { remindEvening: !current.remindEvening });
+      await editOrReply(ctx, settingsText(settings), {
+        reply_markup: settingsKeyboard(settings.displayCurrency),
+        parse_mode: PARSE_MODE,
+      });
+    }),
+  );
+
+  bot.callbackQuery(
+    "settings:digest:toggle",
+    safeCallback("settings:digest", async (ctx) => {
+      const current = await getUserSettings(ctx.from.id);
+      const settings = await updateUserSettings(ctx.from.id, { weeklyDigest: !current.weeklyDigest });
       await editOrReply(ctx, settingsText(settings), {
         reply_markup: settingsKeyboard(settings.displayCurrency),
         parse_mode: PARSE_MODE,

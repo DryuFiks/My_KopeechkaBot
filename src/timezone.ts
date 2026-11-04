@@ -101,6 +101,12 @@ export function zonedHour(timeZone: string, date = new Date()): number {
   return getZonedParts(date, timeZone).hour;
 }
 
+/** Day of the week as seen in `timeZone`: 1 = Monday … 7 = Sunday. */
+export function zonedWeekday(timeZone: string, date = new Date()): number {
+  const { year, month, day } = getZonedParts(date, timeZone);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay() || 7;
+}
+
 /** Today's calendar date as seen in `timeZone` — e.g. to compare against a due-day. */
 export function zonedToday(
   timeZone: string,

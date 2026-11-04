@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isValidTimeZone, zonedDayBoundaries, zonedMonthBoundaries, zonedToday } from "./timezone";
+import {
+  isValidTimeZone,
+  zonedDayBoundaries,
+  zonedMonthBoundaries,
+  zonedToday,
+  zonedWeekday,
+} from "./timezone";
 
 describe("isValidTimeZone", () => {
   it("accepts a real IANA identifier", () => {
@@ -62,5 +68,14 @@ describe("zonedToday", () => {
   it("agrees with UTC for a UTC-based zone", () => {
     const result = zonedToday("UTC", new Date("2026-03-05T10:00:00Z"));
     expect(result).toEqual({ year: 2026, month: 3, day: 5 });
+  });
+});
+
+describe("zonedWeekday", () => {
+  it("returns 1..7 (Monday..Sunday) in the user's timezone", () => {
+    // 2026-11-08 is a Sunday. 21:30 UTC on Saturday is already Sunday in Tbilisi (UTC+4).
+    expect(zonedWeekday("Asia/Tbilisi", new Date("2026-11-07T21:30:00Z"))).toBe(7);
+    expect(zonedWeekday("UTC", new Date("2026-11-07T21:30:00Z"))).toBe(6);
+    expect(zonedWeekday("UTC", new Date("2026-11-09T00:00:00Z"))).toBe(1);
   });
 });

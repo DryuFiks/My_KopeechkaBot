@@ -15,6 +15,7 @@ function present(s: Awaited<ReturnType<typeof getUserSettings>>) {
     onboarded: s.onboardedAt !== null,
     remindEvening: s.remindEvening,
     remindHour: s.remindHour,
+    weeklyDigest: s.weeklyDigest,
   };
 }
 
@@ -26,7 +27,7 @@ export class SettingsController {
     return present(await getUserSettings(user.id));
   }
 
-  /** Main currency, exchanger factor and the evening reminder; omitted fields stay as they are. */
+  /** Main currency, exchanger factor, evening reminder and weekly digest; omitted fields stay as they are. */
   @Put("settings")
   async update(@WebUser() user: WebAppUser, @Body() body: Record<string, unknown>) {
     const patch: Partial<UserSettings> = {};
@@ -36,9 +37,10 @@ export class SettingsController {
       if (!isValidExchangeFactor(factor)) throw new BadRequestException("invalid factor");
       patch.exchangeFactor = Math.round(factor * 1000) / 1000;
     }
-    if (body.remindEvening !== undefined) {
-      if (typeof body.remindEvening !== "boolean") throw new BadRequestException("invalid remindEvening");
-      patch.remindEvening = body.remindEvening;
+    for (const key of ["remindEvening", "weeklyDigest"] as const) {
+      if (body[key] === undefined) continue;
+      if (typeof body[key] !== "boolean") throw new BadRequestException(`invalid ${key}`);
+      patch[key] = body[key];
     }
     if (body.remindHour !== undefined) {
       if (!REMIND_HOURS.includes(Number(body.remindHour)))
