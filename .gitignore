@@ -152,4 +152,4 @@ webapp/dist
 DEPLOY.local.md
 
 # MKB-046: метка релиза, создаётся scripts/deploy.ps1 на время упаковки
-RELEASE
+/RELEASE
