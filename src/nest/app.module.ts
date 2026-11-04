@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { APP_FILTER } from "@nestjs/core";
+import { LogUnexpectedErrorsFilter } from "./errors.filter";
 import { DatabaseModule } from "./database.module";
 import { BotModule } from "./bot.module";
 import { HealthController } from "./health.controller";
@@ -26,5 +28,6 @@ import { HistoryController } from "./api/history.controller";
     TransactionsController,
     HistoryController,
   ],
+  providers: [{ provide: APP_FILTER, useClass: LogUnexpectedErrorsFilter }],
 })
 export class AppModule {}

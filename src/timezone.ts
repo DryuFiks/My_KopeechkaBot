@@ -90,6 +90,17 @@ export function zonedMonthBoundaries(date: Date, timeZone: string): DateRange {
   return { from, to };
 }
 
+/** Today's date as "YYYY-MM-DD" in `timeZone` — for "already sent today" marks. */
+export function zonedTodayIso(timeZone: string, date = new Date()): string {
+  const { year, month, day } = getZonedParts(date, timeZone);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+/** Current hour (0–23) as seen in `timeZone` — for "send at 9:00 the user's time" schedules. */
+export function zonedHour(timeZone: string, date = new Date()): number {
+  return getZonedParts(date, timeZone).hour;
+}
+
 /** Today's calendar date as seen in `timeZone` — e.g. to compare against a due-day. */
 export function zonedToday(
   timeZone: string,

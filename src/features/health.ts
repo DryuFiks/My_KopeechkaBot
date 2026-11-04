@@ -4,13 +4,7 @@ import { getAllRateInfo } from "../currency";
 import { getCounters, getUptimeMs } from "../metrics";
 import { renderScreen, PARSE_MODE } from "../format";
 import { safe } from "../middleware/safe";
-
-function formatUptime(ms: number): string {
-  const totalMinutes = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${hours}ч ${minutes}м`;
-}
+import { formatUptime } from "../adminAlertRules";
 
 /** Admin-only diagnostic snapshot (MKB-016) — the closest thing to a "health check" a polling-only bot with no HTTP server can have. */
 export function registerHealthHandlers(bot: Bot): void {
