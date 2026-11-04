@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchProgress, progressBus } from "@/entities/progress";
 import { writeBus } from "@/shared/lib/events";
 import { haptic } from "@/shared/lib/telegram";
+import { collapseToasts } from "./lib/collapse";
 
 interface Toast {
   id: number;
@@ -33,7 +34,7 @@ export function ProgressToasts() {
       ];
       if (texts.length === 0) return;
       haptic("success");
-      for (const text of texts) {
+      for (const text of collapseToasts(texts)) {
         const id = nextId.current++;
         setToasts((t) => [...t, { id, text }]);
         timers.push(window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), SHOW_MS));

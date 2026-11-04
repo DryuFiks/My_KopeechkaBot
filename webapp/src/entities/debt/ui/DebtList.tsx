@@ -1,11 +1,11 @@
-import { Card, Icon } from "@/shared/ui";
+import { Card, EmptyState, Icon } from "@/shared/ui";
 import { formatGel } from "@/shared/lib/money";
 import type { Debt } from "../model/types";
 
 export function DebtList({ debts, onDelete }: { debts: Debt[]; onDelete: (id: number) => void }) {
   return (
     <Card title="Порядок погашения">
-      {debts.length === 0 && <p className="hint">Долгов нет. Добавь первый ниже.</p>}
+      {debts.length === 0 && <EmptyState icon="card" text="Долгов нет. Если появятся — добавьте их ниже." />}
       {debts.map((d, i) => (
         <div key={d.id} className="row">
           <span>
