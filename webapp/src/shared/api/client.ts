@@ -6,7 +6,16 @@ export function errorMessage(status: number): string {
   if (status === 401) return "Откройте приложение из Telegram";
   if (status === 400) return "Проверьте введённые данные";
   if (status === 404) return "Запись не найдена";
+  if (status === 429) return "Слишком часто — попробуйте через минуту";
   return `Ошибка ${status}`;
+}
+
+/** Тихая отметка для статистики (например, «открыл приложение»): без вибрации и без ошибок на экране. */
+export function sendBeacon(path: string): void {
+  fetch(`/api${path}`, {
+    method: "POST",
+    headers: { "x-telegram-init-data": getWebApp()?.initData ?? "" },
+  }).catch(() => {});
 }
 
 /** Подписанные Telegram-ом initData — сервер берёт user id только из них. */

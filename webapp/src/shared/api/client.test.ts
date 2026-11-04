@@ -6,6 +6,7 @@ describe("errorMessage", () => {
     expect(errorMessage(401)).toContain("Telegram");
     expect(errorMessage(400)).toBe("Проверьте введённые данные");
     expect(errorMessage(404)).toBe("Запись не найдена");
+    expect(errorMessage(429)).toContain("Слишком часто");
     expect(errorMessage(500)).toBe("Ошибка 500");
   });
 });

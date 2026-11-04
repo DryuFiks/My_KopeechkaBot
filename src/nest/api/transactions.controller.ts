@@ -14,6 +14,7 @@ import { getCategoryOptions } from "../../categoryOptions";
 import { convertToGel, refreshRatesIfStale } from "../../currency";
 import { deleteTransactionById, insertTransaction } from "../../db";
 import { getUserSettings } from "../../db/settings";
+import { trackEvent } from "../../db/events";
 import type { TransactionType } from "../../parser";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
@@ -69,6 +70,7 @@ export class TransactionsController {
       category,
       note,
     });
+    trackEvent(user.id, "tx_created", "webapp");
     return { id: saved.id, amountGel };
   }
 

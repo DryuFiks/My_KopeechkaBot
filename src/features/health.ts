@@ -4,7 +4,8 @@ import { getAllRateInfo } from "../currency";
 import { getCounters, getUptimeMs } from "../metrics";
 import { renderScreen, PARSE_MODE } from "../format";
 import { safe } from "../middleware/safe";
-import { formatUptime } from "../adminAlertRules";
+import { formatActivityLines, formatUptime } from "../adminAlertRules";
+import { getActivityStats } from "../db/admin";
 
 /** Admin-only diagnostic snapshot (MKB-016) — the closest thing to a "health check" a polling-only bot with no HTTP server can have. */
 export function registerHealthHandlers(bot: Bot): void {
@@ -18,8 +19,10 @@ export function registerHealthHandlers(bot: Bot): void {
       }
 
       let dbStatus = "OK";
+      let activityLines: string[] = [];
       try {
         await checkConnection();
+        activityLines = ["", ...formatActivityLines(await getActivityStats())];
       } catch (err) {
         dbStatus = `недоступна — ${(err as Error).message}`;
       }
@@ -40,6 +43,7 @@ export function registerHealthHandlers(bot: Bot): void {
           `БД: ${dbStatus}`,
           "Курсы валют:",
           ...rateLines.map((line) => `  ${line}`),
+          ...activityLines,
           "",
           `Ошибок в хендлерах: ${counters.handlerErrors}`,
           `Откатов на кеш курса: ${counters.rateFallbacks}`,

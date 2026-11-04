@@ -13,6 +13,7 @@ import { ProgressController } from "./api/progress.controller";
 import { CategoriesController } from "./api/categories.controller";
 import { TransactionsController } from "./api/transactions.controller";
 import { HistoryController } from "./api/history.controller";
+import { EventsController } from "./api/events.controller";
 
 @Module({
   imports: [DatabaseModule, BotModule],
@@ -27,6 +28,7 @@ import { HistoryController } from "./api/history.controller";
     CategoriesController,
     TransactionsController,
     HistoryController,
+    EventsController,
   ],
   providers: [{ provide: APP_FILTER, useClass: LogUnexpectedErrorsFilter }],
 })

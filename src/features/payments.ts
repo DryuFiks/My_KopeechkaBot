@@ -3,6 +3,7 @@ import { createPayment, deletePayment, findPayment, listPayments, togglePaymentA
 import { insertTransaction } from "../db";
 import { convertToGel, isSupportedCurrency, refreshRatesIfStale } from "../currency";
 import { getUserSettings } from "../db/settings";
+import { trackEvent } from "../db/events";
 import { announceProgress } from "./progress";
 import { confirmActionKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
@@ -188,6 +189,8 @@ export function registerPaymentsHandlers(bot: Bot): void {
           category: payment.category,
           note: `Регулярный платёж: ${payment.title}`,
         });
+        trackEvent(uid, "reminder_tapped", "bot");
+        trackEvent(uid, "tx_created", "bot");
         await ctx.answerCallbackQuery({ text: "Записано" });
         await ctx
           .editMessageText(

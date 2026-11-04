@@ -79,7 +79,25 @@ export interface AdminSummary {
   rateLines: string[];
   errors: { total: number; top: { key: string; count: number }[] };
   /** null when the DB is down. */
-  activity: { usersTotal: number; activeDay: number; activeWeek: number; transactionsDay: number } | null;
+  activity: ActivityLike | null;
+}
+
+export interface ActivityLike {
+  usersTotal: number;
+  activeDay: number;
+  activeWeek: number;
+  transactionsDay: number;
+  txWeekBot: number;
+  txWeekWebapp: number;
+}
+
+/** Shared by the morning summary and /health. */
+export function formatActivityLines(a: ActivityLike): string[] {
+  return [
+    `Активных за сутки: ${a.activeDay}, за неделю: ${a.activeWeek} (всего ${a.usersTotal})`,
+    `Операций за сутки: ${a.transactionsDay}`,
+    `Операций за неделю: в чате ${a.txWeekBot}, в мини-приложении ${a.txWeekWebapp}`,
+  ];
 }
 
 export function formatAdminSummary(s: AdminSummary): string {
@@ -88,13 +106,7 @@ export function formatAdminSummary(s: AdminSummary): string {
     `БД: ${s.dbOk ? "OK" : "недоступна"}`,
     `Курсы: ${s.rateLines.join(", ")}`,
   ];
-  if (s.activity) {
-    const a = s.activity;
-    lines.push(
-      `Активных за сутки: ${a.activeDay}, за неделю: ${a.activeWeek} (всего ${a.usersTotal})`,
-      `Операций за сутки: ${a.transactionsDay}`,
-    );
-  }
+  if (s.activity) lines.push(...formatActivityLines(s.activity));
   lines.push(`Ошибок за сутки: ${s.errors.total}`);
   for (const e of s.errors.top) lines.push(`  ${e.count} × <code>${escapeHtml(e.key)}</code>`);
   return renderScreen({ title: "☀️ Сводка за сутки", lines });
