@@ -1,3 +1,4 @@
-# Скрипты и юниты systemd выполняются на Linux-сервере — только LF, даже при core.autocrlf=true.
-*.sh text eol=lf
-deploy/** text eol=lf
+# LF везде, даже при core.autocrlf=true на Windows: prettier (format:check) ждёт LF,
+# а скрипты и юниты systemd выполняются на Linux-сервере. Батники Windows — CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf

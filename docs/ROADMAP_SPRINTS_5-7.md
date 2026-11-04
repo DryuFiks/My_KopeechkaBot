@@ -72,6 +72,8 @@
   текущий `dist` переименовывается в `dist.prev` перед распаковкой.
 - `scripts/rollback.ps1`: вернуть `dist.prev` и перезапустить службу.
 - Обновить устаревший `docs/RELEASE_CHECKLIST.md` (там до сих пор «нет CI» и «нет HTTP-сервера»).
+- Статус: готово — `scripts/deploy.ps1`, `scripts/rollback.ps1`, `deploy/release/*.sh` (бэкап и миграции только
+  при изменении `sql/`); `.gitattributes` переводит репозиторий на LF, чтобы `npm run check` проходил на Windows.
 
 ### MKB-047 — Обратная связь и журнал событий
 - `/feedback` в боте и кнопка «Написать разработчику» в Профиле WebApp: текст пересылается админу с user id.

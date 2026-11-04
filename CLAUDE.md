@@ -195,21 +195,12 @@ git-ignored `DEPLOY.local.md` (or ask the user). Steps, in this order:
 
 1. `git pull --ff-only` if the user says there are new changes in `origin/main` (other branches/PRs
    land there; they may not pass `format:check` — fix with `npx prettier --write <files>` and commit).
-2. **Build the web app separately: `(cd webapp && npm run build)`.** The root `npm run build` is only
-   `tsc` for the bot and does **not** rebuild `webapp/dist` — skipping this ships a stale frontend.
-3. `npm run check` (format, lint, tsc, tests) and `npm run build` for the bot's `dist/`.
-4. Commit and `git push` (commit/push only on the user's request; deploy uploads the working tree's
-   build, so commit first to keep the repo and the server in step).
-5. Upload and restart (PowerShell, from the repo root; key path is in `DEPLOY.md`):
-   ```powershell
-   $k="<SSH_KEY>"
-   tar -czf $env:TEMP\app.tgz dist webapp/dist package.json package-lock.json sql
-   scp -i $k $env:TEMP\app.tgz ubuntu@<SERVER_IP>:/tmp/
-   ssh -i $k ubuntu@<SERVER_IP> "cd ~/bot && rm -rf webapp/dist && tar -xzf /tmp/app.tgz && npm ci --omit=dev --ignore-scripts >/dev/null 2>&1; rm /tmp/app.tgz && sudo systemctl restart kopeechka && sleep 3 && systemctl is-active kopeechka && sudo journalctl -u kopeechka -n 5 --no-pager"
-   ```
-   (`rm -rf webapp/dist` first so deleted/renamed hashed assets don't pile up; `--ignore-scripts` is
-   required — `husky` isn't in prod deps.)
-6. If `sql/` gained a new migration, apply it **on the server** (`tsx` isn't there, so not
-   `migrate:up`) — the exact `psql` loop is in `DEPLOY.md` ("Миграции"). Do this *before* the restart.
-7. Verify: `is-active` prints `active` and the journal shows `Bot is running.` / `HTTP listening`.
+2. Commit and `git push` (commit/push only on the user's request): the deploy script refuses a dirty
+   working tree so the repo and the server stay in step.
+3. `.\scripts\deploy.ps1` (PowerShell, repo root; MKB-046). It builds `webapp/dist` (the root
+   `npm run build` is only `tsc` and does **not** rebuild the web app), runs `npm run check`, builds
+   `dist/`, uploads, keeps the current server release as `*.prev`, runs a backup + migrations **only if
+   `sql/` changed**, restarts and checks `is-active`. Details: `DEPLOY.md`.
+4. If the bot doesn't come up: `.\scripts\rollback.ps1` (one previous release is kept; migrations are
+   not rolled back — they're additive). Verify the journal shows `Bot is running.` / `HTTP listening`.
    Never run a second bot instance locally with the production token (409 Conflict).
