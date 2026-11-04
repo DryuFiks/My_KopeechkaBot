@@ -14,6 +14,7 @@ import { CategoriesController } from "./api/categories.controller";
 import { TransactionsController } from "./api/transactions.controller";
 import { HistoryController } from "./api/history.controller";
 import { EventsController } from "./api/events.controller";
+import { PaymentsController } from "./api/payments.controller";
 
 @Module({
   imports: [DatabaseModule, BotModule],
@@ -29,6 +30,7 @@ import { EventsController } from "./api/events.controller";
     TransactionsController,
     HistoryController,
     EventsController,
+    PaymentsController,
   ],
   providers: [{ provide: APP_FILTER, useClass: LogUnexpectedErrorsFilter }],
 })
