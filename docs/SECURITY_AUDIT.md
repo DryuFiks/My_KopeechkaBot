@@ -28,6 +28,9 @@ Docker-инфраструктуры; добавление их — отдель�
 - `getActivityStats()` (`src/db/admin.ts`, MKB-045) — только счётчики (пользователей, операций)
   по всем пользователям, без строк; вызывается лишь утренней сводкой администратору
   (`src/adminAlerts.ts`), уходит только на `ADMIN_TELEGRAM_ID`.
+- `getEveningCandidates()` / `markEveningNotified(userId, day)` (`src/db/reminders.ts`, MKB-057) — только
+  пользователи, сами включившие вечернее напоминание; планировщик (`src/userReminders.ts`) пишет каждому
+  только ему, текст без данных. Кнопки `evening:nospend` / `evening:off` действуют на `ctx.from.id`.
 
 ### Callback-data с id: проверка на подбор чужого id
 

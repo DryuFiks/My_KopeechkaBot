@@ -2,6 +2,7 @@ import { CurrencyStep } from "@/features/choose-currency";
 import { EraseAccount } from "@/features/erase-account";
 import { IncomeStep } from "@/features/income-step";
 import { ExpenseStep } from "@/features/expense-step";
+import { ReminderSettings } from "@/features/reminder-settings";
 import { fetchPlan, fetchSettings, resetOnboarding } from "@/entities/plan";
 import { CollapsibleCard, Hint, Status } from "@/shared/ui";
 import { useAction } from "@/shared/lib/useAction";
@@ -23,6 +24,12 @@ export function SettingsPage({ restartOnboarding }: { restartOnboarding: () => v
       <h2>Настройки</h2>
       <CollapsibleCard title="Валюта и курс" note={currencyNote}>
         <Status state={settings}>{(s) => <CurrencyStep settings={s} onChanged={settings.reload} />}</Status>
+      </CollapsibleCard>
+      <CollapsibleCard
+        title="Напоминания"
+        note={s ? (s.remindEvening ? `вечером в ${s.remindHour}:00` : "выключены") : undefined}
+      >
+        <Status state={settings}>{(s) => <ReminderSettings settings={s} onChanged={settings.reload} />}</Status>
       </CollapsibleCard>
       <CollapsibleCard title="Доходы" note={plan.data ? String(plan.data.incomes.length) : undefined}>
         <Status state={plan}>{(p) => <IncomeStep plan={p} onChanged={plan.reload} />}</Status>

@@ -1,7 +1,8 @@
 import { BadRequestException, Body, Controller, Get, Post, Put, UseGuards } from "@nestjs/common";
 import { isValidExchangeFactor } from "../../currencies";
 import { eraseUserData } from "../../db/eraseUser";
-import { getUserSettings, updateUserSettings } from "../../db/settings";
+import { getUserSettings, updateUserSettings, type UserSettings } from "../../db/settings";
+import { REMIND_HOURS } from "../../eveningReminder";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
 import { currency } from "./validation";
@@ -12,6 +13,8 @@ function present(s: Awaited<ReturnType<typeof getUserSettings>>) {
     exchangeFactor: s.exchangeFactor,
     timezone: s.timezone,
     onboarded: s.onboardedAt !== null,
+    remindEvening: s.remindEvening,
+    remindHour: s.remindHour,
   };
 }
 
@@ -23,15 +26,24 @@ export class SettingsController {
     return present(await getUserSettings(user.id));
   }
 
-  /** Main (display) currency and the exchanger factor; omitted fields stay as they are. */
+  /** Main currency, exchanger factor and the evening reminder; omitted fields stay as they are. */
   @Put("settings")
   async update(@WebUser() user: WebAppUser, @Body() body: Record<string, unknown>) {
-    const patch: { displayCurrency?: ReturnType<typeof currency>; exchangeFactor?: number } = {};
+    const patch: Partial<UserSettings> = {};
     if (body.displayCurrency !== undefined) patch.displayCurrency = currency(body.displayCurrency);
     if (body.exchangeFactor !== undefined) {
       const factor = Number(body.exchangeFactor);
       if (!isValidExchangeFactor(factor)) throw new BadRequestException("invalid factor");
       patch.exchangeFactor = Math.round(factor * 1000) / 1000;
+    }
+    if (body.remindEvening !== undefined) {
+      if (typeof body.remindEvening !== "boolean") throw new BadRequestException("invalid remindEvening");
+      patch.remindEvening = body.remindEvening;
+    }
+    if (body.remindHour !== undefined) {
+      if (!REMIND_HOURS.includes(Number(body.remindHour)))
+        throw new BadRequestException("invalid remindHour");
+      patch.remindHour = Number(body.remindHour);
     }
     return present(await updateUserSettings(user.id, patch));
   }
