@@ -7,14 +7,20 @@ import { OnboardingPage } from "@/pages/onboarding";
 import { ProfilePage } from "@/pages/profile";
 import { AddExpensePage, AddIncomePage } from "@/pages/add-expense";
 import { ProgressToasts } from "@/widgets/progress-toasts";
+import { QuickAdd, type QuickAddPreset } from "@/features/quick-add";
 import { fetchSettings } from "@/entities/plan";
-import { Status } from "@/shared/ui";
+import { undoTransaction } from "@/entities/transaction";
+import { ActionToast, Status } from "@/shared/ui";
 import { useAsync } from "@/shared/lib/useAsync";
 import { useBackButton } from "@/shared/lib/useBackButton";
 import { haptic } from "@/shared/lib/telegram";
 import { ErrorBoundary } from "./ErrorBoundary";
 
-type PageProps = { go: (tab: TabId) => void; restartOnboarding: () => void };
+type PageProps = {
+  go: (tab: TabId) => void;
+  quickAdd: (preset?: QuickAddPreset) => void;
+  restartOnboarding: () => void;
+};
 
 const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   overview: OverviewPage,
@@ -27,15 +33,25 @@ const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
 
 function Tabs({ restartOnboarding }: { restartOnboarding: () => void }) {
   const [tab, setTab] = useState<TabId>("overview");
+  const [sheet, setSheet] = useState<QuickAddPreset | null>(null);
+  const [saved, setSaved] = useState<{ id: number; text: string } | null>(null);
+  // Смена ключа перерисовывает текущую вкладку со свежими данными после записи или отмены.
+  const [refresh, setRefresh] = useState(0);
   const goHome = useCallback(() => setTab("overview"), []);
-  // «Назад» в шапке Telegram возвращает на обзор из любой другой вкладки.
-  useBackButton(tab !== "overview", goHome);
+  const closeSheet = useCallback(() => setSheet(null), []);
+  const hideSaved = useCallback(() => setSaved(null), []);
+  // «Назад» в шапке Telegram закрывает шторку, иначе возвращает на главную из любой другой вкладки.
+  useBackButton(sheet !== null || tab !== "overview", sheet !== null ? closeSheet : goHome);
 
+  const quickAdd = (preset: QuickAddPreset = { type: "expense" }) => {
+    haptic("tap");
+    setSheet(preset);
+  };
   const Page = PAGES[tab];
   return (
     <>
       <main className="page">
-        <Page key={tab} go={setTab} restartOnboarding={restartOnboarding} />
+        <Page key={`${tab}:${refresh}`} go={setTab} quickAdd={quickAdd} restartOnboarding={restartOnboarding} />
       </main>
       <TabBar
         active={tab}
@@ -43,11 +59,35 @@ function Tabs({ restartOnboarding }: { restartOnboarding: () => void }) {
           haptic("tap");
           setTab(id);
         }}
-        onAdd={() => {
-          haptic("tap");
-          setTab("add-expense");
-        }}
+        onAdd={() => quickAdd()}
       />
+      {sheet && (
+        <QuickAdd
+          preset={sheet}
+          onClose={closeSheet}
+          onSaved={(id, text) => {
+            setSheet(null);
+            setSaved({ id, text });
+            setRefresh((r) => r + 1);
+          }}
+          onStepwise={(type) => {
+            setSheet(null);
+            setTab(type === "income" ? "add-income" : "add-expense");
+          }}
+        />
+      )}
+      {saved && (
+        <ActionToast
+          key={saved.id}
+          text={saved.text}
+          actionLabel="Отменить"
+          onDone={hideSaved}
+          onAction={() => {
+            setSaved(null);
+            void undoTransaction(saved.id).finally(() => setRefresh((r) => r + 1));
+          }}
+        />
+      )}
     </>
   );
 }
