@@ -7,7 +7,8 @@ import { DebtPayoffPlan } from "@/features/debt-payoff-plan";
 import { useAsync } from "@/shared/lib/useAsync";
 import { Status } from "@/shared/ui";
 
-export function DebtsPage() {
+/** «Цели → Гасить»: долги, стратегия и план погашения. */
+export function Debts() {
   const [strategy, setStrategy] = useState<Strategy>("avalanche");
   const debts = useAsync(fetchDebts);
 
@@ -18,7 +19,6 @@ export function DebtsPage() {
 
   return (
     <>
-      <h1>Долги</h1>
       <StrategyToggle value={strategy} onChange={setStrategy} />
       <Status state={debts}>{(list) => <DebtList debts={orderDebts(list, strategy)} onDelete={remove} />}</Status>
       {debts.data && <DebtPayoffPlan debts={debts.data} strategy={strategy} />}

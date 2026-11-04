@@ -20,7 +20,7 @@ export function OverviewPage({ go }: { go: (tab: TabId) => void }) {
               <Icon name="plus" /> Добавить доход
             </button>
             <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
-            <button className="link center" onClick={() => go("history")}>
+            <button className="link center" onClick={() => go("budget")}>
               <Icon name="calendar" /> История по месяцам
             </button>
           </>

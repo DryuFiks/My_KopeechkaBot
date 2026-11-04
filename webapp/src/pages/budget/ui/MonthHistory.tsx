@@ -145,13 +145,12 @@ function MonthView({ month, previous }: { month: string; previous?: HistoryMonth
   );
 }
 
-/** Вкладка «Бюджет»: месяцы чипами, траты кольцом или по дням, категории и операции. Лимиты — на вкладке «Лимиты». */
-export function HistoryPage() {
+/** «Бюджет → Траты»: месяцы чипами, траты кольцом или по дням, категории и операции. */
+export function MonthHistory() {
   const state = useAsync(fetchHistory);
   const [picked, setPicked] = useState<string>();
   return (
     <>
-      <h1>Бюджет</h1>
       <Status state={state}>
         {({ months }) => {
           const { selected, previous } = pickMonth(months, picked);

@@ -1,10 +1,8 @@
 import { useCallback, useState } from "react";
 import { TabBar, type TabId } from "@/widgets/tab-bar";
 import { OverviewPage } from "@/pages/overview";
-import { DebtsPage } from "@/pages/debts";
+import { BudgetPage } from "@/pages/budget";
 import { GoalsPage } from "@/pages/goals";
-import { HistoryPage } from "@/pages/history";
-import { LimitsPage } from "@/pages/limits";
 import { OnboardingPage } from "@/pages/onboarding";
 import { ProfilePage } from "@/pages/profile";
 import { AddExpensePage, AddIncomePage } from "@/pages/add-expense";
@@ -20,9 +18,7 @@ type PageProps = { go: (tab: TabId) => void; restartOnboarding: () => void };
 
 const PAGES: Record<TabId, (props: PageProps) => JSX.Element> = {
   overview: OverviewPage,
-  history: HistoryPage,
-  limits: LimitsPage,
-  debts: DebtsPage,
+  budget: BudgetPage,
   goals: GoalsPage,
   profile: ProfilePage,
   "add-expense": AddExpensePage,
@@ -46,6 +42,10 @@ function Tabs({ restartOnboarding }: { restartOnboarding: () => void }) {
         onChange={(id) => {
           haptic("tap");
           setTab(id);
+        }}
+        onAdd={() => {
+          haptic("tap");
+          setTab("add-expense");
         }}
       />
     </>
