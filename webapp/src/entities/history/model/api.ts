@@ -42,7 +42,16 @@ export interface HistoryTransactions {
 
 export const fetchHistory = () => api.get<{ months: HistoryMonth[] }>("/history");
 export const fetchHistoryMonth = (month: string) => api.get<HistoryMonthDetail>(`/history/${month}`);
-export const fetchHistoryTransactions = (month: string, offset: number) =>
-  api.get<HistoryTransactions>(`/history/${month}/transactions?offset=${offset}`);
+/** Фильтр операций месяца (MKB-056): текст ищется в категории и комментарии. */
+export interface TransactionFilter {
+  q: string;
+  type: "all" | "expense" | "income";
+}
+export const fetchHistoryTransactions = (month: string, offset: number, filter?: TransactionFilter) => {
+  const params = new URLSearchParams({ offset: String(offset) });
+  if (filter?.q.trim()) params.set("q", filter.q.trim());
+  if (filter && filter.type !== "all") params.set("type", filter.type);
+  return api.get<HistoryTransactions>(`/history/${month}/transactions?${params}`);
+};
 /** Последние операции для главного экрана, от новых к старым. */
 export const fetchRecentTransactions = () => api.get<{ items: HistoryTransaction[] }>("/transactions/recent");

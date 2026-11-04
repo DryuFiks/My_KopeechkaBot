@@ -265,24 +265,6 @@ export async function getMonthlyTotals(userId: number, timeZone: string): Promis
   }));
 }
 
-/** One page of the user's operations in [from, to), newest first. */
-export async function getTransactionsForRange(
-  userId: number,
-  from: Date,
-  to: Date,
-  limit: number,
-  offset: number,
-): Promise<Transaction[]> {
-  const result = await pool.query<Transaction>(
-    `SELECT * FROM transactions
-     WHERE user_id = $1 AND created_at >= $2 AND created_at < $3
-     ORDER BY created_at DESC, id DESC
-     LIMIT $4 OFFSET $5`,
-    [userId, from, to, limit, offset],
-  );
-  return result.rows;
-}
-
 export interface ExpenseBucket {
   bucket: Date;
   amountGel: number;
