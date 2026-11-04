@@ -153,6 +153,8 @@ it, split by concern into a sibling module rather than disabling the rule — e.
 ## Docs
 
 - `docs/RELEASE_CHECKLIST.md` — release steps, migration rollback table, manual smoke checklist.
+- `docs/ROADMAP_SPRINTS_5-7.md` — current roadmap (Nov–Dec 2026, tickets MKB-044…MKB-062): reliability,
+  WebApp redesign, retention.
 - `docs/SECURITY_AUDIT.md` — per-user isolation audit, idempotency table, what's covered by tests
   vs. code review vs. manual checking.
 
