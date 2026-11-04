@@ -11,7 +11,7 @@ export const mainKeyboard = new InlineKeyboard()
 // Telegram принимает web_app-кнопки только с https-адресом, поэтому без WEBAPP_URL кнопки нет.
 const webAppUrl = process.env.WEBAPP_URL;
 if (webAppUrl && webAppUrl.startsWith("https://")) {
-  mainKeyboard.row().webApp("📱 WebApp", webAppUrl);
+  mainKeyboard.row().webApp("📱 Открыть Копеечку", webAppUrl);
 }
 
 export const financeKeyboard = new InlineKeyboard()

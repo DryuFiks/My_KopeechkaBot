@@ -67,7 +67,8 @@ export async function showBudget(ctx: Context, userId: number): Promise<void> {
   const text = renderScreen({
     title: `Бюджет — ${formatPeriodLabel(from, to)}`,
     lines,
-    emptyText: "На этот месяц лимиты не заданы. Пришли: /budget Категория сумма (например: /budget Еда 500)",
+    emptyText:
+      "На этот месяц лимиты не заданы. Пришлите: /budget Категория сумма (например: /budget Еда 500)",
   });
   await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
 }

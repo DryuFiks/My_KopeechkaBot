@@ -89,7 +89,7 @@ export function registerSettingsHandlers(bot: Bot): void {
         const timezone = timezoneMatch[1];
         if (!isValidTimeZone(timezone)) {
           await ctx.reply(
-            `Неизвестный часовой пояс «${timezone}». Используй IANA-название, например Europe/Moscow, Asia/Tbilisi, UTC.`,
+            `Неизвестный часовой пояс «${timezone}». Используйте IANA-название, например Europe/Moscow, Asia/Tbilisi, UTC.`,
             { reply_markup: mainKeyboard },
           );
           return;

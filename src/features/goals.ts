@@ -28,7 +28,7 @@ async function renderGoalsScreen(userId: number) {
         targetDate: g.target_date,
       }),
     ),
-    emptyText: "Целей пока нет. Создай: /goal Название сумма [ГГГГ-ММ-ДД]",
+    emptyText: "Целей пока нет. Создайте: /goal Название сумма [ГГГГ-ММ-ДД]",
   });
   return text;
 }

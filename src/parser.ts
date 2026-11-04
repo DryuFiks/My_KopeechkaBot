@@ -123,7 +123,7 @@ const MAX_AMOUNT = 1_000_000_000;
 export function parseBareAmount(rawText: string): number | ParseError {
   const text = rawText.trim().replace(/\s+/g, "");
   const match = BARE_NUMBER_PATTERN.exec(text);
-  if (!match) return { error: "Введи сумму числом, например 25 или 25.5" };
+  if (!match) return { error: "Введите сумму числом, например 25 или 25.5" };
   const amount = Number(match[1].replace(",", "."));
   if (!(amount > 0) || amount > MAX_AMOUNT)
     return { error: "Сумма должна быть больше нуля и не слишком большой." };

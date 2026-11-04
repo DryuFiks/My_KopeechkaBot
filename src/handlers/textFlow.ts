@@ -37,7 +37,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
         if (flow.stage === "category" || flow.stage === "newCategory") {
           const name = text.trim().slice(0, 60);
           if (!name) {
-            await ctx.reply("Пришли название категории или выбери из списка.", {
+            await ctx.reply("Пришлите название категории или выберите из списка.", {
               reply_markup: cancelKeyboard,
             });
             return;
@@ -79,7 +79,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
         }
 
         // stage === "confirm" — stray text instead of a button tap; the flow stays as-is.
-        await ctx.reply("Используй кнопки ниже, чтобы сохранить или отменить.", {
+        await ctx.reply("Используйте кнопки ниже, чтобы сохранить или отменить.", {
           reply_markup: flowConfirmKeyboard(Boolean(flow.note)),
         });
         return;
