@@ -2,6 +2,7 @@ import { useState } from "react";
 import { deleteCategory, fetchCategories, fetchCategoryUsage } from "@/entities/budget";
 import type { CategoryUsage } from "@/entities/budget";
 import { useAction } from "@/shared/lib/useAction";
+import { Icon } from "@/shared/ui";
 
 const NEW = "__new__";
 
@@ -46,22 +47,7 @@ export function DeleteCategory({ category, onDone }: { category: string; onDone:
       disabled={load.busy || plan !== undefined}
       onClick={open}
     >
-      <svg
-        viewBox="0 0 24 24"
-        width="20"
-        height="20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M3 6h18" />
-        <path d="M8 6V4h8v2" />
-        <path d="M6 6l1 14h10l1-14" />
-        <path d="M10 11v6M14 11v6" />
-      </svg>
+      <Icon name="trash" />
     </button>
   );
 
@@ -101,7 +87,7 @@ export function DeleteCategory({ category, onDone }: { category: string; onDone:
                   {c}
                 </option>
               ))}
-              <option value={NEW}>➕ Новая категория…</option>
+              <option value={NEW}>+ Новая категория…</option>
             </select>
             {choice === NEW && (
               <input

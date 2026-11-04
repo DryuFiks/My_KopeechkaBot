@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createTransaction, fetchCategoryOptions, undoTransaction } from "@/entities/transaction";
 import type { TransactionType } from "@/entities/transaction";
 import { fetchSettings } from "@/entities/plan";
-import { Card, ChipRow, Hint, Status } from "@/shared/ui";
+import { Card, ChipRow, Hint, Icon, Status } from "@/shared/ui";
 import { CURRENCY_SIGN, formatMoney, type Currency } from "@/shared/lib/money";
 import { parseAmount, useAction } from "@/shared/lib/useAction";
 import { useAsync } from "@/shared/lib/useAsync";
@@ -55,7 +55,7 @@ export function AddTransaction({ type, onClose }: { type: TransactionType; onClo
               })
             }
           >
-            ↩️ Отменить
+            <Icon name="undo" /> Отменить
           </button>
           <button className="primary" onClick={onClose}>
             Готово
@@ -135,7 +135,7 @@ export function AddTransaction({ type, onClose }: { type: TransactionType; onClo
           </Status>
           <div className="stepper-nav">
             <button className="chip chip--soft" onClick={() => setChoice(NEW_CATEGORY)}>
-              ➕ Добавить категорию
+              <Icon name="plus" /> Добавить категорию
             </button>
             <button
               className="chip chip--soft"
@@ -219,12 +219,12 @@ export function AddTransaction({ type, onClose }: { type: TransactionType; onClo
             />
           ) : (
             <button className="link" onClick={() => setShowNote(true)}>
-              💬 {note.trim() ? "Изменить комментарий" : "Добавить комментарий"}
+              <Icon name="comment" /> {note.trim() ? "Изменить комментарий" : "Добавить комментарий"}
             </button>
           )}
           <div className="stepper-nav">
             <button className="chip chip--soft" disabled={save.busy} onClick={onClose}>
-              ❌ Отмена
+              <Icon name="close" /> Отмена
             </button>
             <button
               className="primary"
@@ -242,7 +242,7 @@ export function AddTransaction({ type, onClose }: { type: TransactionType; onClo
                 })
               }
             >
-              ✅ Сохранить
+              <Icon name="check" /> Сохранить
             </button>
           </div>
           {save.error && (
