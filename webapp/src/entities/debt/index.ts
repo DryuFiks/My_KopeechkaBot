@@ -1,5 +1,5 @@
 export type { Debt, NewDebt } from "./model/types";
-export { fetchDebts, createDebt, deleteDebt, fetchPlan } from "./model/types";
+export { fetchDebts, createDebt, deleteDebt, closeDebt, fetchPlan } from "./model/types";
 export type { PayoffPlan, PlanComparison } from "./model/types";
 export { orderDebts } from "./lib/order";
 export type { Strategy } from "./lib/order";

@@ -5,6 +5,7 @@ import {
   evaluateProgress,
   rankIndexForXp,
   summarizeDays,
+  currentStreakDays,
   type StatsSnapshot,
 } from "./achievements";
 
@@ -19,6 +20,7 @@ const empty: StatsSnapshot = {
   goalsReached: 0,
   cushionMonths: null,
   monthsWithinLimits: 0,
+  debtsClosed: 0,
 };
 
 describe("summarizeDays", () => {
@@ -89,5 +91,32 @@ describe("evaluateProgress", () => {
     expect(evaluateProgress({ ...empty, cushionMonths: 2.9 }).unlockedCodes).not.toContain("cushion");
     expect(evaluateProgress({ ...empty, cushionMonths: 3 }).unlockedCodes).toContain("cushion");
     expect(evaluateProgress({ ...empty, cushionMonths: null }).unlockedCodes).not.toContain("cushion");
+  });
+});
+
+describe("currentStreakDays (MKB-060)", () => {
+  it("counts consecutive days ending today", () => {
+    expect(currentStreakDays(["2026-11-04", "2026-11-03", "2026-11-02", "2026-10-30"], "2026-11-04")).toBe(3);
+  });
+
+  it("keeps the streak alive until the end of today if yesterday was recorded", () => {
+    expect(currentStreakDays(["2026-11-03", "2026-11-02"], "2026-11-04")).toBe(2);
+  });
+
+  it("is zero once a whole day was missed, or with no records", () => {
+    expect(currentStreakDays(["2026-11-02", "2026-11-01"], "2026-11-04")).toBe(0);
+    expect(currentStreakDays([], "2026-11-04")).toBe(0);
+  });
+
+  it("ignores duplicates and order, and crosses month boundaries", () => {
+    expect(currentStreakDays(["2026-11-01", "2026-10-31", "2026-11-01", "2026-10-30"], "2026-11-01")).toBe(3);
+  });
+});
+
+describe("debt slayer (MKB-060)", () => {
+  it("unlocks after the first closed debt", () => {
+    const def = ACHIEVEMENTS.find((a) => a.code === "debt_slayer");
+    expect(def?.unlocked(empty)).toBe(false);
+    expect(def?.unlocked({ ...empty, debtsClosed: 1 })).toBe(true);
   });
 });

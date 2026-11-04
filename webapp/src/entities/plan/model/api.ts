@@ -54,6 +54,8 @@ export interface PlanSummary {
   today: { remainingGel: number; perDayGel: number; status: AllowanceStatus };
   /** Сумма на сегодня, зафиксированная до сегодняшних трат, и что из неё уже потрачено (MKB-051). */
   day: { allowanceGel: number; spentGel: number; leftGel: number; share: number };
+  /** Дней подряд с записью или отметкой «трат не было» (MKB-060). */
+  streakDays: number;
   ratesMissing: boolean;
   /** GEL за 1 единицу основной валюты по курсу обменника; null — курса нет, показываем лари. */
   displayRateGel: number | null;

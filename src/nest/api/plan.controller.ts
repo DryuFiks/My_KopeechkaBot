@@ -38,7 +38,9 @@ import {
   suggestGoalTemplates,
 } from "../../monthPlan";
 import { totalMinimums } from "../../debtPayoff";
-import { zonedDayBoundaries, zonedMonthBoundaries } from "../../timezone";
+import { zonedDayBoundaries, zonedMonthBoundaries, zonedTodayIso } from "../../timezone";
+import { currentStreakDays } from "../../achievements";
+import { getRecordedDays } from "../../db/progress";
 import type { SupportedCurrency } from "../../currencies";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
@@ -148,11 +150,12 @@ export class PlanController {
     const plan = await this.plan(user);
     const { settings, now, month } = await monthContext(user.id);
     const day = zonedDayBoundaries(now, settings.timezone);
-    const [debts, spent, carryOverGel, spentToday] = await Promise.all([
+    const [debts, spent, carryOverGel, spentToday, recordedDays] = await Promise.all([
       listDebts(user.id),
       getSummaryForRange(user.id, month.from, month.to),
       getBalanceBefore(user.id, month.from),
       getSummaryForRange(user.id, day.from, day.to),
+      getRecordedDays(user.id, settings.timezone),
     ]);
 
     let ratesMissing = false;
@@ -209,6 +212,8 @@ export class PlanController {
       daysLeft,
       today,
       day: dayProgress(dayStart.perDayGel, spentToday.expense_gel),
+      // MKB-060: days in a row with an operation or a «трат не было» mark.
+      streakDays: currentStreakDays(recordedDays, zonedTodayIso(settings.timezone, now)),
       ratesMissing,
       displayRateGel: displayRateGel(settings.displayCurrency, settings.exchangeFactor),
       goalTemplates: suggestGoalTemplates(mandatoryGel, freeMonthGel),

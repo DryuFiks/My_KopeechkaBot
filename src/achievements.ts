@@ -42,6 +42,23 @@ export function summarizeDays(days: DayCount[]): DaySummary {
   return { recordPoints, bestStreakDays: best };
 }
 
+/**
+ * MKB-060: the current run of recorded days (an operation or a "no spending today" mark), YYYY-MM-DD
+ * in the user's timezone. Today not recorded yet doesn't break it — it counts up to yesterday, so the
+ * number never drops in the morning before the user had a chance to record anything.
+ */
+export function currentStreakDays(days: string[], todayIso: string): number {
+  const set = new Set(days.map(dayNumber));
+  const today = dayNumber(todayIso);
+  let n = set.has(today) ? today : today - 1;
+  let streak = 0;
+  while (set.has(n)) {
+    streak += 1;
+    n -= 1;
+  }
+  return streak;
+}
+
 /** Everything the rules need, gathered from the DB by the caller. */
 export interface StatsSnapshot {
   operations: number;
@@ -57,6 +74,8 @@ export interface StatsSnapshot {
   cushionMonths: number | null;
   /** Completed months (of the last six) in which every category with a limit stayed within it. */
   monthsWithinLimits: number;
+  /** Debts marked as paid off (MKB-060). */
+  debtsClosed: number;
 }
 
 export interface AchievementDef {
@@ -156,6 +175,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     description: "Накопите всю сумму одной из целей",
     xp: 150,
     unlocked: (s) => s.goalsReached >= 1,
+  },
+  {
+    code: "debt_slayer",
+    emoji: "🐲",
+    title: "Победитель долгов",
+    description: "Погасите один из долгов и отметьте его закрытым",
+    xp: 150,
+    unlocked: (s) => s.debtsClosed >= 1,
   },
 ];
 

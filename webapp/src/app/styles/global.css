@@ -116,3 +116,4 @@ select { font: inherit; min-width: 56px; padding: 0 var(--space-2); border: 1px 
 .collapsible[open] > summary::after { transform: rotate(180deg); }
 .collapsible__note { margin-left: auto; color: var(--color-text-muted); font-weight: 400; font-size: var(--text-s); }
 .collapsible__body { padding: 0 var(--space-4) var(--space-4); }
+.streak { margin: 0 0 var(--space-2); padding: var(--space-1) var(--space-3); display: inline-block; border-radius: var(--radius-pill); background: var(--color-warning-soft); font-size: var(--text-s); font-weight: 600; }

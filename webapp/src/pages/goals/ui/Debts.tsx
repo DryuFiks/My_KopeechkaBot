@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DebtList, deleteDebt, fetchDebts, orderDebts } from "@/entities/debt";
+import { DebtList, closeDebt, deleteDebt, fetchDebts, orderDebts } from "@/entities/debt";
 import type { Strategy } from "@/entities/debt";
 import { StrategyToggle } from "@/features/debt-strategy";
 import { AddDebtForm } from "@/features/add-debt";
@@ -17,10 +17,17 @@ export function Debts() {
     debts.reload();
   }
 
+  async function close(id: number) {
+    await closeDebt(id);
+    debts.reload();
+  }
+
   return (
     <>
       <StrategyToggle value={strategy} onChange={setStrategy} />
-      <Status state={debts}>{(list) => <DebtList debts={orderDebts(list, strategy)} onDelete={remove} />}</Status>
+      <Status state={debts}>
+        {(list) => <DebtList debts={orderDebts(list, strategy)} onDelete={remove} onClose={close} />}
+      </Status>
       {debts.data && <DebtPayoffPlan debts={debts.data} strategy={strategy} />}
       <AddDebtForm onAdded={debts.reload} />
     </>

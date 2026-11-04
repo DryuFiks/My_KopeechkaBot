@@ -26,9 +26,30 @@ function toDebt(r: DebtRow): Debt {
   };
 }
 
+/** Open debts only — paid-off ones (closed_at set, MKB-060) leave the payoff plan. */
 export async function listDebts(userId: number): Promise<Debt[]> {
-  const res = await pool.query<DebtRow>("SELECT * FROM debts WHERE user_id=$1 ORDER BY id", [userId]);
+  const res = await pool.query<DebtRow>(
+    "SELECT * FROM debts WHERE user_id=$1 AND closed_at IS NULL ORDER BY id",
+    [userId],
+  );
   return res.rows.map(toDebt);
+}
+
+/** MKB-060: marks a debt as paid off; false when it's not this user's or already closed (not an error). */
+export async function closeDebt(userId: number, id: number): Promise<boolean> {
+  const res = await pool.query(
+    "UPDATE debts SET closed_at = NOW() WHERE id=$1 AND user_id=$2 AND closed_at IS NULL",
+    [id, userId],
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+export async function countClosedDebts(userId: number): Promise<number> {
+  const res = await pool.query<{ n: number }>(
+    "SELECT COUNT(*)::int AS n FROM debts WHERE user_id=$1 AND closed_at IS NOT NULL",
+    [userId],
+  );
+  return res.rows[0].n;
 }
 
 export async function createDebt(userId: number, d: Omit<Debt, "id">): Promise<Debt> {

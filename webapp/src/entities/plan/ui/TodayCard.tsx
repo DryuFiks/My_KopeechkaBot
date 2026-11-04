@@ -10,6 +10,15 @@ const STATUS_TEXT = {
 
 const RING = 2 * Math.PI * 15.9;
 
+/** «2 дня», «5 дней», «21 день». */
+export function daysLabel(n: number): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return `${n} день`;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return `${n} дня`;
+  return `${n} дней`;
+}
+
 /** Кольцо: какая часть сегодняшней суммы уже потрачена. */
 function DayRing({ share, over }: { share: number; over: boolean }) {
   return (
@@ -72,6 +81,11 @@ export function TodayCard({ s }: { s: PlanSummary }) {
               ? "Доход в этом месяце ещё не поступил. Добавьте его — тогда появится сумма на день."
               : STATUS_TEXT[s.today.status]}
           </p>
+          {s.streakDays >= 2 && (
+            <p className="streak" title="Дни подряд с записью или отметкой «трат не было»">
+              🔥 {daysLabel(s.streakDays)} подряд с записями
+            </p>
+          )}
           <details className="more">
             <summary>Подробнее о месяце</summary>
             <PlanFactBar
