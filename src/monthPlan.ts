@@ -109,6 +109,28 @@ export function factAllowance(params: {
   return { remainingGel, perDayGel, status };
 }
 
+export interface DayProgress {
+  /** The daily amount as it was at the start of today (before today's spending). */
+  allowanceGel: number;
+  spentGel: number;
+  /** allowance − spent; negative when today went over. */
+  leftGel: number;
+  /** spent / allowance for the progress ring, capped at 1; 1 when there is no allowance but spending. */
+  share: number;
+}
+
+/**
+ * MKB-051: today's spending against today's amount. The daily amount is fixed at the start of the day,
+ * so a 50 ₾ purchase leaves exactly 50 ₾ less for today — instead of being spread over the rest of the
+ * month as factAllowance does when called with today's spending included.
+ */
+export function dayProgress(dayStartAllowanceGel: number, spentTodayGel: number): DayProgress {
+  const allowanceGel = round2(Math.max(0, dayStartAllowanceGel));
+  const spentGel = round2(Math.max(0, spentTodayGel));
+  const share = allowanceGel > 0 ? Math.min(1, spentGel / allowanceGel) : spentGel > 0 ? 1 : 0;
+  return { allowanceGel, spentGel, leftGel: round2(allowanceGel - spentGel), share: round2(share) };
+}
+
 export interface GoalTemplate {
   code: "cushion" | "vacation" | "purchase";
   title: string;

@@ -19,6 +19,10 @@ describe("formatting", () => {
     expect(formatMoney(5, "RUB")).toContain("₽");
     expect(formatMoney(5, "USD")).toContain("$");
   });
+  it("keeps the number and the sign on one line (no-break space)", () => {
+    expect(formatGel(200.93)).toBe("200,93 ₾");
+    expect(formatMoney(5, "RUB")).toBe("5,00 ₽");
+  });
   it("converts GEL into the main currency at the given rate", () => {
     expect(formatInDisplay(29.03, "RUB", 0.02903)).toContain("1");
     expect(formatInDisplay(29.03, "RUB", 0.02903)).toContain("₽");

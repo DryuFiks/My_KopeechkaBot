@@ -6,12 +6,15 @@ function fmt(amount: number): string {
   return amount.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** Неразрывный пробел: число и знак валюты не переносятся на разные строки. */
+const NBSP = " ";
+
 export function formatGel(amount: number): string {
-  return `${fmt(amount)} ${CURRENCY_SIGN.GEL}`;
+  return `${fmt(amount)}${NBSP}${CURRENCY_SIGN.GEL}`;
 }
 
 export function formatMoney(amount: number, currency: Currency): string {
-  return `${fmt(amount)} ${CURRENCY_SIGN[currency]}`;
+  return `${fmt(amount)}${NBSP}${CURRENCY_SIGN[currency]}`;
 }
 
 /**

@@ -44,3 +44,5 @@ export const fetchHistory = () => api.get<{ months: HistoryMonth[] }>("/history"
 export const fetchHistoryMonth = (month: string) => api.get<HistoryMonthDetail>(`/history/${month}`);
 export const fetchHistoryTransactions = (month: string, offset: number) =>
   api.get<HistoryTransactions>(`/history/${month}/transactions?offset=${offset}`);
+/** Последние операции для главного экрана, от новых к старым. */
+export const fetchRecentTransactions = () => api.get<{ items: HistoryTransaction[] }>("/transactions/recent");

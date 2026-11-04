@@ -12,16 +12,18 @@ import {
 } from "@nestjs/common";
 import { getCategoryOptions } from "../../categoryOptions";
 import { convertToGel, refreshRatesIfStale } from "../../currency";
-import { deleteTransactionById, insertTransaction } from "../../db";
+import { deleteTransactionById, getLastTransactions, insertTransaction } from "../../db";
 import { getUserSettings } from "../../db/settings";
 import { trackEvent } from "../../db/events";
 import type { TransactionType } from "../../parser";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
 import { currency, money } from "./validation";
+import { presentTransaction } from "./transactionView";
 
 const MAX_NOTE = 200;
 const MAX_CATEGORY = 60;
+const RECENT = 5;
 
 function txType(value: unknown): TransactionType {
   if (value !== "expense" && value !== "income") throw new BadRequestException("invalid type");
@@ -43,6 +45,12 @@ export class TransactionsController {
   @Get("categories")
   async categories(@WebUser() user: WebAppUser, @Query("type") type?: string) {
     return { categories: await getCategoryOptions(user.id, txType(type ?? "expense")) };
+  }
+
+  /** MKB-051: the last few operations for the home screen, newest first. */
+  @Get("recent")
+  async recent(@WebUser() user: WebAppUser) {
+    return { items: (await getLastTransactions(user.id, RECENT)).map(presentTransaction) };
   }
 
   /**

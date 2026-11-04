@@ -29,6 +29,7 @@ import {
 import { setBudgetLimit } from "../../db/budget";
 import { getUserSettings } from "../../db/settings";
 import {
+  dayProgress,
   daysLeftInMonth,
   expectedMonthlyAmount,
   factAllowance,
@@ -37,7 +38,7 @@ import {
   suggestGoalTemplates,
 } from "../../monthPlan";
 import { totalMinimums } from "../../debtPayoff";
-import { zonedMonthBoundaries } from "../../timezone";
+import { zonedDayBoundaries, zonedMonthBoundaries } from "../../timezone";
 import type { SupportedCurrency } from "../../currencies";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
@@ -146,10 +147,12 @@ export class PlanController {
   async summary(@WebUser() user: WebAppUser) {
     const plan = await this.plan(user);
     const { settings, now, month } = await monthContext(user.id);
-    const [debts, spent, carryOverGel] = await Promise.all([
+    const day = zonedDayBoundaries(now, settings.timezone);
+    const [debts, spent, carryOverGel, spentToday] = await Promise.all([
       listDebts(user.id),
       getSummaryForRange(user.id, month.from, month.to),
       getBalanceBefore(user.id, month.from),
+      getSummaryForRange(user.id, day.from, day.to),
     ]);
 
     let ratesMissing = false;
@@ -177,15 +180,19 @@ export class PlanController {
       0,
     );
     const factIncomeGel = round2(Math.max(spent.income_gel, receiptsGel));
-    const today = factAllowance({
-      carryOverGel,
-      factIncomeGel,
-      plannedIncomeGel: incomeGel,
-      mandatoryGel,
-      expenseSoFarGel: spent.expense_gel,
-      daysLeft,
-      daysInMonth,
-    });
+    const allowance = (expenseSoFarGel: number) =>
+      factAllowance({
+        carryOverGel,
+        factIncomeGel,
+        plannedIncomeGel: incomeGel,
+        mandatoryGel,
+        expenseSoFarGel,
+        daysLeft,
+        daysInMonth,
+      });
+    const today = allowance(spent.expense_gel);
+    // MKB-051: the day's amount is fixed before today's purchases; they are subtracted from it as they are.
+    const dayStart = allowance(spent.expense_gel - spentToday.expense_gel);
 
     return {
       displayCurrency: settings.displayCurrency,
@@ -201,6 +208,7 @@ export class PlanController {
       plannedPerDayGel: freeMonthGel > 0 ? round2(freeMonthGel / daysInMonth) : 0,
       daysLeft,
       today,
+      day: dayProgress(dayStart.perDayGel, spentToday.expense_gel),
       ratesMissing,
       displayRateGel: displayRateGel(settings.displayCurrency, settings.exchangeFactor),
       goalTemplates: suggestGoalTemplates(mandatoryGel, freeMonthGel),

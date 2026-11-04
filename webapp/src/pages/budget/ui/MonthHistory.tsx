@@ -4,31 +4,14 @@ import {
   fetchHistoryMonth,
   fetchHistoryTransactions,
   pickMonth,
+  TransactionRow,
   type HistoryMonth,
   type HistoryTransaction,
 } from "@/entities/history";
 import { BarChart, Card, DonutChart, donutColor, Status } from "@/shared/ui";
 import { monthLabel } from "@/shared/lib/date";
-import { formatGel, formatMoney, percent } from "@/shared/lib/money";
+import { formatGel, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
-
-function TransactionRow({ t }: { t: HistoryTransaction }) {
-  const sign = t.type === "income" ? "+" : "−";
-  const day = new Date(t.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-  return (
-    <div className="row">
-      <span>
-        {t.category ?? "Без категории"}
-        <small> · {day}</small>
-        {t.note && <small> · {t.note}</small>}
-      </span>
-      <b className="amount">
-        {sign}
-        {formatMoney(t.amount, t.currency)}
-      </b>
-    </div>
-  );
-}
 
 function Transactions({ month }: { month: string }) {
   const [items, setItems] = useState<HistoryTransaction[]>([]);
