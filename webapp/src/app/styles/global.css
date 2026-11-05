@@ -17,6 +17,10 @@ h2 { font-size: var(--text-l); line-height: 1.25; margin: var(--space-5) 0 var(-
 .hint, small { color: var(--color-text-muted); }
 .amount { white-space: nowrap; flex-shrink: 0; }
 .amount--income { color: var(--color-income); }
+.tx-row { width: 100%; min-height: var(--tap-size); border: 0; border-radius: var(--radius-s); background: none; text-align: left; }
+.tx-row:active:not(:disabled) { background: var(--color-fill); transform: none; }
+.field { display: grid; gap: var(--space-1); font-size: var(--text-s); color: var(--color-text-muted); }
+.field input { color: var(--color-text); font-size: var(--text-m); }
 .card__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
 .card__head .card__title { margin: 0; }
 .card__head .link { min-height: 0; padding: 0; font-size: var(--text-s); }
@@ -61,7 +65,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 button:active:not(:disabled) { transform: scale(0.98); }
 .icon { flex: none; vertical-align: middle; }
 .primary, .form button, .chip, .link { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); }
-.primary, .form button { padding: var(--space-3) var(--space-4); border: 0; border-radius: var(--radius-m); background: var(--color-accent); color: var(--color-on-accent); font-weight: 600; }
+.primary, .form button:not(.chip):not(.link) { padding: var(--space-3) var(--space-4); border: 0; border-radius: var(--radius-m); background: var(--color-accent); color: var(--color-on-accent); font-weight: 600; }
 .primary { flex: 1; }
 .primary.wide { display: flex; width: 100%; margin: 0 0 var(--space-3); }
 .chip { padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-on-accent); font-size: var(--text-s); font-weight: 500; }

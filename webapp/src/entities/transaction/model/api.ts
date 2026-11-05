@@ -22,3 +22,14 @@ export const fetchCategoryOptions = (type: TransactionType) =>
   api.get<{ categories: string[] }>(`/transactions/categories?type=${type}`);
 export const createTransaction = (t: NewTransaction) => api.post<CreatedTransaction>("/transactions", t);
 export const undoTransaction = (id: number) => api.delete<{ deleted: boolean }>(`/transactions/${id}`);
+
+export interface TransactionEdit {
+  amount: number;
+  currency: Currency;
+  category: string | null;
+  note: string | null;
+  /** «YYYY-MM-DD» — день операции по часовому поясу пользователя. */
+  date: string;
+}
+/** MKB-053: правка операции; сумма в лари пересчитывается на сервере. */
+export const updateTransaction = (id: number, e: TransactionEdit) => api.put<unknown>(`/transactions/${id}`, e);

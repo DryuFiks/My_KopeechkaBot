@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Card, Icon, Status } from "@/shared/ui";
 import { useAsync } from "@/shared/lib/useAsync";
 import { fetchOverview } from "@/entities/budget";
 import { TodayCard, fetchSummary } from "@/entities/plan";
-import { TransactionRow, fetchRecentTransactions } from "@/entities/history";
+import { TransactionRow, fetchRecentTransactions, type HistoryTransaction } from "@/entities/history";
 import { fetchCategoryOptions } from "@/entities/transaction";
+import { EditTransaction } from "@/features/edit-transaction";
 import type { QuickAddPreset } from "@/features/quick-add";
 import type { TabId } from "@/widgets/tab-bar";
 
@@ -30,10 +32,21 @@ function QuickActions({ quickAdd }: { quickAdd: QuickAddFn }) {
   );
 }
 
-function RecentOperations({ go }: { go: Go }) {
+function RecentOperations({ go, onChanged }: { go: Go; onChanged: () => void }) {
   const recent = useAsync(fetchRecentTransactions);
+  const [editing, setEditing] = useState<HistoryTransaction>();
   return (
     <Card>
+      {editing && (
+        <EditTransaction
+          t={editing}
+          onClose={() => setEditing(undefined)}
+          onChanged={() => {
+            recent.reload();
+            onChanged();
+          }}
+        />
+      )}
       <div className="card__head">
         <h2 className="card__title">Последние операции</h2>
         <button className="link" onClick={() => go("budget")}>
@@ -45,7 +58,7 @@ function RecentOperations({ go }: { go: Go }) {
           items.length === 0 ? (
             <p className="hint">Пока пусто. Нажмите «＋» внизу, чтобы записать первую трату.</p>
           ) : (
-            items.map((t) => <TransactionRow key={t.id} t={t} />)
+            items.map((t) => <TransactionRow key={t.id} t={t} onSelect={setEditing} />)
           )
         }
       </Status>
@@ -64,7 +77,7 @@ export function OverviewPage({ go, quickAdd }: { go: Go; quickAdd: QuickAddFn })
           <h1>Привет{name ? `, ${name}` : ""}!</h1>
           <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
           <QuickActions quickAdd={quickAdd} />
-          <RecentOperations go={go} />
+          <RecentOperations go={go} onChanged={summary.reload} />
         </>
       )}
     </Status>
