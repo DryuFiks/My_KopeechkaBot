@@ -7,6 +7,7 @@ import { registerTextFlowHandlers } from "../handlers/textFlow";
 import { registerFeatureHandlers } from "../features";
 import { loadRateCacheFromDb, refreshRatesIfStale } from "../currency";
 import { startPaymentReminders } from "../reminders";
+import { startAdminAlerts } from "../adminAlerts";
 import { logger } from "../logger";
 
 /**
@@ -46,6 +47,7 @@ export class BotService implements OnApplicationBootstrap, OnApplicationShutdown
     registerFeatureHandlers(bot);
     registerTextFlowHandlers(bot);
     startPaymentReminders(bot);
+    startAdminAlerts(bot);
     this.bot = bot;
 
     await setWebAppMenuButton(bot);

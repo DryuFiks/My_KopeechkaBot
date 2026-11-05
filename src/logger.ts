@@ -32,8 +32,23 @@ function redact(message: string): string {
   return result;
 }
 
+let errorListener: ((message: string) => void) | null = null;
+
+/** MKB-045: admin alerts subscribe to ERROR lines (already redacted). WARN never triggers it — safe to log from inside. */
+export function setErrorListener(listener: ((message: string) => void) | null): void {
+  errorListener = listener;
+}
+
 function write(level: Level, message: string): void {
-  const line = `${new Date().toISOString()} [${level}] ${redact(message)}`;
+  const safeMessage = redact(message);
+  const line = `${new Date().toISOString()} [${level}] ${safeMessage}`;
+  if (level === "ERROR" && errorListener) {
+    try {
+      errorListener(safeMessage);
+    } catch {
+      // An alert must never break logging.
+    }
+  }
 
   if (level === "ERROR") console.error(line);
   else if (level === "WARN") console.warn(line);
