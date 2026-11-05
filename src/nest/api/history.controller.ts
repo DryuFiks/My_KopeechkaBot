@@ -12,6 +12,7 @@ import { buildMonthRows, isMonthKey } from "../../historyMonths";
 import { zonedDayBoundaries, zonedMonthBoundaries } from "../../timezone";
 import type { WebAppUser } from "../../telegramAuth";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
+import { presentTransaction } from "./transactionView";
 
 const DAY_MS = 86_400_000;
 const PAGE_MAX = 100;
@@ -83,16 +84,7 @@ export class HistoryController {
     const rows = await getTransactionsForRange(user.id, from, to, pageSize + 1, intParam(offset, 0, 1e6));
     return {
       hasMore: rows.length > pageSize,
-      items: rows.slice(0, pageSize).map((t) => ({
-        id: t.id,
-        type: t.type,
-        amount: Number(t.amount),
-        currency: t.currency,
-        amountGel: t.amount_gel === null ? null : Number(t.amount_gel),
-        category: t.category,
-        note: t.note,
-        createdAt: t.created_at.toISOString(),
-      })),
+      items: rows.slice(0, pageSize).map(presentTransaction),
     };
   }
 }

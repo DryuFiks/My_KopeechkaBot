@@ -16,6 +16,22 @@ h2 { font-size: var(--text-l); line-height: 1.25; margin: var(--space-5) 0 var(-
 .row-block { margin-bottom: var(--space-3); }
 .hint, small { color: var(--color-text-muted); }
 .amount { white-space: nowrap; flex-shrink: 0; }
+.amount--income { color: var(--color-income); }
+.card__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
+.card__head .card__title { margin: 0; }
+.card__head .link { min-height: 0; padding: 0; font-size: var(--text-s); }
+
+/* Главная: «Сегодня можно» с кольцом дня (MKB-051) */
+.hero__top { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.hero__sub { margin: 0; }
+.day-ring { flex: none; width: 76px; height: 76px; }
+.day-ring__track, .day-ring__fill { fill: none; stroke-width: 3.6; }
+.day-ring__track { stroke: var(--color-track); }
+.day-ring__fill { stroke: var(--color-accent); stroke-linecap: round; transition: stroke-dasharray var(--duration); }
+.day-ring--over .day-ring__fill { stroke: var(--color-danger); }
+.day-ring text { fill: var(--color-text); font-size: 8px; font-weight: 600; }
+.quick-actions { display: flex; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.quick-actions .chip { flex: 1; }
 .row b, .amount, .bignum, .spend-total b { font-variant-numeric: tabular-nums; }
 .progress { position: relative; height: 20px; background: var(--color-track); border-radius: var(--radius-pill); overflow: hidden; margin-top: var(--space-2); }
 .progress__fill { height: 100%; background: var(--color-accent); }

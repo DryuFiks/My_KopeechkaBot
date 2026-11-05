@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dayProgress,
   daysLeftInMonth,
   expectedMonthlyAmount,
   factAllowance,
@@ -132,5 +133,24 @@ describe("suggestions", () => {
     const limits = suggestCategoryLimits(1000);
     expect(limits.reduce((s, l) => s + l.limitGel, 0)).toBeCloseTo(800, 1);
     expect(suggestCategoryLimits(0)).toEqual([]);
+  });
+});
+
+describe("dayProgress", () => {
+  it("subtracts today's spending from the amount fixed at the start of the day", () => {
+    expect(dayProgress(200, 50)).toEqual({ allowanceGel: 200, spentGel: 50, leftGel: 150, share: 0.25 });
+  });
+
+  it("goes negative and caps the ring when today is over", () => {
+    expect(dayProgress(100, 130)).toEqual({ allowanceGel: 100, spentGel: 130, leftGel: -30, share: 1 });
+  });
+
+  it("handles no allowance at all", () => {
+    expect(dayProgress(0, 0).share).toBe(0);
+    expect(dayProgress(-20, 10)).toEqual({ allowanceGel: 0, spentGel: 10, leftGel: -10, share: 1 });
+  });
+
+  it("rounds to cents", () => {
+    expect(dayProgress(200.934, 10.004).leftGel).toBe(190.93);
   });
 });
