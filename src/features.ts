@@ -10,6 +10,7 @@ import { registerGoalsHandlers } from "./features/goals";
 import { registerHealthHandlers } from "./features/health";
 import { registerProgressHandlers } from "./features/progress";
 import { registerFeedbackHandlers } from "./features/feedback";
+import { registerReminderHandlers } from "./features/reminders";
 
 export function registerFeatureHandlers(bot: Bot): void {
   registerAnalyticsHandlers(bot);
@@ -23,4 +24,5 @@ export function registerFeatureHandlers(bot: Bot): void {
   registerHealthHandlers(bot);
   registerProgressHandlers(bot);
   registerFeedbackHandlers(bot);
+  registerReminderHandlers(bot);
 }

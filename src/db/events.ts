@@ -3,7 +3,14 @@ import { logger } from "../logger";
 
 /** MKB-047: what happened, never the data itself (no amounts, categories or texts). */
 export type EventName =
-  "app_open" | "tx_created" | "tx_edited" | "goal_contribute" | "reminder_tapped" | "feedback";
+  | "app_open"
+  | "tx_created"
+  | "tx_edited"
+  | "goal_contribute"
+  | "reminder_tapped"
+  | "feedback"
+  /** MKB-057: «трат сегодня не было» из вечернего напоминания — день засчитан (и для серии, MKB-060). */
+  | "no_spend_day";
 export type EventSource = "bot" | "webapp";
 
 /** Fire-and-forget: a lost event must never fail or slow down the user's action. */

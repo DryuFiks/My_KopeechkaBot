@@ -79,7 +79,12 @@ export interface Settings {
   exchangeFactor: number;
   timezone: string;
   onboarded: boolean;
+  /** Вечернее напоминание «записать траты?» (MKB-057); по умолчанию выключено. */
+  remindEvening: boolean;
+  remindHour: number;
 }
+
+export type SettingsPatch = Partial<Pick<Settings, "displayCurrency" | "exchangeFactor" | "remindEvening" | "remindHour">>;
 
 export interface NewIncome {
   name: string;
@@ -108,8 +113,7 @@ export const addExpense = (e: NewExpense) => api.post<PlannedExpense>("/plan/exp
 export const removeExpense = (id: number) => api.delete<{ deleted: boolean }>(`/plan/expense/${id}`);
 
 export const fetchSettings = () => api.get<Settings>("/settings");
-export const updateSettings = (patch: { displayCurrency?: Currency; exchangeFactor?: number }) =>
-  api.put<Settings>("/settings", patch);
+export const updateSettings = (patch: SettingsPatch) => api.put<Settings>("/settings", patch);
 export const completeOnboarding = () => api.post<Settings>("/onboarding/complete", {});
 export const applyBudget = (limits: CategoryLimit[]) =>
   api.post<{ applied: number }>("/plan/apply-budget", { limits });

@@ -66,6 +66,7 @@
 | `008_month_plan.sql` | `DROP TABLE income_sources, income_receipts, planned_expenses; ALTER TABLE user_settings DROP COLUMN exchange_factor, DROP COLUMN onboarded_at` |
 | `009_progress.sql` | `DROP TABLE user_achievements, user_progress` |
 | `010_events.sql` | `DROP TABLE events` |
+| `011_evening_reminder.sql` | `ALTER TABLE user_settings DROP COLUMN remind_evening, DROP COLUMN remind_hour, DROP COLUMN evening_notified` |
 
 ## Известные ограничения
 
