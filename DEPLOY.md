@@ -60,15 +60,46 @@ ssh -i <SSH_KEY> ubuntu@<SERVER_IP> `
 - Смена `.env` на сервере: `nano ~/bot/.env`, затем `sudo systemctl restart kopeechka`.
 - Откат: старый `dist` не хранится — при необходимости откатитесь в git, соберите и залейте по шагам выше.
 
-## Резервная копия БД
+## Резервная копия БД (MKB-044)
 
-```powershell
-ssh -i <SSH_KEY> ubuntu@<SERVER_IP> `
-  "sudo -u postgres pg_dump -Fc My_KopeechkaBot" > backup.dump
+Автоматически, файлы — в `deploy/backup/`:
+
+- **Каждый день в 01:30 UTC** таймер `kopeechka-backup.timer` запускает `/usr/local/bin/kopeechka-backup` (от root):
+  `pg_dump -Fc` в `/var/backups/kopeechka/kopeechka_<дата>.dump` (папка `700`), хранятся **14** последних копий.
+  Пропущенный запуск (машина была выключена) выполняется сразу после загрузки.
+- **По воскресеньям** свежая копия шифруется `gpg` (AES256) и приходит администратору (`ADMIN_TELEGRAM_ID`) в Telegram
+  файлом `kopeechka_<дата>.dump.gpg` — это копия вне сервера на случай потери самой машины.
+- **При ошибке** администратору приходит сообщение «⚠️ Бэкап БД не удался», подробности — `sudo journalctl -u kopeechka-backup`.
+- Пароль шифрования: на сервере `/etc/kopeechka/backup.pass` (root, `600`), у владельца — `%USERPROFILE%\.kopeechka\backup.pass`
+  **и в менеджере паролей**. Без пароля копии из Telegram не расшифровать.
+
+Установка или обновление (из корня репозитория, Git Bash; пароль берётся из локального файла):
+
+```bash
+k="<SSH_KEY>"; s=ubuntu@<SERVER_IP>
+scp -i "$k" deploy/backup/kopeechka-backup.{sh,service,timer} ~/.kopeechka/backup.pass "$s":/tmp/
+ssh -i "$k" "$s" 'cd /tmp && sudo install -m 755 kopeechka-backup.sh /usr/local/bin/kopeechka-backup \
+  && sudo install -m 644 kopeechka-backup.service kopeechka-backup.timer /etc/systemd/system/ \
+  && sudo install -d -m 700 /etc/kopeechka && sudo install -m 600 backup.pass /etc/kopeechka/backup.pass \
+  && rm -f kopeechka-backup.* backup.pass && sudo systemctl daemon-reload \
+  && sudo systemctl enable --now kopeechka-backup.timer && systemctl list-timers kopeechka-backup.timer --no-pager'
 ```
 
-Восстановление: `pg_restore --no-owner --no-privileges -d My_KopeechkaBot backup.dump` (под пользователем `postgres`).
-Автоматических бэкапов пока нет.
+Ручной запуск с отправкой копии в Telegram (например, перед миграцией): `sudo kopeechka-backup --send`.
+
+Проверка восстановлением — на ноутбуке, в одноразовом Docker-контейнере (локальная БД разработки не трогается):
+
+```bash
+bash deploy/backup/verify-restore.sh ~/Downloads/kopeechka_20261108_013000.dump.gpg
+```
+
+Печатает число строк в каждой таблице и `OK`, если операции на месте. Свежую копию без ожидания воскресенья можно
+скачать с сервера: `ssh -i "$k" "$s" 'sudo cat "$(ls -1t /var/backups/kopeechka/*.dump | head -1)"' > latest.dump`
+(в Git Bash — в PowerShell `>` портит бинарные файлы).
+
+Восстановление на сервере: `sudo -u postgres pg_restore --clean --if-exists --no-owner --no-privileges -d My_KopeechkaBot <файл.dump>`
+(перед этим `sudo systemctl stop kopeechka`; `.gpg` сначала расшифровать:
+`gpg --batch --pinentry-mode loopback --passphrase-file <пароль> -o файл.dump -d файл.dump.gpg`).
 
 ## Если поменялся публичный IP
 

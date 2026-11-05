@@ -1,0 +1,9 @@
+[Unit]
+Description=Kopeechka DB backup (MKB-044)
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/kopeechka-backup
+Nice=10
+IOSchedulingClass=idle
