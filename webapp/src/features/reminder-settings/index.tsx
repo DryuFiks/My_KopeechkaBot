@@ -39,6 +39,15 @@ export function ReminderSettings({ settings, onChanged }: { settings: Settings; 
           ))}
         </select>
       </label>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={settings.weeklyDigest}
+          disabled={busy}
+          onChange={(e) => void run(() => updateSettings({ weeklyDigest: e.target.checked }))}
+        />
+        Итоги недели по воскресеньям в 19:00
+      </label>
       {error && (
         <p className="hint" role="alert">
           {error}

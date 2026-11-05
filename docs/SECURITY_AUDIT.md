@@ -31,6 +31,8 @@ Docker-инфраструктуры; добавление их — отдель�
 - `getEveningCandidates()` / `markEveningNotified(userId, day)` (`src/db/reminders.ts`, MKB-057) — только
   пользователи, сами включившие вечернее напоминание; планировщик (`src/userReminders.ts`) пишет каждому
   только ему, текст без данных. Кнопки `evening:nospend` / `evening:off` действуют на `ctx.from.id`.
+- `getDigestCandidates()` / `markDigestSent()` (MKB-058) — только включившие итоги недели; сводка собирается
+  запросами с `user_id` получателя и уходит только ему. Кнопка `digest:off` — на `ctx.from.id`.
 
 ### Callback-data с id: проверка на подбор чужого id
 

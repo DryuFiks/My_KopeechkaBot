@@ -47,3 +47,36 @@ export async function getEveningCandidates(): Promise<EveningCandidate[]> {
 export async function markEveningNotified(userId: number, dayIso: string): Promise<void> {
   await pool.query("UPDATE user_settings SET evening_notified = $2 WHERE user_id = $1", [userId, dayIso]);
 }
+
+export interface DigestCandidate {
+  userId: number;
+  timezone: string;
+  lastSent: string | null;
+  lastActiveAt: Date | null;
+}
+
+/** MKB-058: everyone who turned the weekly digest on (scheduler-only, like getEveningCandidates). */
+export async function getDigestCandidates(): Promise<DigestCandidate[]> {
+  const r = await pool.query<{
+    user_id: string;
+    timezone: string;
+    digest_notified: string | null;
+    last_active: Date | null;
+  }>(
+    `SELECT s.user_id, s.timezone, to_char(s.digest_notified, 'YYYY-MM-DD') AS digest_notified,
+            GREATEST((SELECT max(created_at) FROM transactions t WHERE t.user_id = s.user_id),
+                     (SELECT max(created_at) FROM events e WHERE e.user_id = s.user_id)) AS last_active
+     FROM user_settings s
+     WHERE s.weekly_digest`,
+  );
+  return r.rows.map((row) => ({
+    userId: Number(row.user_id),
+    timezone: row.timezone,
+    lastSent: row.digest_notified,
+    lastActiveAt: row.last_active,
+  }));
+}
+
+export async function markDigestSent(userId: number, dayIso: string): Promise<void> {
+  await pool.query("UPDATE user_settings SET digest_notified = $2 WHERE user_id = $1", [userId, dayIso]);
+}

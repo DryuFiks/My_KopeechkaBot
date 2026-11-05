@@ -82,9 +82,13 @@ export interface Settings {
   /** Вечернее напоминание «записать траты?» (MKB-057); по умолчанию выключено. */
   remindEvening: boolean;
   remindHour: number;
+  /** Итоги недели по воскресеньям (MKB-058); по умолчанию выключены. */
+  weeklyDigest: boolean;
 }
 
-export type SettingsPatch = Partial<Pick<Settings, "displayCurrency" | "exchangeFactor" | "remindEvening" | "remindHour">>;
+export type SettingsPatch = Partial<
+  Pick<Settings, "displayCurrency" | "exchangeFactor" | "remindEvening" | "remindHour" | "weeklyDigest">
+>;
 
 export interface NewIncome {
   name: string;

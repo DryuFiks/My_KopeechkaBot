@@ -27,7 +27,7 @@ export function SettingsPage({ restartOnboarding }: { restartOnboarding: () => v
       </CollapsibleCard>
       <CollapsibleCard
         title="Напоминания"
-        note={s ? (s.remindEvening ? `вечером в ${s.remindHour}:00` : "выключены") : undefined}
+        note={s ? [s.remindEvening && `вечером в ${s.remindHour}:00`, s.weeklyDigest && "итоги недели"].filter(Boolean).join(", ") || "выключены" : undefined}
       >
         <Status state={settings}>{(s) => <ReminderSettings settings={s} onChanged={settings.reload} />}</Status>
       </CollapsibleCard>

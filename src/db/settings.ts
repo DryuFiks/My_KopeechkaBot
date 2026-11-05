@@ -12,6 +12,8 @@ export interface UserSettings {
   /** MKB-057: evening "record your spending?" reminder — off unless the user turns it on. */
   remindEvening: boolean;
   remindHour: number;
+  /** MKB-058: Sunday weekly digest — off unless the user turns it on. */
+  weeklyDigest: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   onboardedAt: null,
   remindEvening: false,
   remindHour: DEFAULT_REMIND_HOUR,
+  weeklyDigest: false,
 };
 
 /**
@@ -38,8 +41,10 @@ export async function getUserSettings(userId: number): Promise<UserSettings> {
     onboarded_at: Date | null;
     remind_evening: boolean;
     remind_hour: number;
+    weekly_digest: boolean;
   }>(
-    `SELECT display_currency, timezone, notify_payments, exchange_factor, onboarded_at, remind_evening, remind_hour
+    `SELECT display_currency, timezone, notify_payments, exchange_factor, onboarded_at, remind_evening, remind_hour,
+            weekly_digest
      FROM user_settings WHERE user_id = $1`,
     [userId],
   );
@@ -53,6 +58,7 @@ export async function getUserSettings(userId: number): Promise<UserSettings> {
     onboardedAt: row.onboarded_at,
     remindEvening: row.remind_evening,
     remindHour: row.remind_hour,
+    weeklyDigest: row.weekly_digest,
   };
 }
 
@@ -65,8 +71,8 @@ export async function updateUserSettings(
   const next: UserSettings = { ...current, ...patch };
   await pool.query(
     `INSERT INTO user_settings (user_id, display_currency, timezone, notify_payments, exchange_factor, onboarded_at,
-                                remind_evening, remind_hour, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                                remind_evening, remind_hour, weekly_digest, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
      ON CONFLICT (user_id) DO UPDATE SET
        display_currency = EXCLUDED.display_currency,
        timezone = EXCLUDED.timezone,
@@ -75,6 +81,7 @@ export async function updateUserSettings(
        onboarded_at = EXCLUDED.onboarded_at,
        remind_evening = EXCLUDED.remind_evening,
        remind_hour = EXCLUDED.remind_hour,
+       weekly_digest = EXCLUDED.weekly_digest,
        updated_at = NOW()`,
     [
       userId,
@@ -85,6 +92,7 @@ export async function updateUserSettings(
       next.onboardedAt,
       next.remindEvening,
       next.remindHour,
+      next.weeklyDigest,
     ],
   );
   return next;
