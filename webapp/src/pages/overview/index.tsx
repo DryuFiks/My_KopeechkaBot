@@ -1,4 +1,4 @@
-import { Status } from "@/shared/ui";
+import { Icon, Status } from "@/shared/ui";
 import { useAsync } from "@/shared/lib/useAsync";
 import { fetchOverview } from "@/entities/budget";
 import { TodayCard, fetchSummary } from "@/entities/plan";
@@ -14,14 +14,14 @@ export function OverviewPage({ go }: { go: (tab: TabId) => void }) {
           <>
             <h1>Привет{name ? `, ${name}` : ""}!</h1>
             <button className="primary wide" onClick={() => go("add-expense")}>
-              ➖ Добавить расход
+              <Icon name="minus" /> Добавить расход
             </button>
             <button className="primary wide" onClick={() => go("add-income")}>
-              ➕ Добавить доход
+              <Icon name="plus" /> Добавить доход
             </button>
             <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
             <button className="link center" onClick={() => go("history")}>
-              🗓 История по месяцам
+              <Icon name="calendar" /> История по месяцам
             </button>
           </>
         )}

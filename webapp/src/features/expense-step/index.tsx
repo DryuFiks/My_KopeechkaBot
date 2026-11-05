@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { addExpense, removeExpense } from "@/entities/plan";
 import type { PlanData } from "@/entities/plan";
-import { ChipRow, Hint } from "@/shared/ui";
+import { ChipRow, Hint, Icon } from "@/shared/ui";
 import { CURRENCY_SIGN, formatMoney, type Currency } from "@/shared/lib/money";
 import { parseAmount, useAction } from "@/shared/lib/useAction";
 
@@ -41,7 +41,7 @@ export function ExpenseStep({ plan, onChanged }: { plan: PlanData; onChanged: ()
               aria-label={`Удалить ${e.name}`}
               onClick={() => del.run(() => removeExpense(e.id))}
             >
-              ✕
+              <Icon name="close" size={18} />
             </button>
           </span>
         </div>

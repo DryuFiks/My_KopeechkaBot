@@ -1,4 +1,4 @@
-import { Card } from "@/shared/ui";
+import { Card, Icon } from "@/shared/ui";
 import { formatGel } from "@/shared/lib/money";
 import type { Debt } from "../model/types";
 
@@ -14,7 +14,7 @@ export function DebtList({ debts, onDelete }: { debts: Debt[]; onDelete: (id: nu
           <span>
             <b>{formatGel(d.balanceGel)}</b>{" "}
             <button className="link" aria-label={`Удалить ${d.name}`} onClick={() => onDelete(d.id)}>
-              ✕
+              <Icon name="close" size={18} />
             </button>
           </span>
         </div>

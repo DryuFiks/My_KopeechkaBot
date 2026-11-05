@@ -25,16 +25,18 @@ h2 { font-size: var(--text-l); line-height: 1.25; margin: var(--space-5) 0 var(-
 button { font: inherit; color: inherit; cursor: pointer; transition: opacity var(--duration), transform var(--duration), background var(--duration); }
 button:disabled { opacity: 0.5; cursor: default; }
 button:active:not(:disabled) { transform: scale(0.98); }
+.icon { flex: none; vertical-align: middle; }
+.primary, .form button, .chip, .link { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); }
 .primary, .form button { padding: var(--space-3) var(--space-4); border: 0; border-radius: var(--radius-m); background: var(--color-accent); color: var(--color-on-accent); font-weight: 600; }
 .primary { flex: 1; }
-.primary.wide { display: block; width: 100%; margin: 0 0 var(--space-3); }
+.primary.wide { display: flex; width: 100%; margin: 0 0 var(--space-3); }
 .chip { padding: var(--space-2) var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-on-accent); font-size: var(--text-s); font-weight: 500; }
 .chip--soft { background: var(--color-fill); color: var(--color-text); }
 /* Необратимые действия: удалить, стереть. */
 .chip--danger { background: var(--color-danger-soft); color: var(--color-danger); }
 .form button.danger { background: var(--color-danger); color: var(--color-on-accent); }
 .link { border: 0; background: none; color: var(--color-link); padding: var(--space-2); }
-.center { display: block; margin: 0 auto; }
+.center { display: flex; margin: 0 auto; }
 
 /* Переключатель вариантов */
 .segmented { display: flex; gap: var(--space-1); padding: 3px; margin-bottom: var(--space-3); background: var(--color-fill); border-radius: var(--radius-m); }
@@ -43,7 +45,7 @@ button:active:not(:disabled) { transform: scale(0.98); }
 
 /* Нижняя навигация */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; background: var(--color-surface); border-top: 1px solid var(--color-border); padding-bottom: env(safe-area-inset-bottom); }
-.tabbar button { flex: 1; padding: var(--space-3) 2px; border: 0; background: none; color: var(--color-text-muted); font-size: var(--text-xs); }
+.tabbar button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 0; background: none; color: var(--color-text-muted); font-size: 11px; line-height: 1.2; }
 .tabbar .is-active { color: var(--color-accent); font-weight: 600; }
 
 /* Формы */
