@@ -8,3 +8,4 @@ export { Hint } from "./Hint";
 export { ChipRow } from "./ChipRow";
 export { DonutChart, donutColor } from "./DonutChart";
 export { Icon, type IconName } from "./Icon";
+export { Segmented } from "./Segmented";
