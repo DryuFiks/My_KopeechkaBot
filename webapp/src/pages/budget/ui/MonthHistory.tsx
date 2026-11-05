@@ -9,7 +9,7 @@ import {
   type HistoryTransaction,
 } from "@/entities/history";
 import { EditTransaction } from "@/features/edit-transaction";
-import { BarChart, Card, DonutChart, donutColor, Status } from "@/shared/ui";
+import { BarChart, Card, DonutChart, donutColor, EmptyState, Status } from "@/shared/ui";
 import { monthLabel } from "@/shared/lib/date";
 import { formatGel, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
@@ -150,7 +150,8 @@ export function MonthHistory() {
       <Status state={state}>
         {({ months }) => {
           const { selected, previous } = pickMonth(months, picked);
-          if (!selected) return <p className="hint">Операций пока нет.</p>;
+          if (!selected)
+            return <EmptyState icon="chart" text="Операций пока нет. Записанные траты появятся здесь по месяцам." />;
           return (
             <>
               <div className="month-chips" role="group" aria-label="Месяц">

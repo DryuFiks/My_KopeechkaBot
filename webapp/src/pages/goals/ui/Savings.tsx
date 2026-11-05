@@ -6,7 +6,7 @@ import { AddGoalForm } from "@/features/add-goal";
 import { DeleteGoal } from "@/features/delete-goal";
 import { formatGel } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
-import { Status } from "@/shared/ui";
+import { EmptyState, Status } from "@/shared/ui";
 
 /** «Цели → Копить»: подушка безопасности и цели накоплений. */
 export function Savings() {
@@ -17,7 +17,7 @@ export function Savings() {
       <Status state={cushion}>
         {(c) => <EmergencyFundCalc monthlyExpenses={c.avgMonthlyExpensesGel} savings={c.savingsGel} />}
       </Status>
-      <p className="hint">Накопления — сумма твоих целей. Расходы — среднее за последние 90 дней.</p>
+      <p className="hint">Накопления — сумма ваших целей. Расходы — среднее за последние 90 дней.</p>
       <Status state={state}>
         {(d) => (
           <>
@@ -25,7 +25,7 @@ export function Savings() {
               Свободные деньги в месяц (среднее за 90 дней): <b>{formatGel(d.monthlySavingsGel)}</b>. Прогноз
               для каждой цели считается так, будто все они идут на неё одну.
             </p>
-            {d.goals.length === 0 && <p className="hint">Целей пока нет. Создай первую ниже.</p>}
+            {d.goals.length === 0 && <EmptyState icon="target" text="Целей пока нет — создайте первую ниже." />}
             {d.goals.map((g) => (
               <GoalCard
                 key={g.id}

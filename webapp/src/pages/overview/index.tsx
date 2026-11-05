@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, Icon, Status } from "@/shared/ui";
+import { Card, EmptyState, Icon, Status } from "@/shared/ui";
 import { useAsync } from "@/shared/lib/useAsync";
 import { fetchOverview } from "@/entities/budget";
 import { TodayCard, fetchSummary } from "@/entities/plan";
@@ -32,7 +32,7 @@ function QuickActions({ quickAdd }: { quickAdd: QuickAddFn }) {
   );
 }
 
-function RecentOperations({ go, onChanged }: { go: Go; onChanged: () => void }) {
+function RecentOperations({ go, quickAdd, onChanged }: { go: Go; quickAdd: QuickAddFn; onChanged: () => void }) {
   const recent = useAsync(fetchRecentTransactions);
   const [editing, setEditing] = useState<HistoryTransaction>();
   return (
@@ -56,7 +56,11 @@ function RecentOperations({ go, onChanged }: { go: Go; onChanged: () => void }) 
       <Status state={recent}>
         {({ items }) =>
           items.length === 0 ? (
-            <p className="hint">Пока пусто. Нажмите «＋» внизу, чтобы записать первую трату.</p>
+            <EmptyState
+              icon="plus"
+              text="Операций пока нет — запишите первую трату."
+              action={{ label: "Записать трату", onClick: () => quickAdd() }}
+            />
           ) : (
             items.map((t) => <TransactionRow key={t.id} t={t} onSelect={setEditing} />)
           )
@@ -77,7 +81,7 @@ export function OverviewPage({ go, quickAdd }: { go: Go; quickAdd: QuickAddFn })
           <h1>Привет{name ? `, ${name}` : ""}!</h1>
           <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
           <QuickActions quickAdd={quickAdd} />
-          <RecentOperations go={go} onChanged={summary.reload} />
+          <RecentOperations go={go} quickAdd={quickAdd} onChanged={summary.reload} />
         </>
       )}
     </Status>

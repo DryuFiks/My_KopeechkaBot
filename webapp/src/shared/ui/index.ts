@@ -11,3 +11,4 @@ export { Icon, type IconName } from "./Icon";
 export { Segmented } from "./Segmented";
 export { Sheet } from "./Sheet";
 export { ActionToast } from "./ActionToast";
+export { EmptyState } from "./EmptyState";
