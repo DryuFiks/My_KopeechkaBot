@@ -13,6 +13,8 @@ export type NewDebt = Omit<Debt, "id">;
 export const fetchDebts = () => api.get<Debt[]>("/debts");
 export const createDebt = (d: NewDebt) => api.post<Debt>("/debts", d);
 export const deleteDebt = (id: number) => api.delete<{ deleted: boolean }>(`/debts/${id}`);
+/** MKB-060: долг погашен — уходит из плана, засчитывается «Победитель долгов». */
+export const closeDebt = (id: number) => api.post<{ closed: boolean }>(`/debts/${id}/close`, {});
 
 export interface PayoffPlan {
   strategy: "avalanche" | "snowball";

@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { simulatePayoff, totalMinimums } from "../../debtPayoff";
-import { createDebt, deleteDebt, listDebts } from "../../db/debts";
+import { closeDebt, createDebt, deleteDebt, listDebts } from "../../db/debts";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
 import type { WebAppUser } from "../../telegramAuth";
 
@@ -60,5 +60,11 @@ export class DebtsController {
   @Delete(":id")
   async remove(@WebUser() user: WebAppUser, @Param("id", ParseIntPipe) id: number) {
     return { deleted: await deleteDebt(user.id, id) };
+  }
+
+  /** MKB-060: «Погашен» — долг уходит из плана, а пользователь получает «Победителя долгов». Повтор — `closed: false`. */
+  @Post(":id/close")
+  async close(@WebUser() user: WebAppUser, @Param("id", ParseIntPipe) id: number) {
+    return { closed: await closeDebt(user.id, id) };
   }
 }

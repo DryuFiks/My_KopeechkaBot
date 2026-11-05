@@ -29,6 +29,22 @@ export async function getOperationDays(userId: number, timeZone: string): Promis
   return res.rows;
 }
 
+/**
+ * MKB-060: local days with an operation or a "no spending today" mark, for the current streak.
+ * The last 400 days are plenty for any run that is still alive.
+ */
+export async function getRecordedDays(userId: number, timeZone: string): Promise<string[]> {
+  const res = await pool.query<{ day: string }>(
+    `SELECT DISTINCT to_char(created_at AT TIME ZONE $2, 'YYYY-MM-DD') AS day
+     FROM (SELECT created_at FROM transactions WHERE user_id = $1
+           UNION ALL
+           SELECT created_at FROM events WHERE user_id = $1 AND name = 'no_spend_day') r
+     WHERE created_at > NOW() - INTERVAL '400 days'`,
+    [userId, timeZone],
+  );
+  return res.rows.map((r) => r.day);
+}
+
 export async function getGoalStats(userId: number): Promise<{ created: number; reached: number }> {
   const res = await pool.query<{ created: number; reached: number }>(
     `SELECT COUNT(*)::int AS created,
