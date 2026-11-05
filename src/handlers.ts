@@ -1,4 +1,4 @@
-import { Bot, Context } from "grammy";
+import { Bot, Context, InlineKeyboard } from "grammy";
 import { getAllRateInfo, refreshRatesIfStale } from "./currency";
 import {
   getLastTransactions,
@@ -50,6 +50,12 @@ const HELP_MESSAGE = `<b>Как записать операцию</b> — одн
 
 const START_MESSAGE = `Привет! Я — бот для учёта доходов и расходов.\n\n${HELP_MESSAGE}`;
 
+const WELCOME_NEW = `<b>Привет! Я Копеечка.</b>
+Помогу увидеть, сколько можно спокойно тратить каждый день.
+
+За 2 минуты в мини-приложении отметим доходы и обязательные расходы — и сразу появится сумма на сегодня.
+Записывать траты можно и прямо здесь, одной строкой: <code>-150 gel еда обед</code>. Все команды — /help.`;
+
 function formatTx(tx: Transaction): string {
   const amountText = formatSignedAmount(tx.type, tx.amount, tx.currency);
   const gel = tx.amount_gel !== null ? `≈ ${formatMoney(tx.amount_gel, "GEL")}` : "курс недоступен";
@@ -100,6 +106,20 @@ export function registerHandlers(bot: Bot): void {
   bot.command(
     "start",
     safe("/start", async (ctx) => {
+      // MKB-062: someone who hasn't set up the plan yet goes straight to the 2-minute onboarding in the
+      // mini app; the chat commands stay available right below.
+      const url = process.env.WEBAPP_URL;
+      const uid = ctx.from?.id;
+      if (uid && url && url.startsWith("https://") && (await getUserSettings(uid)).onboardedAt === null) {
+        await ctx.reply(WELCOME_NEW, {
+          parse_mode: PARSE_MODE,
+          reply_markup: new InlineKeyboard()
+            .webApp("🚀 Начать в Копеечке", url)
+            .row()
+            .text("Меню бота", "menu:main"),
+        });
+        return;
+      }
       await showMainMenu(ctx);
     }),
   );
@@ -200,7 +220,7 @@ export function registerHandlers(bot: Bot): void {
       const text = renderScreen({
         title: "Последние операции",
         lines: txs.map(formatTx),
-        emptyText: "Операций пока нет. Отправь первую, например: -20 gel транспорт",
+        emptyText: "Операций пока нет. Отправьте первую, например: -20 gel транспорт",
       });
       await ctx.reply(text, { parse_mode: PARSE_MODE, reply_markup: mainKeyboard });
     }),

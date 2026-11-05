@@ -6,8 +6,8 @@ import { recordHandlerError } from "../metrics";
 /** Thrown for input the user can fix themselves — the message is shown to them as-is. */
 export class UserInputError extends Error {}
 
-const GENERIC_ERROR_MESSAGE = "Что-то пошло не так. Попробуй ещё раз чуть позже.";
-const TRANSIENT_ERROR_MESSAGE = "Временная проблема с базой данных. Попробуй ещё раз через минуту.";
+const GENERIC_ERROR_MESSAGE = "Что-то пошло не так. Попробуйте ещё раз чуть позже.";
+const TRANSIENT_ERROR_MESSAGE = "Временная проблема с базой данных. Попробуйте ещё раз через минуту.";
 const TRANSIENT_PATTERN = /ECONNREFUSED|ETIMEDOUT|ECONNRESET|timeout|connection terminated/i;
 
 /** Exported for testing: maps a caught error to the exact text shown to the user. */

@@ -53,7 +53,11 @@ conflicted with MKB-012's "a reminder is never a transaction" rule. Use `recurri
 
 ### Bot startup (`src/index.ts`)
 `checkConnection()` → `loadRateCacheFromDb()` + `refreshRatesIfStale()` → register handlers (order
-below) → `startPaymentReminders(bot)` (hourly `setInterval`, see `src/reminders.ts`) → `bot.start()`.
+below) → `startPaymentReminders(bot)` (hourly `setInterval`, see `src/reminders.ts`) →
+`startAdminAlerts(bot)` (ERROR log lines → admin, 9:00 summary; `src/adminAlerts.ts`) →
+`startUserReminders(bot)` (evening reminder + Sunday digest, both **off by default**, user-enabled;
+`src/userReminders.ts`, every 10 min) → `bot.start()`. Any new user-facing scheduled message must also be
+opt-in and switchable off from the message itself.
 
 ### Handler registration layers
 1. `src/handlers.ts` — plain commands (`/start /help /today /month /last /undo /rate`).
@@ -138,7 +142,8 @@ stay under Telegram's 64-byte callback_data limit) · `undo:<txId>` · `<prefix>
 (`confirmActionKeyboard`, for irreversible actions) · `<prefix>:<page>` (pagination) ·
 `dash:<unit>:<offset>` / `trend:<unit>:<offset>` (period switchers, `keyboards/period.ts`) ·
 `stats:<offset>` / `stat_drill:<offset>:<index>:<page>` · `paypause:<id>` / `payrem:<id>:record|skip`
-· `settings:currency:<CUR>` / `settings:notify:toggle` / `settings:reset`.
+· `settings:currency:<CUR>` / `settings:notify|evening|digest:toggle` / `settings:reset` ·
+`evening:nospend|off` / `digest:off` (buttons under the evening reminder and the weekly digest).
 
 Every id-bearing callback resolves its row with `WHERE id=$1 AND user_id=$2` (never a bare
 `WHERE id=$1`) — treat 0 rows back as "already done", not an error (see `docs/SECURITY_AUDIT.md`'s

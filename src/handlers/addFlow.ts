@@ -22,7 +22,7 @@ export function confirmText(flow: Flow): string {
 /** Shown after the category is chosen: only a number is needed now. */
 export function amountPrompt(flow: Flow): string {
   const what = flow.type === "expense" ? "расхода" : "дохода";
-  return `Категория: ${flow.category ?? "без категории"}\nВалюта: ${flow.currency ?? "GEL"}\n\nВведи сумму ${what} числом, например 25 или 25.5`;
+  return `Категория: ${flow.category ?? "без категории"}\nВалюта: ${flow.currency ?? "GEL"}\n\nВведите сумму ${what} числом, например 25 или 25.5`;
 }
 
 /** Begins the wizard: currency → category → amount → confirm (with an optional comment). */
@@ -30,7 +30,7 @@ export async function startAddFlow(ctx: Context, userId: number, type: Transacti
   const { displayCurrency } = await getUserSettings(userId);
   flows.set(userId, { type, stage: "currency" });
   const title = type === "expense" ? "➖ Расход" : "➕ Доход";
-  await editOrReply(ctx, `${title}\nВыбери валюту:`, { reply_markup: currencyKeyboard(displayCurrency) });
+  await editOrReply(ctx, `${title}\nВыберите валюту:`, { reply_markup: currencyKeyboard(displayCurrency) });
 }
 
 /** Moves to the category step; used by the currency tap and available to the text handler. */
@@ -38,7 +38,7 @@ export async function showCategoryStep(ctx: Context, userId: number, flow: Flow)
   const categories = await getCategoryOptions(userId, flow.type);
   flow.categoryOptions = categories;
   flow.stage = "category";
-  const text = `Валюта: ${flow.currency}\nВыбери категорию, добавь новую кнопкой ниже или пришли название:`;
+  const text = `Валюта: ${flow.currency}\nВыберите категорию, добавьте новую кнопкой ниже или пришлите название:`;
   await editOrReply(ctx, text, { reply_markup: categoryKeyboard(categories) });
 }
 
@@ -71,7 +71,7 @@ export function registerAddFlowHandlers(bot: Bot): void {
       flow.stage = "newCategory";
       await ctx.answerCallbackQuery();
       await ctx
-        .editMessageText("Пришли название новой категории (до 60 символов):", {
+        .editMessageText("Пришлите название новой категории (до 60 символов):", {
           reply_markup: cancelKeyboard,
         })
         .catch(() => {});
@@ -90,7 +90,7 @@ export function registerAddFlowHandlers(bot: Bot): void {
       flow.stage = "comment";
       await ctx.answerCallbackQuery();
       await ctx
-        .editMessageText("Пришли комментарий к операции (до 200 символов) или нажми «Без комментария».", {
+        .editMessageText("Пришлите комментарий к операции (до 200 символов) или нажмите «Без комментария».", {
           reply_markup: commentKeyboard,
         })
         .catch(() => {});
