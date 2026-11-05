@@ -3,6 +3,7 @@ import {
   fetchHistory,
   fetchHistoryMonth,
   fetchHistoryTransactions,
+  pickMonth,
   type HistoryMonth,
   type HistoryTransaction,
 } from "@/entities/history";
@@ -153,14 +154,12 @@ export function HistoryPage() {
       <h1>Бюджет</h1>
       <Status state={state}>
         {({ months }) => {
-          const found = months.findIndex((m) => m.month === picked);
-          const at = found >= 0 ? found : months.length - 1;
-          const selected = months[at];
+          const { selected, previous } = pickMonth(months, picked);
           if (!selected) return <p className="hint">Операций пока нет.</p>;
           return (
             <>
               <div className="month-chips" role="group" aria-label="Месяц">
-                {[...months].reverse().map((m) => (
+                {months.map((m) => (
                   <button
                     key={m.month}
                     className={`chip${m.month === selected.month ? " is-active" : ""}`}
@@ -170,7 +169,7 @@ export function HistoryPage() {
                   </button>
                 ))}
               </div>
-              <MonthView key={selected.month} month={selected.month} previous={months[at - 1]} />
+              <MonthView key={selected.month} month={selected.month} previous={previous} />
             </>
           );
         }}
