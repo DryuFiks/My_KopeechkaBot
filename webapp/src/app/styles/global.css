@@ -29,6 +29,7 @@ h2 { font-size: var(--text-l); line-height: 1.25; margin: var(--space-5) 0 var(-
 .empty__icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--color-accent-soft); color: var(--color-accent); }
 .page > * { animation: page-in var(--duration) ease-out; }
 @keyframes page-in { from { opacity: 0; transform: translateY(4px); } }
+.tx-search { margin-bottom: var(--space-2); }
 .tx-row { width: 100%; min-height: var(--tap-size); border: 0; border-radius: var(--radius-s); background: none; text-align: left; }
 .tx-row:active:not(:disabled) { background: var(--color-fill); transform: none; }
 .field { display: grid; gap: var(--space-1); font-size: var(--text-s); color: var(--color-text-muted); }

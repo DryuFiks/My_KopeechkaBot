@@ -5,9 +5,10 @@ import {
   getExpenseSeries,
   getMonthlyTotals,
   getSummaryForRange,
-  getTransactionsForRange,
 } from "../../db";
 import { getUserSettings } from "../../db/settings";
+import { searchTransactionsForRange } from "../../db/transactions";
+import { parseTransactionFilter } from "../../transactionSearch";
 import { buildMonthRows, isMonthKey } from "../../historyMonths";
 import { zonedDayBoundaries, zonedMonthBoundaries } from "../../timezone";
 import type { WebAppUser } from "../../telegramAuth";
@@ -76,12 +77,22 @@ export class HistoryController {
     @Param("month") key: string,
     @Query("offset") offset?: string,
     @Query("limit") limit?: string,
+    @Query("q") q?: string,
+    @Query("type") type?: string,
   ) {
     const { timezone } = await getUserSettings(user.id);
     const { from, to } = monthBounds(key, timezone);
     const pageSize = Math.max(1, intParam(limit, 30, PAGE_MAX));
+    const filter = parseTransactionFilter(q, type);
     // One extra row tells the client whether another page exists.
-    const rows = await getTransactionsForRange(user.id, from, to, pageSize + 1, intParam(offset, 0, 1e6));
+    const rows = await searchTransactionsForRange(
+      user.id,
+      from,
+      to,
+      filter,
+      pageSize + 1,
+      intParam(offset, 0, 1e6),
+    );
     return {
       hasMore: rows.length > pageSize,
       items: rows.slice(0, pageSize).map(presentTransaction),

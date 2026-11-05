@@ -1,69 +1,10 @@
 import { useState } from "react";
-import {
-  fetchHistory,
-  fetchHistoryMonth,
-  fetchHistoryTransactions,
-  pickMonth,
-  TransactionRow,
-  type HistoryMonth,
-  type HistoryTransaction,
-} from "@/entities/history";
-import { EditTransaction } from "@/features/edit-transaction";
+import { fetchHistory, fetchHistoryMonth, pickMonth, type HistoryMonth } from "@/entities/history";
 import { BarChart, Card, DonutChart, donutColor, EmptyState, Status } from "@/shared/ui";
+import { MonthTransactions } from "./MonthTransactions";
 import { monthLabel } from "@/shared/lib/date";
 import { formatGel, percent } from "@/shared/lib/money";
 import { useAsync } from "@/shared/lib/useAsync";
-
-function Transactions({ month, onChanged }: { month: string; onChanged: () => void }) {
-  const [items, setItems] = useState<HistoryTransaction[]>([]);
-  const [hasMore, setHasMore] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-  const [editing, setEditing] = useState<HistoryTransaction>();
-
-  const load = (offset: number) => {
-    setBusy(true);
-    fetchHistoryTransactions(month, offset)
-      .then((page) => {
-        setItems((prev) => (offset === 0 ? page.items : [...prev, ...page.items]));
-        setHasMore(page.hasMore);
-        setError(undefined);
-      })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Ошибка"))
-      .finally(() => setBusy(false));
-  };
-  const loadMore = () => load(items.length);
-
-  // Первая страница подгружается кнопкой, чтобы тяжёлый список не мешал открытию месяца.
-  return (
-    <Card title="Операции">
-      {items.map((t) => (
-        <TransactionRow key={t.id} t={t} onSelect={setEditing} />
-      ))}
-      {editing && (
-        <EditTransaction
-          t={editing}
-          onClose={() => setEditing(undefined)}
-          onChanged={() => {
-            load(0);
-            onChanged();
-          }}
-        />
-      )}
-      {items.length === 0 && !hasMore && <p className="hint">Операций за месяц нет.</p>}
-      {error && (
-        <p className="hint" role="alert">
-          {error}
-        </p>
-      )}
-      {hasMore && (
-        <button className="chip" disabled={busy} onClick={loadMore}>
-          {items.length === 0 ? "Показать операции" : "Показать ещё"}
-        </button>
-      )}
-    </Card>
-  );
-}
 
 function Delta({ now, before }: { now: number; before: number | undefined }) {
   if (before === undefined) return null;
@@ -134,7 +75,7 @@ function MonthView({ month, previous }: { month: string; previous?: HistoryMonth
               <b className={d.closingGel < 0 ? "bad" : undefined}>{formatGel(d.closingGel)}</b>
             </div>
           </Card>
-          <Transactions month={month} onChanged={state.reload} />
+          <MonthTransactions month={month} onChanged={state.reload} />
         </>
       )}
     </Status>

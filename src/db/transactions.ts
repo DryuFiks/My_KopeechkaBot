@@ -1,5 +1,30 @@
 import { pool, type Transaction } from "../db";
 import type { SupportedCurrency } from "../currencies";
+import type { TransactionFilter } from "../transactionSearch";
+
+/**
+ * MKB-056: one page of the user's operations in [from, to) matching the filter, newest first.
+ * `pattern` is already escaped (transactionSearch.ts) and passed as a parameter — never spliced into SQL.
+ */
+export async function searchTransactionsForRange(
+  userId: number,
+  from: Date,
+  to: Date,
+  filter: TransactionFilter,
+  limit: number,
+  offset: number,
+): Promise<Transaction[]> {
+  const r = await pool.query<Transaction>(
+    `SELECT * FROM transactions
+     WHERE user_id = $1 AND created_at >= $2 AND created_at < $3
+       AND ($4::text IS NULL OR category ILIKE $4 ESCAPE '\\' OR note ILIKE $4 ESCAPE '\\')
+       AND ($5::text IS NULL OR type = $5)
+     ORDER BY created_at DESC, id DESC
+     LIMIT $6 OFFSET $7`,
+    [userId, from, to, filter.pattern, filter.type, limit, offset],
+  );
+  return r.rows;
+}
 
 /** One operation of this user, or null (someone else's id is "not found", never an error). */
 export async function findTransaction(userId: number, id: number): Promise<Transaction | null> {
