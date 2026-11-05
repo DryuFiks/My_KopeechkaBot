@@ -81,6 +81,8 @@
   `tx_created` (+ источник: бот/WebApp), `tx_edited`, `goal_contribute`, `reminder_tapped`.
   Без сумм и комментариев — только факт действия.
 - В `/health`: WAU, DAU, доля операций из WebApp и из чата.
+- Статус: готово — `sql/010_events.sql`, `src/db/events.ts`, `/feedback` (`src/features/feedback.ts`),
+  `POST /api/feedback` и `/api/app-open`, карточка в Профиле; метрики в `/health` и утренней сводке.
 
 ### MKB-048 — Дизайн-система v1
 Сейчас в WebApp ~140 строк CSS, 5 цветовых переменных и захардкоженные `#d33`, `#d98a00`.

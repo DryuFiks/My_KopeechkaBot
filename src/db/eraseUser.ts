@@ -15,6 +15,7 @@ const USER_TABLES = [
   "user_achievements",
   "user_progress",
   "user_settings",
+  "events",
 ] as const;
 
 /**

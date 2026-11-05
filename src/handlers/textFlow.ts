@@ -3,6 +3,7 @@ import { deleteTransactionById, getBalanceOverview, insertTransaction } from "..
 import { cancelKeyboard, flowConfirmKeyboard, mainKeyboard, undoKeyboard } from "../keyboards";
 import { convertToGel, refreshRatesIfStale } from "../currency";
 import { getUserSettings } from "../db/settings";
+import { trackEvent } from "../db/events";
 import { announceProgress } from "../features/progress";
 import { parseAmountLine, parseBareAmount, parseTransactionMessage, isParseError } from "../parser";
 import { formatBalanceOverview, formatSignedAmount, PARSE_MODE } from "../format";
@@ -102,6 +103,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
         category: parsed.category,
         note: parsed.note,
       });
+      trackEvent(uid, "tx_created", "bot");
       await ctx.reply("Операция записана.", { reply_markup: undoKeyboard(saved.id) });
       await announceProgress(ctx, uid);
     }),
@@ -174,6 +176,7 @@ export function registerTextFlowHandlers(bot: Bot): void {
         category: flow.category ?? null,
         note: flow.note ?? null,
       });
+      trackEvent(uid, "tx_created", "bot");
 
       const overview = await getBalanceOverview(uid);
       const text = [

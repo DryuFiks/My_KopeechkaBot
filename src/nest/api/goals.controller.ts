@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { getSummaryForRange } from "../../db";
+import { trackEvent } from "../../db/events";
 import { closeGoal, contributeToGoal, createGoal, listGoals, type SavingsGoal } from "../../db/goals";
 import { averageMonthlySavings, monthsToGoal, requiredMonthly } from "../../savingsForecast";
 import { TelegramAuthGuard, WebUser } from "./auth.guard";
@@ -86,6 +87,7 @@ export class GoalsController {
   ) {
     const g = await contributeToGoal(user.id, id, positive(body.amountGel, 1e9));
     if (!g) throw new NotFoundException();
+    trackEvent(user.id, "goal_contribute", "webapp");
     return present(g, 0, new Date());
   }
 

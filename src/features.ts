@@ -9,6 +9,7 @@ import { registerPaymentsHandlers } from "./features/payments";
 import { registerGoalsHandlers } from "./features/goals";
 import { registerHealthHandlers } from "./features/health";
 import { registerProgressHandlers } from "./features/progress";
+import { registerFeedbackHandlers } from "./features/feedback";
 
 export function registerFeatureHandlers(bot: Bot): void {
   registerAnalyticsHandlers(bot);
@@ -21,4 +22,5 @@ export function registerFeatureHandlers(bot: Bot): void {
   registerGoalsHandlers(bot);
   registerHealthHandlers(bot);
   registerProgressHandlers(bot);
+  registerFeedbackHandlers(bot);
 }

@@ -83,13 +83,21 @@ describe("formatAdminSummary", () => {
     dbOk: true,
     rateLines: ["RUB свежий", "USD свежий"],
     errors: { total: 2, top: [{ key: "x <y>", count: 2 }] },
-    activity: { usersTotal: 7, activeDay: 4, activeWeek: 6, transactionsDay: 12 },
+    activity: {
+      usersTotal: 7,
+      activeDay: 4,
+      activeWeek: 6,
+      transactionsDay: 12,
+      txWeekBot: 30,
+      txWeekWebapp: 11,
+    },
   };
 
   it("shows uptime, activity and escaped error types", () => {
     const text = formatAdminSummary(base);
     expect(text).toContain("Аптайм: 3ч 5м");
     expect(text).toContain("Активных за сутки: 4, за неделю: 6 (всего 7)");
+    expect(text).toContain("Операций за неделю: в чате 30, в мини-приложении 11");
     expect(text).toContain("2 × <code>x &lt;y&gt;</code>");
   });
 

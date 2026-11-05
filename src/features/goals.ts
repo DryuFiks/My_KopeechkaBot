@@ -1,5 +1,6 @@
 import { Bot } from "grammy";
 import { closeGoal, contributeToGoal, createGoal, findGoal, listGoals } from "../db/goals";
+import { trackEvent } from "../db/events";
 import { confirmActionKeyboard, mainKeyboard } from "../keyboards";
 import { editOrReply } from "../editOrReply";
 import { escapeHtml, formatGoalProgress, renderScreen, PARSE_MODE } from "../format";
@@ -73,6 +74,7 @@ export function registerGoalsHandlers(bot: Bot): void {
         await ctx.reply("Цель не найдена.", { reply_markup: mainKeyboard });
         return;
       }
+      trackEvent(uid, "goal_contribute", "bot");
       const text = formatGoalProgress({
         title: goal.title,
         savedGel: Number(goal.saved_gel),
