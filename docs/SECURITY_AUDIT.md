@@ -49,6 +49,7 @@ Docker-инфраструктуры; добавление их — отдель�
 | `delgoal:<id>:yes\|no` | `features/goals.ts` | `UPDATE ... WHERE id=$1 AND user_id=$2` |
 | `cat:<index>` | `handlers/textFlow.ts` | не id в БД — индекс в `flow.categoryOptions`, привязанном к `flows.get(uid)` в памяти процесса |
 | `PUT /api/transactions/:id` (MKB-053) | `nest/api/transactions.controller.ts` | `findTransaction` и `UPDATE ... WHERE id=$1 AND user_id=$2`; чужой id → 404, строка не меняется (проверено интеграционно); сумма в лари считается на сервере |
+| `POST /api/payments/:id/toggle`, `DELETE /api/payments/:id` (MKB-059) | `nest/api/payments.controller.ts` | `togglePaymentActive` / `deletePayment` — `WHERE id=$1 AND user_id=$2`; чужой id → 404 / `deleted: false` |
 
 Ни один callback-хендлер не выполняет `WHERE id=$1` без `AND user_id=$2` — подбор чужого
 id по возрастающей нумерации не даёт доступа к чужим данным.

@@ -35,3 +35,4 @@
 .cat-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: var(--space-2); display: inline-block; }
 .month-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 6px var(--space-3); }
 .check input { width: 20px; height: 20px; min-height: 0; accent-color: var(--color-accent); }
+.is-paused { opacity: 0.6; }
