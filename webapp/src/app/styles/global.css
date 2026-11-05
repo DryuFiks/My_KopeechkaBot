@@ -100,7 +100,7 @@ button:active:not(:disabled) { transform: scale(0.98); }
 .tabbar .tabbar__add { flex: none; align-self: center; justify-content: center; width: 52px; height: 52px; min-height: 52px; margin: -14px var(--space-2) 0; padding: 0; border-radius: 50%; background: var(--color-accent); color: var(--color-on-accent); box-shadow: var(--shadow-float); }
 
 /* Формы */
-select { font: inherit; }
+select { font: inherit; min-width: 56px; padding: 0 var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-s); background: var(--color-surface); color: var(--color-text); }
 .form { display: grid; gap: var(--space-2); }
 .form input, .form textarea, .inline-input { border: 1px solid var(--color-border); border-radius: var(--radius-m); background: var(--color-surface); color: var(--color-text); font: inherit; }
 .form input, .form textarea { padding: var(--space-3); }

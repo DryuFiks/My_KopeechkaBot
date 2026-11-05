@@ -1,7 +1,7 @@
 .barchart { width: 100%; height: 90px; fill: var(--color-accent); margin-bottom: var(--space-2); }
 .limit-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: 6px; }
 .limit-controls .inline-input { width: 90px; text-align: left; }
-.check { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-s); color: var(--color-text-muted); }
+.check { display: flex; align-items: center; gap: var(--space-2); min-height: var(--tap-size); font-size: var(--text-s); color: var(--color-text-muted); }
 .bad { color: var(--color-danger); }
 .planfact { margin: var(--space-3) 0; }
 .planfact__bar { height: 8px; margin-top: var(--space-1); border-radius: var(--radius-pill); overflow: hidden; background: var(--color-track); }
@@ -34,3 +34,4 @@
 .cat-row .row { gap: var(--space-2); }
 .cat-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: var(--space-2); display: inline-block; }
 .month-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 6px var(--space-3); }
+.check input { width: 20px; height: 20px; min-height: 0; accent-color: var(--color-accent); }
