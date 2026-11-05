@@ -17,6 +17,34 @@ interface TelegramWebApp {
   };
   setHeaderColor?(color: string): void;
   setBackgroundColor?(color: string): void;
+  isVersionAtLeast?(version: string): boolean;
+  /** Bot API 8.0+: ярлык мини-приложения на главном экране телефона. */
+  addToHomeScreen?(): void;
+  checkHomeScreenStatus?(cb: (status: HomeScreenStatus) => void): void;
+}
+
+export type HomeScreenStatus = "unsupported" | "unknown" | "added" | "missed";
+
+/**
+ * MKB-061: можно ли предложить ярлык. Старые клиенты (до 8.0) и вне Telegram — нет; если ярлык уже
+ * добавлен — тоже нет. Ответ приходит асинхронно; без ответа клиента считаем, что нельзя.
+ */
+export function homeScreenStatus(): Promise<HomeScreenStatus> {
+  const app = getWebApp();
+  if (!app?.isVersionAtLeast?.("8.0") || !app.checkHomeScreenStatus || !app.addToHomeScreen) {
+    return Promise.resolve("unsupported");
+  }
+  return new Promise((resolve) => {
+    const timer = window.setTimeout(() => resolve("unsupported"), 1500);
+    app.checkHomeScreenStatus?.((status) => {
+      window.clearTimeout(timer);
+      resolve(status);
+    });
+  });
+}
+
+export function addToHomeScreen(): void {
+  getWebApp()?.addToHomeScreen?.();
 }
 
 declare global {
