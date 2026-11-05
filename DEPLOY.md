@@ -38,27 +38,29 @@
 На сервере нет исходников и dev-зависимостей (1 ГБ RAM не тянет сборку) — собираем локально и заливаем
 готовый `dist`.
 
+Одной командой (MKB-046), PowerShell из корня репозитория; сервер и ключ скрипт берёт из `DEPLOY.local.md`:
+
 ```powershell
-# 1. локально: проверки и сборка (webapp/dist собирается вместе с проектом)
-npm run check
-npm run build
-
-# 2. упаковать и залить (из корня репозитория)
-tar -czf $env:TEMP\app.tgz dist webapp/dist package.json package-lock.json sql
-scp -i <SSH_KEY> $env:TEMP\app.tgz ubuntu@<SERVER_IP>:/tmp/
-
-# 3. на сервере: распаковать, (при смене зависимостей) поставить, перезапустить
-ssh -i <SSH_KEY> ubuntu@<SERVER_IP> `
-  "cd ~/bot && tar -xzf /tmp/app.tgz && npm ci --omit=dev --ignore-scripts && rm /tmp/app.tgz && sudo systemctl restart kopeechka && systemctl is-active kopeechka"
+.\scripts\deploy.ps1      # выкладка
+.\scripts\rollback.ps1    # откат на предыдущий релиз
 ```
 
-- `--ignore-scripts` обязателен: `prepare` запускает `husky`, которого нет в prod-зависимостях.
-- **Миграции** на сервере (`tsx` — dev-зависимость, `migrate:up` там не работает). Все файлы идемпотентны,
-  применяются по порядку — `schema.sql`, затем `NNN_*.sql`:
-  `cd ~/bot && for f in sql/schema.sql $(ls sql/0*.sql | sort); do sudo -u postgres psql -d My_KopeechkaBot -v ON_ERROR_STOP=1 -f $f; done`
-  (от `postgres`, а не `kbot`: таблицы созданы владельцем `postgres`, `kbot` имеет на них права, но не может их `ALTER`).
+Что делает `deploy.ps1`:
+1. Отказывается работать с незакоммиченными изменениями (на сервер уходит рабочая копия; обойти — `-AllowDirty`).
+2. Собирает `webapp/dist` (`npm --prefix webapp run build`), гоняет `npm run check`, собирает `dist`.
+3. Пакует `dist webapp/dist package.json package-lock.json sql` и файл `RELEASE` (коммит, ветка, время),
+   заливает вместе с `deploy/release/install-release.sh` и запускает его на сервере.
+4. На сервере текущая версия переименовывается в `*.prev` (хранится одна), ставится новая,
+   `npm ci --omit=dev --ignore-scripts` (`husky` нет в prod-зависимостях).
+5. **Если `sql/` изменился** — сначала `sudo kopeechka-backup --send` (бэкап + копия админу), затем миграции
+   по порядку (`schema.sql`, потом `NNN_*.sql`) от `postgres` — таблицы принадлежат ему, `kbot` не может их `ALTER`.
+6. Перезапуск и проверка `systemctl is-active`; если служба не поднялась — код ошибки, журнал и подсказка про откат.
+
+`rollback.ps1` возвращает `*.prev`, ставит его зависимости и перезапускает бота. Миграции не откатываются:
+они только добавляют таблицы и колонки, предыдущий код их не замечает. Какой релиз сейчас на сервере:
+`ssh ... "cat ~/bot/RELEASE"`.
+
 - Смена `.env` на сервере: `nano ~/bot/.env`, затем `sudo systemctl restart kopeechka`.
-- Откат: старый `dist` не хранится — при необходимости откатитесь в git, соберите и залейте по шагам выше.
 
 ## Резервная копия БД (MKB-044)
 
