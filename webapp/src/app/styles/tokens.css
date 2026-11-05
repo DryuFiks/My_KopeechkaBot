@@ -17,6 +17,7 @@
   --color-fill: rgba(127, 127, 127, 0.1);
   --color-track: rgba(127, 127, 127, 0.18);
   --color-border: rgba(127, 127, 127, 0.24);
+  --color-backdrop: rgba(0, 0, 0, 0.4);
 
   /* Смысловые цвета */
   --color-success: #2e9e5b;

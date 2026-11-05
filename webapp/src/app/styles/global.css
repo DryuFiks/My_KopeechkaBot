@@ -30,8 +30,26 @@ h2 { font-size: var(--text-l); line-height: 1.25; margin: var(--space-5) 0 var(-
 .day-ring__fill { stroke: var(--color-accent); stroke-linecap: round; transition: stroke-dasharray var(--duration); }
 .day-ring--over .day-ring__fill { stroke: var(--color-danger); }
 .day-ring text { fill: var(--color-text); font-size: 8px; font-weight: 600; }
-.quick-actions { display: flex; gap: var(--space-2); margin: 0 0 var(--space-3); }
-.quick-actions .chip { flex: 1; }
+.quick-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0 0 var(--space-3); }
+.quick-actions .chip { flex: 1 1 auto; background: var(--color-surface); box-shadow: var(--shadow-card); }
+
+/* Нижняя шторка и быстрый ввод (MKB-052) */
+.sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; background: var(--color-backdrop); animation: sheet-fade var(--duration) ease-out; }
+.sheet__panel { width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; margin: 0 auto; padding: var(--space-3) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom)); background: var(--color-surface); border-radius: var(--radius-l) var(--radius-l) 0 0; box-shadow: var(--shadow-float); animation: sheet-up 220ms ease-out; }
+.sheet__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2); }
+.sheet__head h2 { margin: 0; font-size: var(--text-l); }
+.sheet .month-chips .chip:not(.is-active) { background: var(--color-fill); }
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@keyframes sheet-fade { from { background: transparent; } }
+.qa-amount { margin: var(--space-2) 0; text-align: center; font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.qa-amount--empty { color: var(--color-text-muted); }
+.qa-currencies { display: flex; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-3); }
+.qa-currencies .chip { padding: var(--space-1) var(--space-3); }
+.qa-currencies .chip.is-active { background: var(--color-accent-soft); color: var(--color-accent); font-weight: 600; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); }
+.keypad button { min-height: 52px; border: 0; border-radius: var(--radius-m); background: var(--color-fill); color: var(--color-text); font-size: var(--text-xl); font-variant-numeric: tabular-nums; }
+.action-toast { position: fixed; left: var(--space-3); right: var(--space-3); bottom: calc(var(--tabbar-height) + var(--space-5) + env(safe-area-inset-bottom)); z-index: 15; display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); max-width: 536px; margin: 0 auto; padding: var(--space-3) var(--space-4); border-radius: var(--radius-m); background: var(--color-text); color: var(--color-surface); box-shadow: var(--shadow-float); font-size: var(--text-s); }
+.action-toast .link { color: var(--color-surface); font-weight: 600; padding: 0 var(--space-1); min-height: 0; }
 .row b, .amount, .bignum, .spend-total b { font-variant-numeric: tabular-nums; }
 .progress { position: relative; height: 20px; background: var(--color-track); border-radius: var(--radius-pill); overflow: hidden; margin-top: var(--space-2); }
 .progress__fill { height: 100%; background: var(--color-accent); }

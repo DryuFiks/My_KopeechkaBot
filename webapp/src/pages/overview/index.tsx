@@ -3,9 +3,32 @@ import { useAsync } from "@/shared/lib/useAsync";
 import { fetchOverview } from "@/entities/budget";
 import { TodayCard, fetchSummary } from "@/entities/plan";
 import { TransactionRow, fetchRecentTransactions } from "@/entities/history";
+import { fetchCategoryOptions } from "@/entities/transaction";
+import type { QuickAddPreset } from "@/features/quick-add";
 import type { TabId } from "@/widgets/tab-bar";
 
 type Go = (tab: TabId) => void;
+type QuickAddFn = (preset?: QuickAddPreset) => void;
+
+const FREQUENT = 3;
+
+/** Частые категории расходов: тап открывает быстрый ввод сразу с категорией (MKB-052). */
+function QuickActions({ quickAdd }: { quickAdd: QuickAddFn }) {
+  const cats = useAsync(() => fetchCategoryOptions("expense"));
+  const frequent = cats.data?.categories.slice(0, FREQUENT) ?? [];
+  return (
+    <div className="quick-actions" role="group" aria-label="Быстро записать">
+      {frequent.map((c) => (
+        <button key={c} className="chip chip--soft" onClick={() => quickAdd({ type: "expense", category: c })}>
+          {c}
+        </button>
+      ))}
+      <button className="chip chip--soft" onClick={() => quickAdd({ type: "income" })}>
+        <Icon name="plus" size={18} /> Доход
+      </button>
+    </div>
+  );
+}
 
 function RecentOperations({ go }: { go: Go }) {
   const recent = useAsync(fetchRecentTransactions);
@@ -30,8 +53,8 @@ function RecentOperations({ go }: { go: Go }) {
   );
 }
 
-/** Главная (MKB-051): сколько можно сегодня, быстрые действия, последние операции. */
-export function OverviewPage({ go }: { go: Go }) {
+/** Главная (MKB-051): сколько можно сегодня, быстрый ввод по частым категориям, последние операции. */
+export function OverviewPage({ go, quickAdd }: { go: Go; quickAdd: QuickAddFn }) {
   const state = useAsync(fetchOverview);
   const summary = useAsync(fetchSummary);
   return (
@@ -40,14 +63,7 @@ export function OverviewPage({ go }: { go: Go }) {
         <>
           <h1>Привет{name ? `, ${name}` : ""}!</h1>
           <Status state={summary}>{(s) => <TodayCard s={s} />}</Status>
-          <div className="quick-actions">
-            <button className="chip chip--soft" onClick={() => go("add-expense")}>
-              <Icon name="minus" size={18} /> Расход
-            </button>
-            <button className="chip chip--soft" onClick={() => go("add-income")}>
-              <Icon name="plus" size={18} /> Доход
-            </button>
-          </div>
+          <QuickActions quickAdd={quickAdd} />
           <RecentOperations go={go} />
         </>
       )}
