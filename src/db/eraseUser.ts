@@ -16,6 +16,8 @@ const USER_TABLES = [
   "user_progress",
   "user_settings",
   "events",
+  "mcp_tokens",
+  "account_balances",
 ] as const;
 
 /**

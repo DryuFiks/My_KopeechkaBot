@@ -6,6 +6,7 @@ export function errorMessage(status: number): string {
   if (status === 401) return "Откройте приложение из Telegram";
   if (status === 400) return "Проверьте введённые данные";
   if (status === 404) return "Запись не найдена";
+  if (status === 409) return "Достигнут лимит ссылок — отзовите ненужную";
   if (status === 429) return "Слишком часто — попробуйте через минуту";
   return `Ошибка ${status}`;
 }

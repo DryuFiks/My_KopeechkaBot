@@ -25,6 +25,8 @@
   (`DATABASE_URL`, права 600). Данные перенесены `pg_dump -Fc` из локального Docker-контейнера `my-postgres`.
 - **Caddy** — `/etc/caddy/Caddyfile`: `<SERVER_DOMAIN> { reverse_proxy 127.0.0.1:3000 }`.
   Nest слушает только `127.0.0.1:3000` (раздаёт `webapp/dist` и `/api`), наружу смотрит один Caddy.
+  **MKB-063:** MCP-ссылка `/mcp/<токен>` — это пароль, поэтому в Caddy access-лог для этого пути отключён
+  (`@mcp path /mcp/*` + `log_skip @mcp`, если в Caddyfile включён `log`). Токен не пишется и в журнал бота.
 - **`.env`** на сервере: `BOT_TOKEN`, `ADMIN_TELEGRAM_ID`, `DATABASE_URL` (локальный Postgres сервера),
   `WEBAPP_URL=https://<SERVER_DOMAIN>`.
 - **Сеть**: security list VCN открыт на 22 (SSH), 80 и 443 (TCP, `0.0.0.0/0`). В Oracle-образе Ubuntu есть ещё
