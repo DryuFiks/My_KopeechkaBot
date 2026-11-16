@@ -115,5 +115,8 @@ select { font: inherit; min-width: 56px; padding: 0 var(--space-2); border: 1px 
 .collapsible > summary::after { content: "▾"; color: var(--color-text-muted); transition: transform var(--duration); }
 .collapsible[open] > summary::after { transform: rotate(180deg); }
 .collapsible__note { margin-left: auto; color: var(--color-text-muted); font-weight: 400; font-size: var(--text-s); }
+.collapsible__sub { margin: var(--space-2) 0; }
+.collapsible__sub summary { cursor: pointer; font-weight: 600; }
+.collapsible__sub ol { margin: var(--space-2) 0; padding-left: var(--space-4); }
 .collapsible__body { padding: 0 var(--space-4) var(--space-4); }
 .streak { margin: 0 0 var(--space-2); padding: var(--space-1) var(--space-3); display: inline-block; border-radius: var(--radius-pill); background: var(--color-warning-soft); font-size: var(--text-s); font-weight: 600; }

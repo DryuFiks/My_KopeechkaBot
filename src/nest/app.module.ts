@@ -15,6 +15,8 @@ import { TransactionsController } from "./api/transactions.controller";
 import { HistoryController } from "./api/history.controller";
 import { EventsController } from "./api/events.controller";
 import { PaymentsController } from "./api/payments.controller";
+import { McpManageController } from "./api/mcp.controller";
+import { McpController } from "./mcp.controller";
 
 @Module({
   imports: [DatabaseModule, BotModule],
@@ -31,6 +33,8 @@ import { PaymentsController } from "./api/payments.controller";
     HistoryController,
     EventsController,
     PaymentsController,
+    McpManageController,
+    McpController,
   ],
   providers: [{ provide: APP_FILTER, useClass: LogUnexpectedErrorsFilter }],
 })
